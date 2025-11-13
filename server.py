@@ -18,7 +18,8 @@ from src.models import (
     InitializeConfigInput,
     InitializeMemoryInput,
     DetectPlatformInput,
-    ValidateDocsInput
+    ValidateDocsInput,
+    AssessQualityInput
 )
 
 # Import tool implementations
@@ -26,6 +27,7 @@ from src.tools.config import initialize_config
 from src.tools.memory import initialize_memory
 from src.tools.platform import detect_platform
 from src.tools.validation import validate_docs
+from src.tools.quality import assess_quality
 
 # Initialize the MCP server
 mcp = FastMCP("doc_manager_mcp")
@@ -89,6 +91,20 @@ async def docmgr_detect_platform(params: DetectPlatformInput) -> str:
 async def docmgr_validate_docs(params: ValidateDocsInput) -> str:
     """Validate documentation for broken links, missing assets, and code snippet issues."""
     return await validate_docs(params)
+
+@mcp.tool(
+    name="docmgr_assess_quality",
+    annotations={
+        "title": "Assess Documentation Quality",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def docmgr_assess_quality(params: AssessQualityInput) -> str:
+    """Assess documentation quality against 7 criteria: relevance, accuracy, purposefulness, uniqueness, consistency, clarity, structure."""
+    return await assess_quality(params)
 
 if __name__ == "__main__":
     mcp.run()
