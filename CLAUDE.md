@@ -86,16 +86,22 @@ Checksums enable change detection independent of git commits, which is more reli
 
 ## Current Implementation Status
 
-**Implemented Tools (3/10):**
+**Implemented Tools (7/10):**
+
+*Setup & Detection:*
 - `docmgr_initialize_config` - Creates `.doc-manager.yml` configuration
 - `docmgr_initialize_memory` - Sets up memory system with checksums
-- `docmgr_detect_platform` - Detects/recommends documentation platforms
+- `docmgr_detect_platform` - Multi-stage platform detection (root, subdirs, dependencies)
 
-**Planned Tools:**
-- Quality assessment (7 criteria: relevance, accuracy, purposefulness, uniqueness, consistency, clarity, structure)
-- Documentation validation (links, assets, code snippets)
-- Change mapping (detect code changes and map to affected docs)
-- Dependency tracking (code-to-docs relationships)
+*Quality & Validation:*
+- `docmgr_validate_docs` - Validates broken links, missing assets, code snippets
+- `docmgr_assess_quality` - Evaluates docs against 7 quality criteria
+
+*Change Tracking:*
+- `docmgr_map_changes` - Maps code changes to affected documentation
+- `docmgr_track_dependencies` - Builds bidirectional code-to-docs dependency graph
+
+**Remaining Tools (3/10):**
 - Bootstrap workflow (generate fresh documentation)
 - Migration workflow (restructure existing docs)
 - Sync workflow (incremental updates)
@@ -170,14 +176,28 @@ See NEXT-STEPS.md for detailed implementation roadmap and IMPLEMENTATION-GUIDE.m
 - Validate all inputs before processing
 
 ### Platform Detection
-- Check root-level config files first (fast path)
-- Fall back to detecting from project language
+- Multi-stage approach: root configs → subdirectories → dependency files
+- Check common doc directories (docsite/, docs/, documentation/, website/, site/)
+- Parse package.json, requirements.txt, go.mod for platform dependencies
 - Support 7 platforms: hugo, docusaurus, mkdocs, sphinx, vitepress, jekyll, gitbook
 
 ### Checksums vs Git Commits
 - Use SHA-256 file checksums for change detection (more reliable)
 - Git commit/branch stored for context only
 - Checksums work even with uncommitted changes
+- Change mapping supports both checksum and git diff modes
+
+### Validation & Quality
+- Link validation: internal markdown/HTML links, relative/absolute paths
+- Asset validation: image existence, alt text presence
+- Code snippet validation: basic syntax checking for common languages
+- Quality assessment: 7 criteria with scored findings and actionable issues
+
+### Dependency Tracking
+- Extracts code references from docs (file paths, functions, classes, commands, config keys)
+- Builds bidirectional dependency graph (doc→code, code→doc)
+- Saves to `.doc-manager/dependencies.json`
+- Identifies orphaned docs and most-referenced source files
 
 ## Project Configuration
 
