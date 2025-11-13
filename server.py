@@ -21,7 +21,8 @@ from src.models import (
     ValidateDocsInput,
     AssessQualityInput,
     MapChangesInput,
-    TrackDependenciesInput
+    TrackDependenciesInput,
+    BootstrapInput
 )
 
 # Import tool implementations
@@ -32,6 +33,7 @@ from src.tools.validation import validate_docs
 from src.tools.quality import assess_quality
 from src.tools.changes import map_changes
 from src.tools.dependencies import track_dependencies
+from src.tools.workflows import bootstrap
 
 # Initialize the MCP server
 mcp = FastMCP("doc_manager_mcp")
@@ -137,6 +139,20 @@ async def docmgr_map_changes(params: MapChangesInput) -> str:
 async def docmgr_track_dependencies(params: TrackDependenciesInput) -> str:
     """Build dependency graph showing which docs reference which source files."""
     return await track_dependencies(params)
+
+@mcp.tool(
+    name="docmgr_bootstrap",
+    annotations={
+        "title": "Bootstrap Fresh Documentation",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": False,
+        "openWorldHint": False
+    }
+)
+async def docmgr_bootstrap(params: BootstrapInput) -> str:
+    """Bootstrap fresh documentation structure with templates and configuration."""
+    return await bootstrap(params)
 
 if __name__ == "__main__":
     mcp.run()
