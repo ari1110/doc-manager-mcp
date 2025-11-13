@@ -193,7 +193,27 @@ async def bootstrap(params: BootstrapInput) -> str:
             lines.append("- Initialize: `npx create-docusaurus@latest . classic`")
             lines.append("- Move generated docs to match structure")
 
-        return "\n".join(lines)
+        # Return JSON or Markdown based on response_format
+        if params.response_format == ResponseFormat.JSON:
+            return json.dumps({
+                "status": "success",
+                "message": "Documentation bootstrapped successfully",
+                "project": project_path.name,
+                "platform": recommended_platform.value,
+                "docs_path": params.docs_path,
+                "files_created": len(created_files),
+                "steps": {
+                    "platform_detection": "completed",
+                    "configuration": "completed",
+                    "structure_creation": "completed",
+                    "memory_initialization": "completed",
+                    "quality_assessment": "completed"
+                },
+                "created_files": created_files,
+                "quality_score": overall_score
+            }, indent=2)
+        else:
+            return "\n".join(lines)
 
     except Exception as e:
         return handle_error(e, "bootstrap")
@@ -679,7 +699,26 @@ async def migrate(params: MigrateInput) -> str:
         lines.append(f"- Old location: `{params.existing_docs_path}/`")
         lines.append(f"- New location: `{params.new_docs_path}/`")
 
-        return "\n".join(lines)
+        # Return JSON or Markdown based on response_format
+        if params.response_format == ResponseFormat.JSON:
+            return json.dumps({
+                "status": "success",
+                "message": "Documentation migrated successfully",
+                "source_path": params.existing_docs_path,
+                "target_path": params.new_docs_path,
+                "target_platform": params.target_platform.value,
+                "files_migrated": len(migrated_files),
+                "broken_links": len(broken_links),
+                "steps": {
+                    "backup": "completed" if git_available else "skipped",
+                    "copy": "completed",
+                    "structure_update": "completed",
+                    "link_detection": "completed"
+                },
+                "migrated_files": migrated_files
+            }, indent=2)
+        else:
+            return "\n".join(lines)
 
     except Exception as e:
         return handle_error(e, "migrate")
@@ -920,7 +959,19 @@ async def sync(params: SyncInput) -> str:
         else:
             lines.append("1. Update memory baseline to mark current state as synced")
 
-        return "\n".join(lines)
+        # Return JSON or Markdown based on response_format
+        if params.response_format == ResponseFormat.JSON:
+            return json.dumps({
+                "status": "success",
+                "message": "Sync analysis completed",
+                "changes": total_changes,
+                "affected_docs": len(affected_docs),
+                "recommendations": [doc["file"] for doc in affected_docs[:10]],
+                "validation_issues": total_issues if 'total_issues' in locals() else None,
+                "quality_score": overall_score if 'overall_score' in locals() else None
+            }, indent=2)
+        else:
+            return "\n".join(lines)
 
     except Exception as e:
         return handle_error(e, "sync")

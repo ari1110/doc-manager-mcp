@@ -27,6 +27,20 @@ class InitializeConfigInput(BaseModel):
         description="Glob patterns to exclude from documentation analysis",
         max_items=50
     )
+    docs_path: Optional[str] = Field(
+        default=None,
+        description="Path to documentation directory (relative to project root). If not specified, will be auto-detected",
+        min_length=1
+    )
+    sources: Optional[List[str]] = Field(
+        default=None,
+        description="Source file patterns to track for documentation (e.g., 'src/**/*.py')",
+        max_items=50
+    )
+    response_format: ResponseFormat = Field(
+        default=ResponseFormat.MARKDOWN,
+        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
+    )
 
 class InitializeMemoryInput(BaseModel):
     """Input for initializing memory system."""
@@ -40,6 +54,10 @@ class InitializeMemoryInput(BaseModel):
         ...,
         description="Absolute path to project root directory",
         min_length=1
+    )
+    response_format: ResponseFormat = Field(
+        default=ResponseFormat.MARKDOWN,
+        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
     )
 
 class DetectPlatformInput(BaseModel):
@@ -182,6 +200,10 @@ class BootstrapInput(BaseModel):
         description="Path where documentation should be created (relative to project root)",
         min_length=1
     )
+    response_format: ResponseFormat = Field(
+        default=ResponseFormat.MARKDOWN,
+        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
+    )
 
 class MigrateInput(BaseModel):
     """Input for migrating existing documentation."""
@@ -213,6 +235,10 @@ class MigrateInput(BaseModel):
     preserve_history: bool = Field(
         default=True,
         description="Use git mv to preserve file history during migration"
+    )
+    response_format: ResponseFormat = Field(
+        default=ResponseFormat.MARKDOWN,
+        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
     )
 
 class SyncInput(BaseModel):
