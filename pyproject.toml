@@ -13,6 +13,9 @@ dependencies = [
 [project.scripts]
 doc-manager = "server:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
