@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(mcp-builder)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
