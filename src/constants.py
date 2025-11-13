@@ -36,3 +36,11 @@ class QualityCriterion(str, Enum):
     CONSISTENCY = "consistency"
     CLARITY = "clarity"
     STRUCTURE = "structure"
+
+class ChangeDetectionMode(str, Enum):
+    """Change detection modes."""
+    CHECKSUM = "checksum"
+    GIT_DIFF = "git_diff"
+
+# Alias for backward compatibility
+Platform = DocumentationPlatform

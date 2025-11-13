@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 
 from ..models import InitializeMemoryInput
+from ..constants import ResponseFormat
 from ..utils import (
     detect_project_language,
     find_docs_directory,
@@ -43,10 +44,8 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
             return f"Error: Project path does not exist: {project_path}"
 
         memory_dir = project_path / ".doc-manager"
-        if memory_dir.exists():
-            return f"Memory system already exists at {memory_dir}. Delete it first to reinitialize."
 
-        # Create memory directory structure
+        # Create memory directory structure (overwrite if exists)
         memory_dir.mkdir(parents=True, exist_ok=True)
         (memory_dir / "memory").mkdir(exist_ok=True)
 
@@ -147,7 +146,21 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
         with open(asset_path, 'w', encoding='utf-8') as f:
             json.dump(asset_manifest, f, indent=2)
 
-        return f"""✓ Initialized documentation memory system
+        # Return JSON or Markdown based on response_format
+        if params.response_format == ResponseFormat.JSON:
+            return json.dumps({
+                "status": "success",
+                "message": "Memory system initialized successfully",
+                "baseline_path": str(baseline_path),
+                "conventions_path": str(conventions_path),
+                "repository": repo_name,
+                "language": language,
+                "docs_exist": docs_exist,
+                "git_commit": git_commit[:8] if git_commit else None,
+                "files_tracked": file_count
+            }, indent=2)
+        else:
+            return f"""✓ Memory system initialized successfully
 
 **Memory System Summary:**
 - Repository: {repo_name}
