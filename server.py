@@ -23,7 +23,8 @@ from src.models import (
     MapChangesInput,
     TrackDependenciesInput,
     BootstrapInput,
-    MigrateInput
+    MigrateInput,
+    SyncInput
 )
 
 # Import tool implementations
@@ -34,7 +35,7 @@ from src.tools.validation import validate_docs
 from src.tools.quality import assess_quality
 from src.tools.changes import map_changes
 from src.tools.dependencies import track_dependencies
-from src.tools.workflows import bootstrap, migrate
+from src.tools.workflows import bootstrap, migrate, sync
 
 # Initialize the MCP server
 mcp = FastMCP("doc_manager_mcp")
@@ -168,6 +169,20 @@ async def docmgr_bootstrap(params: BootstrapInput) -> str:
 async def docmgr_migrate(params: MigrateInput) -> str:
     """Migrate existing documentation to new structure with optional git history preservation."""
     return await migrate(params)
+
+@mcp.tool(
+    name="docmgr_sync",
+    annotations={
+        "title": "Sync Documentation with Code Changes",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def docmgr_sync(params: SyncInput) -> str:
+    """Sync documentation with code changes, identifying what needs updates."""
+    return await sync(params)
 
 if __name__ == "__main__":
     mcp.run()

@@ -686,5 +686,241 @@ async def migrate(params: MigrateInput) -> str:
 
 
 async def sync(params: SyncInput) -> str:
-    """Sync documentation with code changes - to be implemented."""
-    return "Sync workflow not yet implemented. Coming soon!"
+    """Sync documentation with code changes.
+
+    Orchestrates documentation synchronization:
+    1. Maps code changes to affected documentation
+    2. Identifies documentation that needs updates
+    3. Validates current documentation state
+    4. Assesses documentation quality
+    5. Updates memory baseline (if changes applied)
+    6. Generates sync report with actionable recommendations
+
+    Args:
+        params (SyncInput): Validated input parameters containing:
+            - project_path (str): Absolute path to project root
+            - mode (str): "reactive" (manual) or "proactive" (auto-detect)
+            - response_format (ResponseFormat): Output format
+
+    Returns:
+        str: Sync report with affected docs and recommendations
+
+    Examples:
+        - Use when: After making code changes
+        - Use when: Before releasing documentation updates
+        - Use when: Running in CI/CD to detect doc staleness
+
+    Error Handling:
+        - Returns error if project_path doesn't exist
+        - Returns error if memory baseline not found
+        - Returns info if no changes detected
+    """
+    try:
+        project_path = Path(params.project_path).resolve()
+
+        if not project_path.exists():
+            return f"Error: Project path does not exist: {project_path}"
+
+        lines = ["# Documentation Sync Report", ""]
+        lines.append(f"**Project:** {project_path.name}")
+        lines.append(f"**Sync Mode:** {params.mode}")
+        lines.append(f"**Started:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append("")
+
+        # Step 1: Map code changes
+        lines.append("## Step 1: Change Detection")
+        lines.append("")
+
+        from ..models import MapChangesInput
+        changes_result = await map_changes(MapChangesInput(
+            project_path=str(project_path),
+            response_format=ResponseFormat.JSON
+        ))
+
+        changes_data = json.loads(changes_result)
+        changes_detected = changes_data.get("changes_detected", False)
+        total_changes = changes_data.get("total_changes", 0)
+        affected_docs = changes_data.get("affected_documentation", [])
+
+        if not changes_detected:
+            lines.append("✓ No code changes detected since last baseline")
+            lines.append("")
+            lines.append("**Status:** Documentation is up to date!")
+            return "\n".join(lines)
+
+        lines.append(f"⚠️  Detected {total_changes} code changes")
+        lines.append("")
+
+        # Step 2: Identify affected documentation
+        lines.append("## Step 2: Affected Documentation")
+        lines.append("")
+
+        if not affected_docs:
+            lines.append("✓ No documentation impacts detected")
+            lines.append("  (Changes only affected tests, infrastructure, or docs themselves)")
+            lines.append("")
+        else:
+            high_priority = [d for d in affected_docs if d["priority"] == "high"]
+            medium_priority = [d for d in affected_docs if d["priority"] == "medium"]
+            low_priority = [d for d in affected_docs if d["priority"] == "low"]
+
+            lines.append(f"**Total Affected:** {len(affected_docs)} documentation files")
+            lines.append(f"- High Priority: {len(high_priority)}")
+            lines.append(f"- Medium Priority: {len(medium_priority)}")
+            lines.append(f"- Low Priority: {len(low_priority)}")
+            lines.append("")
+
+            if high_priority:
+                lines.append("### High Priority Updates Needed")
+                lines.append("")
+                for doc in high_priority[:10]:  # Show first 10
+                    status = "✓ Exists" if doc["exists"] else "⚠️ Needs creation"
+                    lines.append(f"#### {doc['file']} ({status})")
+                    lines.append(f"**Reason:** {doc['reason']}")
+                    lines.append(f"**Affected by:** {', '.join(doc['affected_by'][:3])}")
+                    if len(doc['affected_by']) > 3:
+                        lines.append(f"  ... and {len(doc['affected_by']) - 3} more")
+                    lines.append("")
+
+                if len(high_priority) > 10:
+                    lines.append(f"*... and {len(high_priority) - 10} more high priority files*")
+                    lines.append("")
+
+        # Step 3: Validate current documentation
+        lines.append("## Step 3: Current Documentation Status")
+        lines.append("")
+
+        from ..models import ValidateDocsInput
+        from ..utils import find_docs_directory
+
+        docs_path = find_docs_directory(project_path)
+        if docs_path:
+            validation_result = await validate_docs(ValidateDocsInput(
+                project_path=str(project_path),
+                docs_path=str(docs_path.relative_to(project_path)),
+                response_format=ResponseFormat.JSON
+            ))
+
+            validation_data = json.loads(validation_result)
+            total_issues = validation_data.get("total_issues", 0)
+            errors = validation_data.get("errors", 0)
+            warnings = validation_data.get("warnings", 0)
+
+            if total_issues == 0:
+                lines.append("✓ No validation issues found")
+            else:
+                lines.append(f"⚠️  Found {total_issues} validation issues:")
+                lines.append(f"  - Errors: {errors}")
+                lines.append(f"  - Warnings: {warnings}")
+            lines.append("")
+        else:
+            lines.append("⚠️  No documentation directory found")
+            lines.append("")
+
+        # Step 4: Quality assessment
+        lines.append("## Step 4: Quality Assessment")
+        lines.append("")
+
+        if docs_path:
+            from ..models import AssessQualityInput
+            quality_result = await assess_quality(AssessQualityInput(
+                project_path=str(project_path),
+                docs_path=str(docs_path.relative_to(project_path)),
+                response_format=ResponseFormat.JSON
+            ))
+
+            quality_data = json.loads(quality_result)
+            overall_score = quality_data.get("overall_score", "unknown")
+
+            lines.append(f"**Overall Quality:** {overall_score}")
+
+            # Show specific criteria that need attention
+            criteria = quality_data.get("criteria", [])
+            low_scores = [c for c in criteria if c.get("score") in ["fair", "poor"]]
+
+            if low_scores:
+                lines.append("")
+                lines.append("**Areas Needing Attention:**")
+                for criterion in low_scores:
+                    lines.append(f"- {criterion['criterion'].capitalize()}: {criterion['score']}")
+
+            lines.append("")
+        else:
+            lines.append("⚠️  Cannot assess quality without documentation directory")
+            lines.append("")
+
+        # Step 5: Recommendations
+        lines.append("## Sync Recommendations")
+        lines.append("")
+
+        if params.mode == "reactive":
+            lines.append("**Manual Actions Required:**")
+            lines.append("")
+
+            if affected_docs:
+                lines.append("1. **Update affected documentation:**")
+                for doc in high_priority[:5]:
+                    lines.append(f"   - {doc['file']}")
+
+                lines.append("")
+                lines.append("2. **Review changes:**")
+                lines.append("   - Check that examples still work")
+                lines.append("   - Update screenshots if UI changed")
+                lines.append("   - Verify configuration examples")
+
+            lines.append("")
+            lines.append("3. **Run validation:**")
+            lines.append("   ```")
+            lines.append("   docmgr_validate_docs")
+            lines.append("   ```")
+
+            lines.append("")
+            lines.append("4. **Update baseline:**")
+            lines.append("   After applying updates, refresh the memory baseline:")
+            lines.append("   ```")
+            lines.append("   docmgr_initialize_memory")
+            lines.append("   ```")
+
+        elif params.mode == "proactive":
+            lines.append("**Proactive Sync Suggestions:**")
+            lines.append("")
+
+            if affected_docs:
+                lines.append("The following documentation files are out of sync with code:")
+                for doc in affected_docs[:10]:
+                    lines.append(f"- {doc['file']} (Priority: {doc['priority']})")
+
+                if len(affected_docs) > 10:
+                    lines.append(f"  ... and {len(affected_docs) - 10} more")
+
+                lines.append("")
+                lines.append("Consider:")
+                lines.append("- Creating a PR to update these files")
+                lines.append("- Adding TODO comments in affected docs")
+                lines.append("- Flagging as 'needs-update' in your issue tracker")
+
+        lines.append("")
+
+        # Summary
+        lines.append("## Summary")
+        lines.append("")
+        lines.append(f"**Code Changes:** {total_changes} files modified")
+        lines.append(f"**Documentation Impact:** {len(affected_docs)} files affected")
+
+        if docs_path:
+            lines.append(f"**Validation Issues:** {total_issues if 'total_issues' in locals() else 'N/A'}")
+            lines.append(f"**Quality Score:** {overall_score if 'overall_score' in locals() else 'N/A'}")
+
+        lines.append("")
+        lines.append("**Next Steps:**")
+        if affected_docs:
+            lines.append("1. Review and update affected documentation")
+            lines.append("2. Run validation to ensure no broken links")
+            lines.append("3. Update memory baseline after changes")
+        else:
+            lines.append("1. Update memory baseline to mark current state as synced")
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        return handle_error(e, "sync")
