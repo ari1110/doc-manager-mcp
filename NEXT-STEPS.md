@@ -11,6 +11,24 @@
 **Latest Commit:** `00cc0f1` - Add uv.lock to gitignore
 **Lines of Code:** ~1,056 lines across modular structure
 
+## Quick Start for Developers
+
+**New to this project?** Start here:
+
+1. **Read IMPLEMENTATION-GUIDE.md** - Step-by-step instructions with code examples for each tool
+2. **Use templates/** - Copy templates for new tools, tests, and workflows
+3. **Reference references/** - Decision frameworks and pattern guides
+4. **Follow the phase plan below** - Systematic implementation order
+
+**Key Resources:**
+- `IMPLEMENTATION-GUIDE.md` - Detailed implementation guide with code skeletons
+- `templates/tools/tool-template.py` - Standard tool structure
+- `templates/tests/test-template.py` - Pytest template with fixtures
+- `templates/tools/workflow-template.py` - Workflow orchestration pattern
+- `references/quality-criteria.md` - 7 quality criteria rubrics
+- `references/doc-mapping-patterns.md` - 8 code→doc mapping patterns
+- `references/doc-platform-selector.md` - Platform selection decision tree
+
 ---
 
 ## Remaining Work
@@ -46,6 +64,8 @@ for doc_dir in doc_dirs:
 **File:** `src/tools/quality.py` (new file)
 **Model:** Already defined in `src/models.py` - `AssessQualityInput`
 
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 1: Quality Assessment
+
 **Requirements:**
 - Evaluate documentation against 7 quality criteria:
   1. **Relevance** - Addresses current user needs and use cases
@@ -56,30 +76,14 @@ for doc_dir in doc_dirs:
   6. **Clarity** - Precise language, concrete examples, intuitive navigation
   7. **Structure** - Logical organization with appropriate depth
 
-**Implementation Approach:**
-- Integrate Vale CLI for prose linting (consistency, clarity)
-- Implement custom checkers for other criteria
-- Generate quality report with scores and specific issues
-- Support both JSON and Markdown output formats
+**Quick Start:**
+1. Copy `templates/tools/tool-template.py` to `src/tools/quality.py`
+2. Implement `_assess_criterion()` for each quality criterion
+3. Integrate Vale CLI for consistency/clarity checks (optional)
+4. Register tool in `server.py` using the pattern from IMPLEMENTATION-GUIDE.md
+5. Create tests using `templates/tests/test-template.py`
 
-**Tool Registration:**
-```python
-@mcp.tool(
-    name="docmgr_assess_quality",
-    annotations={
-        "title": "Assess Documentation Quality",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
-)
-async def docmgr_assess_quality(params: AssessQualityInput) -> str:
-    """Evaluate documentation against 7 quality criteria."""
-    return await assess_quality(params)
-```
-
-**Reference:** See `R:\Test-Projects\pass-cli\.claude\skills\documentation-manager\references\quality-criteria.md` for detailed rubrics.
+**Reference:** `references/quality-criteria.md` for detailed rubrics and assessment questions.
 
 ### 3. Implement Validation Tool
 
@@ -87,38 +91,24 @@ async def docmgr_assess_quality(params: AssessQualityInput) -> str:
 **File:** `src/tools/validation.py` (new file)
 **Model:** Already defined - `ValidateDocsInput`
 
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 2: Validation
+
 **Validation Checks:**
-1. **Broken Links**
-   - Internal links (markdown references, relative paths)
-   - External links (HTTP/HTTPS URLs)
-   - Generate report with file:line references
+1. **Broken Links** - Internal/external links, file:line references
+2. **Asset Validation** - Image existence, alt text, unused assets
+3. **Code Snippet Validation** - Extract and lint code blocks by language
 
-2. **Asset Validation**
-   - Verify all image links point to existing files
-   - Check for missing alt text on images
-   - Identify unused assets (in manifest but not referenced)
-
-3. **Code Snippet Validation**
-   - Extract code blocks from markdown
-   - Attempt to compile/lint by language
-   - Flag syntax errors with file:line references
-
-**Example Implementation:**
-```python
-async def validate_docs(params: ValidateDocsInput) -> str:
-    issues = []
-
-    if params.check_links:
-        issues.extend(await _check_broken_links(docs_path))
-
-    if params.check_assets:
-        issues.extend(await _validate_assets(docs_path, asset_manifest))
-
-    if params.check_snippets:
-        issues.extend(await _validate_code_snippets(docs_path))
-
-    return _format_validation_report(issues, params.response_format)
-```
+**Quick Start:**
+1. Copy `templates/tools/tool-template.py` to `src/tools/validation.py`
+2. Implement link checker using code from IMPLEMENTATION-GUIDE.md
+3. Implement asset validator using `_extract_markdown_images()` utility
+4. Implement snippet validator with language-specific checks
+5. Add utility functions from IMPLEMENTATION-GUIDE.md to `src/utils.py`:
+   - `extract_markdown_links()`
+   - `extract_markdown_images()`
+   - `extract_code_blocks()`
+   - `is_url_accessible()`
+6. Register tool in `server.py`
 
 ### 4. Implement Change Mapping Tool
 
@@ -126,31 +116,21 @@ async def validate_docs(params: ValidateDocsInput) -> str:
 **File:** `src/tools/changes.py` (new file)
 **Model:** Already defined - `MapChangesInput`
 
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 3: Change Mapping
+
 **Functionality:**
-- Compare current file checksums vs. memory baseline
-- Identify changed files and their scope (API, CLI, config, internal)
-- Map changes to affected documentation files
-- Use `doc-mapping-patterns.md` reference for common mappings
+- Compare current checksums vs. memory baseline
+- Map code changes to affected documentation files
+- Apply pattern-based heuristics for intelligent mapping
 
-**Example Mappings:**
-- `cmd/tui/*.go` changed → Update `docs/guides/tui-guide.md`
-- `internal/vault/*.go` changed → Update `docs/reference/security-architecture.md`
-- `go.mod` dependencies changed → Update `docs/getting-started/installation.md`
+**Quick Start:**
+1. Copy `templates/tools/tool-template.py` to `src/tools/changes.py`
+2. Implement checksum comparison logic from IMPLEMENTATION-GUIDE.md
+3. Use mapping patterns from `references/doc-mapping-patterns.md`
+4. Support custom mappings from `.doc-manager.yml` config
+5. Generate report with file paths and priority levels
 
-**Output:**
-```json
-{
-  "changes_detected": true,
-  "changed_files": ["cmd/tui/model.go", "cmd/tui/view.go"],
-  "affected_docs": [
-    {
-      "file": "docs/guides/tui-guide.md",
-      "reason": "TUI implementation changes in cmd/tui/",
-      "priority": "high"
-    }
-  ]
-}
-```
+**Reference:** `references/doc-mapping-patterns.md` for 8 pattern categories (CLI commands, API changes, config changes, dependencies, examples, tests, docs, infrastructure)
 
 ### 5. Implement Dependency Tracking Tool
 
@@ -158,15 +138,19 @@ async def validate_docs(params: ValidateDocsInput) -> str:
 **File:** `src/tools/dependencies.py` (new file)
 **Model:** Already defined - `TrackDependenciesInput`
 
-**Functionality:**
-- Build a dependency graph of code → docs relationships
-- Track which docs depend on which code files/APIs
-- Useful for impact analysis before making code changes
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 4: Dependency Tracking
 
-**Implementation:**
-- Parse documentation for code references (file paths, function names, etc.)
-- Cross-reference with actual codebase
-- Store dependency graph in `.doc-manager/dependencies.json`
+**Functionality:**
+- Build dependency graph: code files → documentation files
+- Extract code references from markdown (file paths, function names)
+- Store in `.doc-manager/dependencies.json` for impact analysis
+
+**Quick Start:**
+1. Copy `templates/tools/tool-template.py` to `src/tools/dependencies.py`
+2. Implement `_extract_code_references()` to parse markdown
+3. Use example code from IMPLEMENTATION-GUIDE.md
+4. Save dependency graph to JSON file
+5. Register tool in `server.py`
 
 ### 6. Implement Bootstrap Workflow
 
@@ -174,28 +158,20 @@ async def validate_docs(params: ValidateDocsInput) -> str:
 **File:** `src/tools/workflows.py` (new file)
 **Model:** Already defined - `BootstrapInput`
 
-**Workflow Steps:**
-1. Detect platform (call `detect_platform`)
-2. Create docs structure from templates (`assets/structure/`)
-3. Generate initial documentation files with placeholders
-4. Set up platform-specific configuration
-5. Initialize memory system
-6. Run initial quality assessment
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 5-7: Workflows (Bootstrap section)
 
-**Template Structure to Create:**
-Create `assets/structure/` with basic docs skeleton:
-```
-assets/structure/
-├── README.md (template)
-├── docs/
-│   ├── _index.md (template)
-│   ├── getting-started/
-│   │   └── installation.md (template)
-│   ├── guides/
-│   │   └── quick-start.md (template)
-│   └── reference/
-│       └── api.md (template)
-```
+**Workflow Steps:**
+1. Detect/validate platform
+2. Create documentation structure
+3. Generate initial content from templates
+4. Initialize memory system
+
+**Quick Start:**
+1. Copy `templates/tools/workflow-template.py` to `src/tools/workflows.py`
+2. Implement `bootstrap()` function using example from IMPLEMENTATION-GUIDE.md
+3. Orchestrate existing tools (detect_platform, initialize_memory)
+4. Create `assets/structure/` templates for common doc types
+5. Register tool in `server.py`
 
 ### 7. Implement Migration Workflow
 
@@ -203,20 +179,17 @@ assets/structure/
 **File:** `src/tools/workflows.py`
 **Model:** Already defined - `MigrateInput`
 
-**Workflow Steps:**
-1. Assess existing documentation (call `assess_quality`)
-2. Detect existing platform
-3. Create new parallel docs directory
-4. Map old structure → new structure
-5. Use `git mv` to preserve history (if `preserve_history=true`)
-6. Generate breaking changes report
-7. Update internal links and references
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 5-7: Workflows
 
-**Breaking Changes Handling:**
-- Track all moved/renamed files
-- Generate redirect mappings
-- Report broken links with suggested fixes
-- Create migration guide document
+**Workflow Steps:**
+1. Assess existing docs → 2. Detect platform → 3. Map old→new structure → 4. Preserve history (git mv) → 5. Update links → 6. Generate migration report
+
+**Quick Start:**
+1. Add `migrate()` function to `src/tools/workflows.py`
+2. Use workflow template pattern from `templates/tools/workflow-template.py`
+3. Implement backup/rollback logic for safety
+4. Track moved files for redirect generation
+5. Register tool in `server.py`
 
 ### 8. Implement Sync Workflow
 
@@ -224,36 +197,31 @@ assets/structure/
 **File:** `src/tools/workflows.py`
 **Model:** Already defined - `SyncInput`
 
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Tool 5-7: Workflows
+
 **Sync Modes:**
+- **Reactive:** Manual trigger → map changes → identify affected docs → update
+- **Proactive:** Auto-detect via git hook/CI → generate PR with doc updates
 
-**Reactive Mode** (manual trigger):
-1. Map changes since last sync (call `map_changes`)
-2. Identify affected documentation
-3. Present proposed updates to user
-4. Apply updates
-5. Update memory checksums
-
-**Proactive Mode** (auto-detect):
-1. Run on every code change (via git hook or CI)
-2. Automatically detect impacts
-3. Generate PR/commit with doc updates
-4. Or: flag docs as needing review
-
-**Implementation:**
-- Use checksum comparison (more robust than git commit hashes)
-- Support both modes in single tool
-- Generate detailed sync report
+**Quick Start:**
+1. Add `sync()` function to `src/tools/workflows.py`
+2. Use `map_changes` tool to identify affected docs
+3. Implement checksum update logic
+4. Support both reactive and proactive modes
+5. Register tool in `server.py`
 
 ### 9. Create Supporting Reference Files
 
-**Priority:** Medium
-**Location:** Create these in the skill directory for reference
+**Priority:** ~~Medium~~ ✅ **COMPLETED**
 
-Files to create:
-1. **`doc-platform-selector.md`** - Decision framework for choosing platforms
-2. **`doc-mapping-patterns.md`** - Common code change → doc update patterns
-3. **`breaking-changes-handling.md`** - Systematic approach to migration
-4. **`dependency-tracking-patterns.md`** - How to identify doc-code dependencies
+**Status:** All reference files created in `references/` directory:
+- ✅ `references/quality-criteria.md` - 7 quality criteria rubrics
+- ✅ `references/doc-mapping-patterns.md` - 8 code→doc mapping patterns
+- ✅ `references/doc-platform-selector.md` - Platform selection decision tree
+
+**Future additions** (if needed):
+- `breaking-changes-handling.md` - Migration best practices
+- `dependency-tracking-patterns.md` - Code reference extraction patterns
 
 ### 10. Add Monorepo Support
 
@@ -307,27 +275,19 @@ projects:
 **Priority:** High
 **File:** `tests/` (new directory)
 
+**Implementation Guide:** See IMPLEMENTATION-GUIDE.md → Testing Each Tool
+
 **Test Coverage:**
-1. Unit tests for each utility function
+1. Unit tests for utilities
 2. Integration tests for each tool
 3. End-to-end workflow tests
-4. Test with real repositories (pass-cli as test case)
+4. Real repository testing (pass-cli)
 
-**Example Test Structure:**
-```
-tests/
-├── unit/
-│   ├── test_utils.py
-│   ├── test_models.py
-│   └── test_constants.py
-├── integration/
-│   ├── test_config_tool.py
-│   ├── test_memory_tool.py
-│   ├── test_platform_tool.py
-│   └── test_quality_tool.py
-└── fixtures/
-    └── sample_project/
-```
+**Quick Start:**
+1. Copy `templates/tests/test-template.py` for each tool
+2. Customize fixtures for specific tool needs
+3. Run with: `pytest tests/integration/test_<tool>.py -v`
+4. Use pass-cli as integration test case
 
 ### 13. Create MCP Evaluation Tests
 
@@ -400,17 +360,23 @@ According to mcp-builder skill, create evaluation XML:
 
 ## Resources and References
 
-**Existing Code:**
-- Quality criteria rubrics: `R:\Test-Projects\pass-cli\.claude\skills\documentation-manager\references\quality-criteria.md`
-- MCP best practices: `R:\Test-Projects\pass-cli\.claude\skills\mcp-builder\reference\mcp_best_practices.md`
-- Python MCP guide: `R:\Test-Projects\pass-cli\.claude\skills\mcp-builder\reference\python_mcp_server.md`
+**Local Resources (This Repository):**
+- 📘 `IMPLEMENTATION-GUIDE.md` - Comprehensive implementation guide with code examples
+- 📂 `templates/` - Tool, test, and workflow templates
+- 📚 `references/` - Quality criteria, mapping patterns, platform selector
 
-**External Tools to Integrate:**
+**Templates:**
+- `templates/tools/tool-template.py` - Standard tool structure
+- `templates/tests/test-template.py` - Pytest template with fixtures
+- `templates/tools/workflow-template.py` - Workflow orchestration pattern
+
+**References:**
+- `references/quality-criteria.md` - 7 quality criteria rubrics
+- `references/doc-mapping-patterns.md` - 8 code→doc mapping patterns
+- `references/doc-platform-selector.md` - Platform decision framework
+
+**External Tools:**
 - Vale CLI: https://vale.sh/ (prose linting)
-- Link checkers: Python `linkchecker` or similar
-- Language-specific linters (pylint, eslint, etc.)
-
-**Testing:**
 - MCP Inspector: `npx @modelcontextprotocol/inspector uv run python server.py`
 - Test project: `R:\Test-Projects\pass-cli`
 
