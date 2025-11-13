@@ -17,13 +17,15 @@ from mcp.server.fastmcp import FastMCP
 from src.models import (
     InitializeConfigInput,
     InitializeMemoryInput,
-    DetectPlatformInput
+    DetectPlatformInput,
+    ValidateDocsInput
 )
 
 # Import tool implementations
 from src.tools.config import initialize_config
 from src.tools.memory import initialize_memory
 from src.tools.platform import detect_platform
+from src.tools.validation import validate_docs
 
 # Initialize the MCP server
 mcp = FastMCP("doc_manager_mcp")
@@ -73,6 +75,20 @@ async def docmgr_initialize_memory(params: InitializeMemoryInput) -> str:
 async def docmgr_detect_platform(params: DetectPlatformInput) -> str:
     """Detect and recommend documentation platform for the project."""
     return await detect_platform(params)
+
+@mcp.tool(
+    name="docmgr_validate_docs",
+    annotations={
+        "title": "Validate Documentation",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False
+    }
+)
+async def docmgr_validate_docs(params: ValidateDocsInput) -> str:
+    """Validate documentation for broken links, missing assets, and code snippet issues."""
+    return await validate_docs(params)
 
 if __name__ == "__main__":
     mcp.run()
