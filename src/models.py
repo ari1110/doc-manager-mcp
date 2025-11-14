@@ -25,7 +25,7 @@ class InitializeConfigInput(BaseModel):
     exclude_patterns: Optional[List[str]] = Field(
         default_factory=lambda: ["**/node_modules", "**/dist", "**/vendor", "**/*.log"],
         description="Glob patterns to exclude from documentation analysis",
-        max_items=50
+        max_length=50
     )
     docs_path: Optional[str] = Field(
         default=None,
@@ -35,7 +35,7 @@ class InitializeConfigInput(BaseModel):
     sources: Optional[List[str]] = Field(
         default=None,
         description="Source file patterns to track for documentation (e.g., 'src/**/*.py')",
-        max_items=50
+        max_length=50
     )
     response_format: ResponseFormat = Field(
         default=ResponseFormat.MARKDOWN,
