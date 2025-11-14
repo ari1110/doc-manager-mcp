@@ -43,3 +43,5 @@ Thumbs.db
 # Documentation Manager specific
 .doc-manager/
 *.log
+
+node_modules/
