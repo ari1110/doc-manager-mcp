@@ -23,6 +23,7 @@ source "$SCRIPT_DIR/common.sh"
 # Configuration
 REGISTRY_FILE="test-registry.json"
 PARSER_SCRIPT="$SCRIPT_DIR/parse-test-file-universal.ts"
+TAGGER_SCRIPT="$SCRIPT_DIR/add-test-tags-universal.ts"
 JSON_MODE=false
 COMMAND=""
 SPEC_NUMBER=""
@@ -40,6 +41,7 @@ USAGE:
 
 COMMANDS:
     init                    Initialize new test registry file
+    bootstrap [--spec NUM]  Auto-tag existing tests (brownfield projects)
     scan                    Scan codebase and update test registry
     report                  Show pyramid metrics, health, and issues
     spec <number>           Show tests for specific spec (e.g., spec 001)
@@ -56,6 +58,9 @@ OPTIONS:
 EXAMPLES:
     # Initialize registry
     test-registry.sh init
+
+    # Auto-tag existing tests (brownfield setup)
+    test-registry.sh bootstrap --spec 001
 
     # Scan codebase and update registry
     test-registry.sh scan
@@ -124,6 +129,21 @@ parse_args() {
             init|scan|report|validate|export-for-plan|self-check)
                 COMMAND="$1"
                 shift
+                ;;
+            bootstrap)
+                COMMAND="bootstrap"
+                shift
+                # Capture optional --spec argument
+                if [[ $# -gt 0 && "$1" == "--spec" ]]; then
+                    shift
+                    if [[ $# -gt 0 ]]; then
+                        SPEC_NUMBER="$1"
+                        shift
+                    else
+                        echo "Error: --spec requires a spec number" >&2
+                        exit 1
+                    fi
+                fi
                 ;;
             spec)
                 COMMAND="spec"
@@ -255,6 +275,93 @@ EOF
     else
         echo "✓ Initialized test registry at $registry_path"
     fi
+}
+
+cmd_bootstrap() {
+    check_dependencies
+
+    local registry_path repo_root
+    registry_path="$(get_registry_path)"
+    repo_root="$(get_repo_root)"
+
+    # Check if tagger script exists
+    if [[ ! -f "$TAGGER_SCRIPT" ]]; then
+        echo "Error: Auto-tagger script not found: $TAGGER_SCRIPT" >&2
+        exit 1
+    fi
+
+    # Initialize registry if it doesn't exist
+    if ! registry_exists; then
+        echo "Registry not found. Initializing..."
+        cmd_init > /dev/null
+    fi
+
+    # Run initial scan to detect untagged tests
+    echo "Scanning for existing tests..."
+    cmd_scan > /dev/null
+
+    # Check for untagged tests
+    local untagged_count
+    untagged_count=$(jq -r '.health.orphanedTests' "$registry_path")
+
+    if [[ "$untagged_count" -eq 0 ]]; then
+        echo "✓ All tests are already tagged. No bootstrap needed."
+        exit 0
+    fi
+
+    echo "Found $untagged_count untagged tests"
+
+    # Determine spec number
+    local spec_arg=""
+    if [[ -n "$SPEC_NUMBER" ]]; then
+        spec_arg="--spec $SPEC_NUMBER"
+        echo "Tagging tests with @spec $SPEC_NUMBER..."
+    else
+        echo "Inferring spec numbers from file paths..."
+    fi
+
+    # Run auto-tagger (dry-run first)
+    echo ""
+    echo "Preview of changes (dry-run):"
+    echo "========================================"
+    bun "$TAGGER_SCRIPT" 2>&1 || true
+    echo "========================================"
+    echo ""
+
+    # Confirm with user
+    read -p "Apply these changes? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Bootstrap cancelled."
+        exit 0
+    fi
+
+    # Run auto-tagger with --write
+    echo "Applying tags..."
+    bun "$TAGGER_SCRIPT" --write
+
+    # Re-scan to update registry
+    echo ""
+    echo "Rescanning with updated tags..."
+    cmd_scan > /dev/null
+
+    # Show final results
+    local tagged_count
+    tagged_count=$(jq -r '.health.orphanedTests' "$registry_path")
+    local success_count=$((untagged_count - tagged_count))
+
+    echo ""
+    echo "✓ Bootstrap complete!"
+    echo "  Tagged: $success_count tests"
+    if [[ "$tagged_count" -gt 0 ]]; then
+        echo "  Remaining untagged: $tagged_count tests"
+        echo ""
+        echo "Note: Some tests could not be auto-tagged. Manual tagging may be required."
+    fi
+
+    # Show updated report
+    echo ""
+    cmd_report
 }
 
 cmd_scan() {
@@ -417,6 +524,14 @@ cmd_scan() {
         echo "✓ Status: $pyramid_status"
         echo "✓ Health: Orphaned=$orphaned_count, Retirement=$retirement_count, Slow=$slow_count"
         echo "✓ Updated registry at $registry_path"
+
+        # Warn about untagged tests (brownfield projects)
+        if [[ "$orphaned_count" -gt 0 ]]; then
+            echo ""
+            echo "⚠ Found $orphaned_count untagged tests (no @spec tag)"
+            echo "  To auto-tag them, run:"
+            echo "    test-registry.sh bootstrap --spec <number>"
+        fi
     fi
 }
 
@@ -1010,6 +1125,9 @@ main() {
     case "$COMMAND" in
         init)
             cmd_init
+            ;;
+        bootstrap)
+            cmd_bootstrap
             ;;
         scan)
             cmd_scan
