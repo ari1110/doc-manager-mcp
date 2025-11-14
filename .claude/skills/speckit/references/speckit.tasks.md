@@ -147,3 +147,25 @@ Every task MUST strictly follow this format:
   - Each phase should be a complete, independently testable increment
   - Retirement tasks placed AFTER new implementation (clean up once replacement works)
 - **Final Phase**: Polish & Cross-Cutting Concerns
+
+### Test Task Guidelines
+
+**When tests ARE requested** (via spec or TDD approach), follow test pyramid targets:
+
+- **Target Distribution**: 70% unit, 20% integration, 10% e2e
+- **Per User Story**: Calculate expected test counts based on story complexity
+- **Task Examples**:
+  - Unit tests: `- [ ] T020 [P] [US1] Unit tests for UserService in tests/unit/test_user_service.py`
+  - Integration tests: `- [ ] T035 [US2] Integration tests for auth flow in tests/integration/test_auth.py`
+  - E2E tests: `- [ ] T045 [US3] E2E test for checkout flow in tests/e2e/test_checkout.py`
+
+**Pyramid Health Considerations**:
+- Use test registry data (from step 2) to understand current pyramid state
+- If pyramid is inverted (WARN status): Prioritize unit test tasks
+- Avoid generating excessive e2e tests (should be <10% of total)
+- Focus e2e tests on critical user journeys only
+
+**Test Task Placement**:
+- Unit tests: Early in story phase (enable TDD)
+- Integration tests: After unit tests, before full integration
+- E2E tests: Near end of story phase (validate complete flow)
