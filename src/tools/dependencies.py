@@ -24,8 +24,8 @@ def _extract_code_references(content: str, doc_file: Path) -> List[Dict[str, Any
     references = []
 
     # Extract file path references (common patterns)
-    # Pattern: `path/to/file.ext`
-    file_path_pattern = r'`([a-zA-Z0-9_\-/.]+\.(go|py|js|ts|java|rs|rb|php|c|cpp|h|hpp|cs|swift|kt))`'
+    # Pattern: `path/to/file.ext` or `file.ext` - matches backtick-wrapped paths
+    file_path_pattern = r'`([a-zA-Z0-9_\-/.]+\.(go|py|js|ts|tsx|jsx|java|rs|rb|php|c|cpp|h|hpp|cs|swift|kt|yaml|yml|json|cfg))`'
     for match in re.finditer(file_path_pattern, content):
         file_path = match.group(1)
         references.append({
@@ -35,8 +35,8 @@ def _extract_code_references(content: str, doc_file: Path) -> List[Dict[str, Any
         })
 
     # Extract function/method references
-    # Pattern: `functionName()` or `ClassName.methodName()`
-    function_pattern = r'`([A-Z][a-zA-Z0-9]*\.)?([a-z][a-zA-Z0-9]*)\(\)`'
+    # Pattern: `functionName()` or `ClassName.methodName()` - matches backtick-wrapped functions with parentheses
+    function_pattern = r'`([A-Z][a-zA-Z0-9]*\.)?([a-z_][a-zA-Z0-9_]*)\(\)`'
     for match in re.finditer(function_pattern, content):
         func_name = match.group(0).strip('`')
         references.append({
@@ -45,9 +45,20 @@ def _extract_code_references(content: str, doc_file: Path) -> List[Dict[str, Any
             "doc_file": str(doc_file)
         })
 
+    # Also match markdown headings with function signatures: ## functionName(args)
+    heading_function_pattern = r'^#+\s+([a-z_][a-zA-Z0-9_]*)\s*\([^)]*\)'
+    for match in re.finditer(heading_function_pattern, content, re.MULTILINE):
+        func_name = match.group(1) + "()"
+        references.append({
+            "type": "function",
+            "reference": func_name,
+            "doc_file": str(doc_file)
+        })
+
     # Extract class/type references
-    # Pattern: `ClassName` (capitalized words in backticks)
-    class_pattern = r'`([A-Z][a-zA-Z0-9]+)`'
+    # Pattern: `ClassName` (capitalized words in backticks) - but NOT followed by ()
+    # Use negative lookahead to exclude function calls
+    class_pattern = r'`([A-Z][a-zA-Z0-9]+)(?!\()`'
     for match in re.finditer(class_pattern, content):
         class_name = match.group(1)
         # Exclude common words and single letters
@@ -59,17 +70,18 @@ def _extract_code_references(content: str, doc_file: Path) -> List[Dict[str, Any
             })
 
     # Extract command references
-    # Pattern: command in code blocks or $ command
+    # Pattern: command in backticks - matches `command subcommand --flag`
     command_patterns = [
-        r'`([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*)`',  # `command subcommand`
-        r'\$\s+([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*)'  # $ command subcommand
+        r'`([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)`',  # `command subcommand --flag`
+        r'\$\s+([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)'  # $ command subcommand --flag
     ]
 
     for pattern in command_patterns:
         for match in re.finditer(pattern, content):
             command = match.group(1)
-            # Filter out common words
-            if command.split()[0] not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you']:
+            # Filter out common words and single-word commands that are likely prose
+            first_word = command.split()[0]
+            if first_word not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'a', 'an', 'in', 'on', 'at', 'to', 'of']:
                 references.append({
                     "type": "command",
                     "reference": command,
@@ -77,28 +89,41 @@ def _extract_code_references(content: str, doc_file: Path) -> List[Dict[str, Any
                 })
 
     # Extract configuration keys
-    # Pattern: config keys in YAML/JSON format or in backticks
-    config_pattern = r'`([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+)`'
-    for match in re.finditer(config_pattern, content):
-        config_key = match.group(1)
-        references.append({
-            "type": "config_key",
-            "reference": config_key,
-            "doc_file": str(doc_file)
-        })
+    # Pattern: config keys like `platform`, `docs_path`, or `server.port` (single words or dotted paths in backticks)
+    # Also match keys followed by a colon like `platform: value` or `docs_path: "value"`
+    # Match lowercase/underscore keys that look like config (avoid matching prose)
+    config_patterns = [
+        r'`([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+)`',  # Dotted paths: `server.port`
+        r'`([a-z_][a-z0-9_]{2,}):[^`]+`',  # Config keys with colon inside backticks: `platform: hugo`, `docs_path: "docs"`
+        r'`([a-z_][a-z0-9_]{2,})`'  # Single words at least 3 chars: `platform`, `exclude`, `docs_path`
+    ]
+
+    for pattern in config_patterns:
+        for match in re.finditer(pattern, content):
+            config_key = match.group(1)
+            # Exclude common words that aren't config keys
+            if config_key not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'file', 'path', 'name', 'type']:
+                references.append({
+                    "type": "config_key",
+                    "reference": config_key,
+                    "doc_file": str(doc_file)
+                })
 
     return references
 
 
 def _find_source_files(project_path: Path, docs_path: Path) -> List[Path]:
-    """Find all source code files in the project."""
+    """Find all source code and configuration files in the project."""
     source_files = []
 
-    # Common source file extensions
+    # Common source file extensions (code + config files)
     extensions = [
+        # Source code
         '.go', '.py', '.js', '.ts', '.jsx', '.tsx',
         '.java', '.rs', '.rb', '.php', '.c', '.cpp',
-        '.h', '.hpp', '.cs', '.swift', '.kt'
+        '.h', '.hpp', '.cs', '.swift', '.kt',
+        # Configuration files
+        '.yaml', '.yml', '.json', '.toml', '.cfg', '.ini'
     ]
 
     for ext in extensions:
@@ -131,8 +156,10 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
         # Match file path references
         if ref_type == "file_path":
             for source_file in source_files:
-                relative_path = str(source_file.relative_to(project_path))
-                if reference in relative_path or relative_path.endswith(reference):
+                relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
+                # Normalize reference path separators too
+                ref_normalized = reference.replace('\\', '/')
+                if ref_normalized in relative_path or relative_path.endswith(ref_normalized):
                     dependencies[doc_file].add(relative_path)
 
         # Match function/class references by searching in source files
@@ -156,7 +183,7 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
 
                     for pattern in patterns:
                         if re.search(pattern, content):
-                            relative_path = str(source_file.relative_to(project_path))
+                            relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
                             dependencies[doc_file].add(relative_path)
                             break
 
@@ -167,7 +194,7 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
         elif ref_type == "command":
             command_name = reference.split()[0]
             for source_file in source_files:
-                relative_path = str(source_file.relative_to(project_path))
+                relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
                 # Look for command files (e.g., cmd/add.go for "add" command)
                 if f"cmd/{command_name}" in relative_path or f"cli/{command_name}" in relative_path:
                     dependencies[doc_file].add(relative_path)
@@ -176,24 +203,71 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
     return {k: sorted(list(v)) for k, v in dependencies.items()}
 
 
-def _build_reverse_index(dependencies: Dict[str, List[str]]) -> Dict[str, List[str]]:
-    """Build reverse index: source_file -> [doc_files]."""
+def _build_reverse_index(dependencies: Dict[str, List[str]], all_references: List[Dict[str, Any]] = None) -> Dict[str, List[str]]:
+    """Build reverse index: source_file/reference -> [doc_files].
+
+    Includes both matched source files and unmatched references (functions, classes, etc.)
+    """
     reverse_index = {}
 
+    # Add matched source files
     for doc_file, source_files in dependencies.items():
         for source_file in source_files:
             if source_file not in reverse_index:
                 reverse_index[source_file] = []
             reverse_index[source_file].append(doc_file)
 
+    # Add unmatched references (functions, classes, commands, config keys)
+    # These won't have matched source files but should still be trackable
+    if all_references:
+        # Find which references were NOT matched to source files
+        matched_refs = set()
+        for doc_file, source_files in dependencies.items():
+            for source_file in source_files:
+                matched_refs.add(source_file)
+
+        # Add unmatched references with a type prefix
+        for ref in all_references:
+            ref_type = ref["type"]
+            reference = ref["reference"]
+            doc_file = ref["doc_file"]
+
+            # For non-file references (functions, classes, etc.), add them to the index
+            if ref_type in ["function", "class", "command", "config_key"]:
+                if reference not in reverse_index:
+                    reverse_index[reference] = []
+                if doc_file not in reverse_index[reference]:
+                    reverse_index[reference].append(doc_file)
+
     return reverse_index
 
 
+def _build_reference_index(all_references: List[Dict[str, Any]]) -> Dict[str, List[str]]:
+    """Build index of references to docs that mention them: reference -> [doc_files]."""
+    ref_index = {}
+
+    for ref in all_references:
+        reference = ref["reference"]
+        doc_file = ref["doc_file"]
+
+        if reference not in ref_index:
+            ref_index[reference] = []
+        if doc_file not in ref_index[reference]:
+            ref_index[reference].append(doc_file)
+
+    return ref_index
+
+
 def _save_dependencies_to_memory(project_path: Path, dependencies: Dict[str, List[str]],
-                                 reverse_index: Dict[str, List[str]]):
+                                 reverse_index: Dict[str, List[str]], all_references: List[Dict[str, Any]] = None,
+                                 reference_index: Dict[str, List[str]] = None):
     """Save dependency graph to memory directory."""
     memory_dir = project_path / ".doc-manager"
-    if not memory_dir.exists():
+
+    # Create memory directory if it doesn't exist
+    try:
+        memory_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
         return
 
     dependency_file = memory_dir / "dependencies.json"
@@ -204,6 +278,23 @@ def _save_dependencies_to_memory(project_path: Path, dependencies: Dict[str, Lis
         "code_to_doc": reverse_index
     }
 
+    # Add reference index (reference -> docs that mention it)
+    if reference_index:
+        data["reference_to_doc"] = reference_index
+
+    # Add all references grouped by type if provided
+    if all_references:
+        refs_by_type = {}
+        for ref in all_references:
+            ref_type = ref["type"]
+            if ref_type not in refs_by_type:
+                refs_by_type[ref_type] = []
+            refs_by_type[ref_type].append({
+                "reference": ref["reference"],
+                "doc_file": ref["doc_file"]
+            })
+        data["all_references"] = refs_by_type
+
     try:
         with open(dependency_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
@@ -212,7 +303,8 @@ def _save_dependencies_to_memory(project_path: Path, dependencies: Dict[str, Lis
 
 
 def _format_dependency_report(dependencies: Dict[str, List[str]], reverse_index: Dict[str, List[str]],
-                              total_references: int, response_format: ResponseFormat) -> str:
+                              total_references: int, all_references: List[Dict[str, Any]],
+                              response_format: ResponseFormat) -> str:
     """Format dependency tracking report."""
     if response_format == ResponseFormat.JSON:
         return json.dumps({
@@ -226,7 +318,10 @@ def _format_dependency_report(dependencies: Dict[str, List[str]], reverse_index:
     else:
         lines = ["# Code-to-Documentation Dependency Graph", ""]
         lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        lines.append(f"**Total References:** {total_references}")
+        if total_references == 0:
+            lines.append("**Total References:** 0 (no references found)")
+        else:
+            lines.append(f"**Total References:** {total_references}")
         lines.append(f"**Documentation Files:** {len(dependencies)}")
         lines.append(f"**Source Files Referenced:** {len(reverse_index)}")
         lines.append("")
@@ -270,6 +365,30 @@ def _format_dependency_report(dependencies: Dict[str, List[str]], reverse_index:
 
             if len(sorted_sources) > 20:
                 lines.append(f"*... and {len(sorted_sources) - 20} more source files*")
+                lines.append("")
+
+        # Show all extracted references grouped by type
+        if total_references > 0:
+            lines.append("## Extracted References by Type")
+            lines.append("")
+            lines.append("All code references found in documentation:")
+            lines.append("")
+
+            # Group references by type
+            refs_by_type = {}
+            for ref in all_references:
+                ref_type = ref["type"]
+                if ref_type not in refs_by_type:
+                    refs_by_type[ref_type] = set()
+                refs_by_type[ref_type].add(ref["reference"])
+
+            for ref_type in sorted(refs_by_type.keys()):
+                refs = sorted(refs_by_type[ref_type])
+                lines.append(f"**{ref_type.replace('_', ' ').title()}s ({len(refs)}):**")
+                for ref in refs[:20]:  # Limit to 20 per type
+                    lines.append(f"- `{ref}`")
+                if len(refs) > 20:
+                    lines.append(f"  *... and {len(refs) - 20} more*")
                 lines.append("")
 
         lines.append("## Impact Analysis")
@@ -342,20 +461,19 @@ async def track_dependencies(params: TrackDependenciesInput) -> str:
 
         # Find all markdown files
         markdown_files = _find_markdown_files(docs_path)
-        if not markdown_files:
-            return f"Error: No markdown files found in {docs_path}"
-
-        # Extract references from all docs
         all_references = []
-        for md_file in markdown_files:
-            try:
-                with open(md_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
 
-                references = _extract_code_references(content, md_file.relative_to(docs_path))
-                all_references.extend(references)
-            except Exception:
-                continue
+        if markdown_files:
+            # Extract references from all docs
+            for md_file in markdown_files:
+                try:
+                    with open(md_file, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    references = _extract_code_references(content, md_file.relative_to(docs_path))
+                    all_references.extend(references)
+                except Exception:
+                    continue
 
         # Find source files
         source_files = _find_source_files(project_path, docs_path)
@@ -363,13 +481,17 @@ async def track_dependencies(params: TrackDependenciesInput) -> str:
         # Match references to actual source files
         dependencies = _match_references_to_sources(all_references, source_files, project_path)
 
-        # Build reverse index
-        reverse_index = _build_reverse_index(dependencies)
+        # Build reverse index (source file/reference -> docs)
+        # Includes both matched files and unmatched references
+        reverse_index = _build_reverse_index(dependencies, all_references)
+
+        # Build reference index (reference text -> docs that mention it)
+        reference_index = _build_reference_index(all_references)
 
         # Save to memory
-        _save_dependencies_to_memory(project_path, dependencies, reverse_index)
+        _save_dependencies_to_memory(project_path, dependencies, reverse_index, all_references, reference_index)
 
-        return _format_dependency_report(dependencies, reverse_index, len(all_references), params.response_format)
+        return _format_dependency_report(dependencies, reverse_index, len(all_references), all_references, params.response_format)
 
     except Exception as e:
         return handle_error(e, "track_dependencies")

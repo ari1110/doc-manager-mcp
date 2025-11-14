@@ -163,14 +163,16 @@ def authenticate(username, password):
         from src.tools.memory import initialize_memory
         from src.models import InitializeMemoryInput
 
-        (tmp_path / "critical.py").write_text("def important_api(): pass")
+        # Create an API file that will trigger doc mapping
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "api.py").write_text("def important_api(): pass")
 
         await initialize_memory(InitializeMemoryInput(
             project_path=str(tmp_path),
             response_format=ResponseFormat.MARKDOWN
         ))
 
-        (tmp_path / "critical.py").write_text("def important_api(new_param): pass")
+        (tmp_path / "src" / "api.py").write_text("def important_api(new_param): pass")
 
         result = await map_changes(MapChangesInput(
             project_path=str(tmp_path),
@@ -178,7 +180,7 @@ def authenticate(username, password):
             response_format=ResponseFormat.MARKDOWN
         ))
 
-        # Should mention priority
+        # Should mention priority (since src/ changes trigger API doc mapping)
         assert "priority" in result.lower() or "high" in result.lower() or "medium" in result.lower()
 
     async def test_json_output_format(self, tmp_path):
@@ -201,9 +203,9 @@ def authenticate(username, password):
             response_format=ResponseFormat.JSON
         ))
 
-        assert '"changes":' in result
-        assert '"category":' in result
-        assert '"priority":' in result
+        assert '"changed_files":' in result
+        assert '"change_type":' in result
+        assert '"affected_documentation":' in result
 
     async def test_no_changes_detected(self, tmp_path):
         """Test when no changes are detected."""

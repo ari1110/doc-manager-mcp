@@ -172,6 +172,22 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
         except Exception:
             pass
 
+    # Check setup.py for Sphinx (common in Python projects)
+    setup_py = project_path / "setup.py"
+    if setup_py.exists() and not detected:  # Only if nothing else detected
+        try:
+            with open(setup_py, 'r', encoding='utf-8') as f:
+                content = f.read().lower()
+                # Prefer Sphinx for setup.py-based projects (setuptools pattern)
+                if "sphinx" in content or "setuptools" in content:
+                    detected.append({
+                        "platform": "sphinx",
+                        "confidence": "low",
+                        "evidence": ["Found setup.py (Sphinx is common for setuptools-based Python projects)"]
+                    })
+        except Exception:
+            pass
+
     # Check go.mod for Go projects
     go_mod = project_path / "go.mod"
     if go_mod.exists():

@@ -123,8 +123,8 @@ class TestMemoryInitialization:
             baseline = json.load(f)
             metadata = baseline["metadata"]
 
-            # Should have git info
-            assert "branch" in metadata or "commit" in metadata
+            # Should have git info (using git_branch and git_commit keys)
+            assert "git_branch" in metadata or "git_commit" in metadata
 
     async def test_respects_exclude_patterns(self, tmp_path):
         """Test that excluded patterns are not tracked."""

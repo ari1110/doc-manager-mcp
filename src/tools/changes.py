@@ -31,7 +31,7 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: Dict[str, An
     # Check existing files for changes
     for file_path in project_path.rglob("*"):
         if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):
-            relative_path = str(file_path.relative_to(project_path))
+            relative_path = str(file_path.relative_to(project_path)).replace('\\', '/')
 
             # Skip files in .doc-manager directory
             if relative_path.startswith(".doc-manager"):
@@ -107,13 +107,15 @@ def _get_changed_files_from_git(project_path: Path, since_commit: str) -> List[D
 def _categorize_change(file_path: str) -> str:
     """Categorize the scope of a code change."""
     file_lower = file_path.lower()
+    # Normalize path separators for consistent matching
+    normalized_path = file_path.replace('\\', '/')
 
     # CLI/Command changes
-    if file_path.startswith("cmd/") or "/cmd/" in file_path:
+    if normalized_path.startswith("cmd/") or "/cmd/" in normalized_path:
         return "cli"
 
     # API/Library changes
-    if any(x in file_path for x in ["internal/", "pkg/", "lib/", "src/"]):
+    if any(x in normalized_path for x in ["internal/", "pkg/", "lib/", "src/"]):
         return "api"
 
     # Configuration changes
@@ -121,7 +123,7 @@ def _categorize_change(file_path: str) -> str:
         return "config"
 
     # Documentation changes
-    if file_lower.endswith((".md", ".rst", ".txt")) or "/docs/" in file_path or "/documentation/" in file_path:
+    if file_lower.endswith((".md", ".rst", ".txt")) or "/docs/" in normalized_path or "/documentation/" in normalized_path:
         return "documentation"
 
     # Build/Dependency changes
@@ -133,7 +135,7 @@ def _categorize_change(file_path: str) -> str:
         return "test"
 
     # Infrastructure/Config
-    if any(x in file_path for x in [".github/", ".gitlab/", "docker", "Dockerfile", ".ci/", "deploy/"]):
+    if any(x in normalized_path for x in [".github/", ".gitlab/", "docker", "Dockerfile", ".ci/", "deploy/"]):
         return "infrastructure"
 
     return "other"
@@ -342,6 +344,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
                 for doc in high_priority:
                     status = "✓ Exists" if doc["exists"] else "⚠️ Not found"
                     lines.append(f"#### {doc['file']} ({status})")
+                    lines.append(f"**Priority:** {doc['priority']}")
                     lines.append(f"**Reason:** {doc['reason']}")
                     lines.append(f"**Affected by:** {', '.join(doc['affected_by'][:3])}")
                     if len(doc['affected_by']) > 3:
@@ -353,7 +356,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
                 lines.append("")
                 for doc in medium_priority:
                     status = "✓" if doc["exists"] else "⚠️"
-                    lines.append(f"- {status} **{doc['file']}** - {doc['reason']}")
+                    lines.append(f"- {status} **{doc['file']}** (Priority: {doc['priority']}) - {doc['reason']}")
                 lines.append("")
 
             if low_priority:
@@ -361,7 +364,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
                 lines.append("")
                 for doc in low_priority:
                     status = "✓" if doc["exists"] else "⚠️"
-                    lines.append(f"- {status} **{doc['file']}**")
+                    lines.append(f"- {status} **{doc['file']}** (Priority: {doc['priority']})")
                 lines.append("")
 
         # Changed files detail
