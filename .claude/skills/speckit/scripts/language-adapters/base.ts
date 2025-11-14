@@ -56,9 +56,9 @@ export interface LanguageAdapter {
   getExtensions(): string[];
 
   /**
-   * Get the tree-sitter language module for this adapter
+   * Get the path to the tree-sitter WASM file for this adapter
    */
-  getTreeSitterLanguage(): Promise<any>;
+  getTreeSitterLanguage(): Promise<string>;
 
   /**
    * Find all test nodes in the syntax tree
@@ -117,7 +117,7 @@ export interface LanguageAdapter {
 export abstract class BaseLanguageAdapter implements LanguageAdapter {
   abstract getLanguage(): string;
   abstract getExtensions(): string[];
-  abstract getTreeSitterLanguage(): Promise<any>;
+  abstract getTreeSitterLanguage(): Promise<string>;
   abstract findTestNodes(tree: Tree, sourceCode: string): TestLocation[];
   abstract extractCommentForNode(node: SyntaxNode, sourceCode: string): string;
   abstract generateMetadataComment(metadata: InferredMetadata, indent: string): string;

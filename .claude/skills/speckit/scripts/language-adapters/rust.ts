@@ -19,9 +19,8 @@ export class RustAdapter extends BaseLanguageAdapter {
     return ['.rs'];
   }
 
-  async getTreeSitterLanguage(): Promise<any> {
-    const Rust = await import('tree-sitter-rust');
-    return Rust;
+  async getTreeSitterLanguage(): Promise<string> {
+    return require.resolve('tree-sitter-rust/tree-sitter-rust.wasm');
   }
 
   findTestNodes(tree: Tree, sourceCode: string): TestLocation[] {

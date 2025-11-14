@@ -22,7 +22,7 @@
  *   --help        Show this help message
  */
 
-import { Parser } from 'web-tree-sitter';
+import { Parser, Language } from 'web-tree-sitter';
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
@@ -207,8 +207,9 @@ async function main() {
 
     // Create parser for this language
     const parser = new Parser();
-    const Language = await adapter.getTreeSitterLanguage();
-    parser.setLanguage(Language);
+    const wasmPath = await adapter.getTreeSitterLanguage();
+    const language = await Language.load(wasmPath);
+    parser.setLanguage(language);
 
     // Build glob patterns for this language's extensions
     const patterns = adapter.getExtensions().map(ext => {

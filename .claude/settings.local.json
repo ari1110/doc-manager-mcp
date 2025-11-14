@@ -4,13 +4,14 @@
       "Skill(mcp-builder)",
       "Bash(python -m py_compile:*)",
       "Bash(uv run pytest:*)",
-      "Bash(uv run python:*)"
+      "Bash(uv run python:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "zen"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

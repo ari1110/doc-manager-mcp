@@ -19,9 +19,8 @@ export class GoAdapter extends BaseLanguageAdapter {
     return ['.go'];
   }
 
-  async getTreeSitterLanguage(): Promise<any> {
-    const Go = await import('tree-sitter-go');
-    return Go;
+  async getTreeSitterLanguage(): Promise<string> {
+    return require.resolve('tree-sitter-go/tree-sitter-go.wasm');
   }
 
   findTestNodes(tree: Tree, sourceCode: string): TestLocation[] {

@@ -19,10 +19,9 @@ export class JavaScriptAdapter extends BaseLanguageAdapter {
     return ['.js', '.jsx', '.ts', '.tsx'];
   }
 
-  async getTreeSitterLanguage(): Promise<any> {
+  async getTreeSitterLanguage(): Promise<string> {
     // Use TypeScript grammar for all JS/TS files (it's a superset)
-    const TypeScript = await import('tree-sitter-typescript');
-    return TypeScript.typescript;
+    return require.resolve('tree-sitter-typescript/tree-sitter-typescript.wasm');
   }
 
   findTestNodes(tree: Tree, sourceCode: string): TestLocation[] {

@@ -20,9 +20,9 @@ export class PythonAdapter extends BaseLanguageAdapter {
     return ['.py', '.pyi'];
   }
 
-  async getTreeSitterLanguage(): Promise<any> {
-    const Python = await import('tree-sitter-python');
-    return Python;
+  async getTreeSitterLanguage(): Promise<string> {
+    // Return path to WASM file
+    return require.resolve('tree-sitter-python/tree-sitter-python.wasm');
   }
 
   findTestNodes(tree: Tree, sourceCode: string): TestLocation[] {
