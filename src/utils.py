@@ -1,10 +1,11 @@
 """Utility functions for doc-manager MCP server."""
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 import hashlib
 import subprocess
 import yaml
+import fnmatch
 
 def calculate_checksum(file_path: Path) -> str:
     """Calculate SHA-256 checksum of a file."""
@@ -91,3 +92,45 @@ def handle_error(e: Exception, context: str = "") -> str:
         error_msg += f" in {context}"
     error_msg += f": {str(e)}"
     return error_msg
+
+def matches_exclude_pattern(path: str, exclude_patterns: List[str]) -> bool:
+    """Check if a path matches any of the exclude patterns.
+
+    Args:
+        path: Relative path to check (string)
+        exclude_patterns: List of glob patterns (e.g., ["**/node_modules", "**/*.log"])
+
+    Returns:
+        True if path should be excluded, False otherwise
+    """
+    # Normalize path separators
+    normalized_path = str(Path(path)).replace('\\', '/')
+
+    for pattern in exclude_patterns:
+        # Normalize pattern separators
+        normalized_pattern = pattern.replace('\\', '/')
+
+        # Handle **/ prefix (matches any depth)
+        if normalized_pattern.startswith('**/'):
+            pattern_suffix = normalized_pattern[3:]  # Remove **/
+            # Check if pattern matches the full path or any part
+            if fnmatch.fnmatch(normalized_path, '*/' + pattern_suffix) or \
+               fnmatch.fnmatch(normalized_path, pattern_suffix):
+                return True
+            # Check if any component matches
+            parts = normalized_path.split('/')
+            for i, part in enumerate(parts):
+                remaining = '/'.join(parts[i:])
+                if fnmatch.fnmatch(remaining, pattern_suffix):
+                    return True
+        # Handle /** suffix (matches directory and contents)
+        elif normalized_pattern.endswith('/**'):
+            dir_pattern = normalized_pattern[:-3]  # Remove /**
+            if normalized_path.startswith(dir_pattern + '/') or normalized_path == dir_pattern:
+                return True
+        # Regular pattern matching
+        else:
+            if fnmatch.fnmatch(normalized_path, normalized_pattern):
+                return True
+
+    return False

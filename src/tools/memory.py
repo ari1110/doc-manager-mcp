@@ -11,7 +11,9 @@ from ..utils import (
     find_docs_directory,
     run_git_command,
     calculate_checksum,
-    handle_error
+    handle_error,
+    load_config,
+    matches_exclude_pattern
 )
 
 async def initialize_memory(params: InitializeMemoryInput) -> str:
@@ -59,13 +61,26 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
         git_commit = run_git_command(project_path, "rev-parse", "HEAD")
         git_branch = run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD")
 
+        # Load config to get exclude patterns
+        config = load_config(project_path)
+        exclude_patterns = config.get("exclude", []) if config else []
+        # Add default excludes if not in config
+        if not exclude_patterns:
+            exclude_patterns = ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"]
+
         # Calculate checksums for all files in project
         checksums = {}
         file_count = 0
         for file_path in project_path.rglob("*"):
             if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):
                 relative_path = file_path.relative_to(project_path)
-                checksums[str(relative_path)] = calculate_checksum(file_path)
+                relative_path_str = str(relative_path).replace('\\', '/')
+
+                # Skip if matches exclude patterns
+                if matches_exclude_pattern(relative_path_str, exclude_patterns):
+                    continue
+
+                checksums[relative_path_str] = calculate_checksum(file_path)
                 file_count += 1
 
         # Create repo baseline
@@ -75,8 +90,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
             "language": language,
             "docs_exist": docs_exist,
             "docs_path": str(docs_dir.relative_to(project_path)) if docs_dir else None,
-            "git_commit": git_commit,
-            "git_branch": git_branch,
+            "metadata": {
+                "git_commit": git_commit,
+                "git_branch": git_branch
+            },
             "timestamp": datetime.now().isoformat(),
             "version": "1.0.0",
             "file_count": file_count,
@@ -92,7 +109,7 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
 
 ## Style Guide
 
-### Voice and Tone
+### Writing Style
 - Use second person ("you") for user-facing documentation
 - Use active voice for instructions
 - Keep sentences concise and clear
@@ -132,8 +149,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
 """
 
         conventions_path = memory_dir / "memory" / "doc-conventions.md"
-        with open(conventions_path, 'w', encoding='utf-8') as f:
-            f.write(conventions)
+        # Only create conventions file if it doesn't already exist
+        if not conventions_path.exists():
+            with open(conventions_path, 'w', encoding='utf-8') as f:
+                f.write(conventions)
 
         # Create asset manifest (empty initially)
         asset_manifest = {
@@ -156,7 +175,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
                 "repository": repo_name,
                 "language": language,
                 "docs_exist": docs_exist,
-                "git_commit": git_commit[:8] if git_commit else None,
+                "metadata": {
+                    "git_commit": git_commit[:8] if git_commit else None,
+                    "git_branch": git_branch
+                },
                 "files_tracked": file_count
             }, indent=2)
         else:

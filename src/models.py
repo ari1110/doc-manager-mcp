@@ -23,7 +23,7 @@ class InitializeConfigInput(BaseModel):
         description="Documentation platform to use. If not specified, will be auto-detected. Options: hugo, docusaurus, mkdocs, sphinx, vitepress, jekyll, gitbook"
     )
     exclude_patterns: Optional[List[str]] = Field(
-        default_factory=lambda: ["**/node_modules", "**/dist", "**/vendor", "**/*.log"],
+        default_factory=lambda: ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"],
         description="Glob patterns to exclude from documentation analysis",
         max_length=50
     )
@@ -233,7 +233,7 @@ class MigrateInput(BaseModel):
         min_length=1
     )
     target_path: str = Field(
-        default="docs-new",
+        default="docs",
         description="Path where migrated documentation should be created (relative to project root)",
         min_length=1
     )

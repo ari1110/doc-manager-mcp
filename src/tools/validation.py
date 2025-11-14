@@ -328,6 +328,8 @@ def _format_validation_report(issues: List[Dict[str, Any]], response_format: Res
 
         if not issues:
             lines.append("✓ No issues found! Documentation is valid.")
+            lines.append("")
+            lines.append("**Status:** Validation complete.")
             return "\n".join(lines)
 
         if errors:
