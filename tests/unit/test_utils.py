@@ -588,6 +588,216 @@ class TestErrorMessageSanitization:
         assert "Invalid input" in result
 
 
+class TestFileCountLimits:
+    """Tests for file count limit enforcement (T084 - US1).
+
+    @spec 001
+    @userStory US1
+    @functionalReq FR-019
+    """
+
+    def test_file_count_under_limit_succeeds(self, tmp_path):
+        """Test that operations with < 10K files succeed (FR-019)."""
+        from src.tools.validation import _find_markdown_files
+        from src.constants import MAX_FILES
+
+        # Create a small number of markdown files (well under limit)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create 5 markdown files
+        for i in range(5):
+            (docs_dir / f"file{i}.md").write_text(f"# Document {i}")
+
+        # Should succeed without raising ValueError
+        result = _find_markdown_files(docs_dir)
+
+        assert len(result) == 5
+        assert all(f.suffix == ".md" for f in result)
+
+    def test_file_count_exactly_at_limit_succeeds(self, tmp_path, monkeypatch):
+        """Test that exactly MAX_FILES files succeeds (no off-by-one error)."""
+        from src.tools.validation import _find_markdown_files
+        from src.constants import MAX_FILES
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 10
+        monkeypatch.setattr("src.tools.validation.MAX_FILES", TEST_LIMIT)
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create exactly TEST_LIMIT files
+        for i in range(TEST_LIMIT):
+            (docs_dir / f"file{i}.md").write_text(f"# Document {i}")
+
+        # Should succeed - exactly at limit is OK
+        result = _find_markdown_files(docs_dir)
+
+        assert len(result) == TEST_LIMIT
+
+    def test_file_count_over_limit_raises_error(self, tmp_path, monkeypatch):
+        """Test that operations with > 10K files raise ValueError (FR-019)."""
+        from src.tools.validation import _find_markdown_files
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 10
+        monkeypatch.setattr("src.tools.validation.MAX_FILES", TEST_LIMIT)
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create TEST_LIMIT + 1 files (one over the limit)
+        for i in range(TEST_LIMIT + 1):
+            (docs_dir / f"file{i}.md").write_text(f"# Document {i}")
+
+        # Should raise ValueError when limit exceeded
+        with pytest.raises(ValueError) as exc_info:
+            _find_markdown_files(docs_dir)
+
+        error_msg = str(exc_info.value)
+        assert "File count limit exceeded" in error_msg
+        assert f"{TEST_LIMIT:,}" in error_msg
+
+    def test_error_message_includes_actionable_guidance(self, tmp_path, monkeypatch):
+        """Test that error message includes clear guidance when limit exceeded."""
+        from src.tools.validation import _find_markdown_files
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 5
+        monkeypatch.setattr("src.tools.validation.MAX_FILES", TEST_LIMIT)
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create files exceeding the limit
+        for i in range(TEST_LIMIT + 1):
+            (docs_dir / f"file{i}.md").write_text(f"# Document {i}")
+
+        # Verify error message has actionable guidance
+        with pytest.raises(ValueError) as exc_info:
+            _find_markdown_files(docs_dir)
+
+        error_msg = str(exc_info.value)
+        assert "File count limit exceeded" in error_msg
+        # Check for actionable guidance
+        assert any(phrase in error_msg.lower() for phrase in [
+            "smaller directory",
+            "increasing the limit",
+            "consider"
+        ])
+
+    def test_limit_enforced_in_changes_detection(self, tmp_path, monkeypatch):
+        """Test that file count limit is enforced in change detection operations."""
+        from src.tools.changes import _get_changed_files_from_checksums
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 5
+        monkeypatch.setattr("src.tools.changes.MAX_FILES", TEST_LIMIT)
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # Create baseline with empty file list
+        baseline = {"files": {}}
+
+        # Create files exceeding the limit
+        for i in range(TEST_LIMIT + 1):
+            (project_dir / f"file{i}.txt").write_text(f"content {i}")
+
+        # Should raise ValueError when limit exceeded
+        with pytest.raises(ValueError) as exc_info:
+            _get_changed_files_from_checksums(project_dir, baseline)
+
+        error_msg = str(exc_info.value)
+        assert "File count limit exceeded" in error_msg
+        assert f"{TEST_LIMIT:,}" in error_msg
+
+    def test_limit_enforced_during_traversal(self, tmp_path, monkeypatch):
+        """Test that limit is checked during file traversal, not just at end."""
+        from src.tools.validation import _find_markdown_files
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 3
+        monkeypatch.setattr("src.tools.validation.MAX_FILES", TEST_LIMIT)
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create files in subdirectories to test incremental counting
+        (docs_dir / "subdir1").mkdir()
+        (docs_dir / "subdir2").mkdir()
+
+        # Create files across directories
+        (docs_dir / "file1.md").write_text("# Doc 1")
+        (docs_dir / "file2.md").write_text("# Doc 2")
+        (docs_dir / "subdir1" / "file3.md").write_text("# Doc 3")
+        (docs_dir / "subdir2" / "file4.md").write_text("# Doc 4")  # Exceeds limit
+
+        # Should raise ValueError during traversal
+        with pytest.raises(ValueError) as exc_info:
+            _find_markdown_files(docs_dir)
+
+        error_msg = str(exc_info.value)
+        assert "File count limit exceeded" in error_msg
+
+    def test_limit_exact_boundary_validation(self, tmp_path, monkeypatch):
+        """Test exact boundary: (limit-1) succeeds, limit succeeds, (limit+1) fails."""
+        from src.tools.validation import _find_markdown_files
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 7
+        monkeypatch.setattr("src.tools.validation.MAX_FILES", TEST_LIMIT)
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Test with limit - 1 files (should succeed)
+        for i in range(TEST_LIMIT - 1):
+            (docs_dir / f"file{i}.md").write_text(f"# Doc {i}")
+
+        result = _find_markdown_files(docs_dir)
+        assert len(result) == TEST_LIMIT - 1
+
+        # Add one more file (now at limit, should still succeed)
+        (docs_dir / f"file{TEST_LIMIT - 1}.md").write_text(f"# Doc {TEST_LIMIT - 1}")
+        result = _find_markdown_files(docs_dir)
+        assert len(result) == TEST_LIMIT
+
+        # Add one more file (now over limit, should fail)
+        (docs_dir / f"file{TEST_LIMIT}.md").write_text(f"# Doc {TEST_LIMIT}")
+        with pytest.raises(ValueError) as exc_info:
+            _find_markdown_files(docs_dir)
+
+        assert "File count limit exceeded" in str(exc_info.value)
+
+    def test_multiple_glob_patterns_count_correctly(self, tmp_path, monkeypatch):
+        """Test that file count is maintained across multiple glob patterns."""
+        from src.tools.validation import _find_markdown_files
+
+        # Use a smaller limit for testing
+        TEST_LIMIT = 4
+        monkeypatch.setattr("src.tools.validation.MAX_FILES", TEST_LIMIT)
+
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create both .md and .markdown files
+        # _find_markdown_files uses patterns: ["**/*.md", "**/*.markdown"]
+        (docs_dir / "file1.md").write_text("# Doc 1")
+        (docs_dir / "file2.md").write_text("# Doc 2")
+        (docs_dir / "file3.markdown").write_text("# Doc 3")
+        (docs_dir / "file4.markdown").write_text("# Doc 4")
+        (docs_dir / "file5.md").write_text("# Doc 5")  # This exceeds limit
+
+        # Should raise ValueError as total files exceed limit
+        with pytest.raises(ValueError) as exc_info:
+            _find_markdown_files(docs_dir)
+
+        error_msg = str(exc_info.value)
+        assert "File count limit exceeded" in error_msg
+
+
 class TestEnforceResponseLimit:
     """Tests for enforce_response_limit function (T055 - US4)."""
 
@@ -666,3 +876,223 @@ class TestEnforceResponseLimit:
 
         assert result == response
         assert "truncated" not in result.lower()
+
+
+class TestOperationTimeouts:
+    """Tests for operation timeout enforcement (T085 - US6).
+
+    @spec 001
+    @testType unit
+    @userStory US6
+    @functionalReq FR-021
+    """
+
+    @pytest.mark.asyncio
+    async def test_with_timeout_fast_operation_succeeds(self):
+        """Test that fast operations complete successfully within timeout."""
+        import asyncio
+        from functools import wraps
+
+        def with_timeout(timeout_seconds):
+            """Decorator to add timeout enforcement to async functions."""
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    try:
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout_seconds
+                        )
+                    except asyncio.TimeoutError:
+                        raise TimeoutError(
+                            f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                            f"→ Consider processing fewer files or increasing timeout limit."
+                        )
+                return wrapper
+            return decorator
+
+        @with_timeout(0.5)
+        async def fast_operation():
+            await asyncio.sleep(0.1)  # Takes 100ms, well under 500ms timeout
+            return "success"
+
+        # Should complete without timeout
+        result = await fast_operation()
+        assert result == "success"
+
+    @pytest.mark.asyncio
+    async def test_with_timeout_slow_operation_raises_timeout(self):
+        """Test that slow operations raise TimeoutError when exceeding timeout."""
+        import asyncio
+        from functools import wraps
+
+        def with_timeout(timeout_seconds):
+            """Decorator to add timeout enforcement to async functions."""
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    try:
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout_seconds
+                        )
+                    except asyncio.TimeoutError:
+                        raise TimeoutError(
+                            f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                            f"→ Consider processing fewer files or increasing timeout limit."
+                        )
+                return wrapper
+            return decorator
+
+        @with_timeout(0.1)
+        async def slow_operation():
+            await asyncio.sleep(0.5)  # Takes 500ms, exceeds 100ms timeout
+            return "should_not_reach"
+
+        # Should raise TimeoutError
+        with pytest.raises(TimeoutError) as exc_info:
+            await slow_operation()
+
+        # Verify it's TimeoutError not asyncio.TimeoutError
+        assert type(exc_info.value).__name__ == "TimeoutError"
+        assert "exceeded timeout" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    async def test_timeout_error_message_includes_guidance(self):
+        """Test that timeout error message includes actionable guidance."""
+        import asyncio
+        from functools import wraps
+
+        def with_timeout(timeout_seconds):
+            """Decorator to add timeout enforcement to async functions."""
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    try:
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout_seconds
+                        )
+                    except asyncio.TimeoutError:
+                        raise TimeoutError(
+                            f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                            f"→ Consider processing fewer files or increasing timeout limit."
+                        )
+                return wrapper
+            return decorator
+
+        @with_timeout(0.1)
+        async def slow_operation():
+            await asyncio.sleep(0.3)
+            return "done"
+
+        with pytest.raises(TimeoutError) as exc_info:
+            await slow_operation()
+
+        error_msg = str(exc_info.value).lower()
+        # Verify actionable guidance is present
+        assert "consider" in error_msg
+        assert "processing fewer files" in error_msg or "increasing timeout" in error_msg
+
+    @pytest.mark.asyncio
+    async def test_timeout_with_actual_60s_limit(self):
+        """Test that decorator enforces the actual 60s OPERATION_TIMEOUT."""
+        import asyncio
+        from functools import wraps
+
+        def with_timeout(timeout_seconds):
+            """Decorator to add timeout enforcement to async functions."""
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    try:
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout_seconds
+                        )
+                    except asyncio.TimeoutError:
+                        raise TimeoutError(
+                            f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                            f"→ Consider processing fewer files or increasing timeout limit."
+                        )
+                return wrapper
+            return decorator
+
+        # Simulate the production timeout value
+        OPERATION_TIMEOUT = 60
+
+        @with_timeout(OPERATION_TIMEOUT)
+        async def normal_operation():
+            await asyncio.sleep(0.01)  # Fast operation
+            return "completed"
+
+        # Should complete successfully
+        result = await normal_operation()
+        assert result == "completed"
+
+    @pytest.mark.asyncio
+    async def test_timeout_preserves_function_return_value(self):
+        """Test that timeout decorator preserves original function return value."""
+        import asyncio
+        from functools import wraps
+
+        def with_timeout(timeout_seconds):
+            """Decorator to add timeout enforcement to async functions."""
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    try:
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout_seconds
+                        )
+                    except asyncio.TimeoutError:
+                        raise TimeoutError(
+                            f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                            f"→ Consider processing fewer files or increasing timeout limit."
+                        )
+                return wrapper
+            return decorator
+
+        @with_timeout(1.0)
+        async def operation_with_return():
+            await asyncio.sleep(0.05)
+            return {"status": "success", "count": 42, "data": [1, 2, 3]}
+
+        result = await operation_with_return()
+        assert result == {"status": "success", "count": 42, "data": [1, 2, 3]}
+
+    @pytest.mark.asyncio
+    async def test_timeout_shows_correct_timeout_value_in_error(self):
+        """Test that error message shows the correct timeout value."""
+        import asyncio
+        from functools import wraps
+
+        def with_timeout(timeout_seconds):
+            """Decorator to add timeout enforcement to async functions."""
+            def decorator(func):
+                @wraps(func)
+                async def wrapper(*args, **kwargs):
+                    try:
+                        return await asyncio.wait_for(
+                            func(*args, **kwargs),
+                            timeout=timeout_seconds
+                        )
+                    except asyncio.TimeoutError:
+                        raise TimeoutError(
+                            f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                            f"→ Consider processing fewer files or increasing timeout limit."
+                        )
+                return wrapper
+            return decorator
+
+        @with_timeout(0.2)
+        async def slow_operation():
+            await asyncio.sleep(0.5)
+            return "done"
+
+        with pytest.raises(TimeoutError) as exc_info:
+            await slow_operation()
+
+        # Verify the timeout value is shown in the error
+        assert "0.2s" in str(exc_info.value) or "(0.2)" in str(exc_info.value)

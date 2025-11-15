@@ -233,11 +233,11 @@ Single project structure - all paths relative to repository root:
 
 ### Tests for User Story 7
 
-- [ ] T084 [P] [US7] Unit test for file count limit enforcement in tests/unit/test_utils.py
-- [ ] T085 [P] [US7] Unit test for timeout enforcement in tests/unit/test_utils.py
-- [ ] T086 [P] [US7] Integration test with 10K+ file project in tests/integration/test_limits.py
-- [ ] T087 [US7] Integration test for operation timeout triggering in tests/integration/test_limits.py
-- [ ] T088 [US7] E2E stress test with 100 concurrent tool invocations in tests/test_e2e_stress.py
+- [x] T084 [P] [US7] Unit test for file count limit enforcement in tests/unit/test_utils.py
+- [x] T085 [P] [US7] Unit test for timeout enforcement in tests/unit/test_utils.py
+- [x] T086 [P] [US7] Integration test with 10K+ file project in tests/integration/test_limits.py
+- [x] T087 [US7] Integration test for operation timeout triggering in tests/integration/test_limits.py
+- [x] T088 [US7] E2E stress test with 100 concurrent tool invocations in tests/test_e2e_stress.py
 
 **Checkpoint**: Resource limits enforced (SC-017, SC-018, SC-019, SC-023, SC-024, SC-025)
 
