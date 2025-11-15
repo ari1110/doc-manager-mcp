@@ -44,4 +44,9 @@ Thumbs.db
 .doc-manager/
 *.log
 
+# Secrets and credentials (T010 - FR-004, FR-005)
+.mcp.json
+.env
+*.env.local
+
 node_modules/
