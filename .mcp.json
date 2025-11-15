@@ -9,7 +9,7 @@
         "zen-mcp-server"
       ],
       "env": {
-        "OPENROUTER_API_KEY": "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",
+        "OPENROUTER_API_KEY": "your-api-key-here",
         "DISABLED_TOOLS": "analyze,apilookup,docgen,tracer,testgen,refactor,planner,precommit,thinkdeep,version,consensus,codereview,debug,challenge,chat"
       }
     }
