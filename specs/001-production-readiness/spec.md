@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Production readiness remediation for doc-manager MCP server - addressing critical security vulnerabilities, MCP protocol compliance issues, and implementation bugs"
 
+## Clarifications
+
+### Session 2025-11-15
+
+- Q: Error Logging Strategy - FR-015 requires replacing silent error handlers, but where should errors be logged? → A: Write errors to stderr (process manager captures them)
+- Q: Git Dependency Failure Mode - What should happen when git binary is completely missing from the system? → A: Fail with clear error message: "Git is required but not found. Please install git."
+- Q: File Lock Timeout Behavior - FR-018 requires file locking, but what timeout should be used to prevent deadlocks? → A: 5-second timeout with 3 retry attempts (total ~15 seconds)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Secure File System Operations (Priority: P1)
@@ -120,7 +128,7 @@ The MCP server must protect against denial-of-service attacks and accidental res
 1. **Given** a tool traverses the file system, **When** processing files, **Then** it must enforce limits on: total files processed (e.g., max 10,000), recursion depth (e.g., max 100 levels), and operation timeout (e.g., max 60 seconds)
 2. **Given** a tool processes exclude patterns or regex, **When** complex patterns are provided, **Then** the server must validate patterns for ReDoS (Regular Expression Denial of Service) vulnerabilities
 3. **Given** a tool computes checksums or builds dependency graphs, **When** processing large file sets, **Then** memory usage must remain bounded (e.g., streaming processing, not loading all in memory)
-4. **Given** concurrent tool invocations access shared resources, **When** file locks are needed, **Then** lock acquisition must timeout to prevent deadlocks
+4. **Given** concurrent tool invocations access shared resources, **When** file locks are needed, **Then** lock acquisition must timeout after 5 seconds with 3 retries to prevent deadlocks
 
 ---
 
@@ -130,6 +138,7 @@ The MCP server must protect against denial-of-service attacks and accidental res
 - How does the system handle symbolic links that create circular references?
 - What happens when exclude patterns conflict with source patterns (mutual exclusion)?
 - How does the server respond when git commands are invoked in a non-git repository?
+- What happens when the git binary is not installed or not in PATH? (Answer: Fail with clear error message)
 - What happens when JSON responses exceed MCP protocol size limits?
 - How does the system handle concurrent modifications to `.doc-manager/` state files?
 - What happens when file system changes occur between validation checks and actual use (TOCTOU race conditions)?
@@ -163,10 +172,10 @@ The MCP server must protect against denial-of-service attacks and accidental res
 
 **Error Handling:**
 
-- **FR-015**: System MUST replace all silent error handlers (`except: pass`) with proper error logging or user-facing messages
+- **FR-015**: System MUST replace all silent error handlers (`except: pass`) with proper error logging to stderr or user-facing error messages
 - **FR-016**: Error messages MUST provide actionable guidance (e.g., "Run X tool first", "Check file permissions")
 - **FR-017**: Error messages MUST NOT expose full file system paths, stack traces, or implementation details
-- **FR-018**: System MUST implement file locking for all operations modifying `.doc-manager/` state files
+- **FR-018**: System MUST implement file locking for all operations modifying `.doc-manager/` state files with 5-second timeout and 3 retry attempts
 
 **Resource Protection:**
 
