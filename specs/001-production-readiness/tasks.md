@@ -59,16 +59,16 @@ Single project structure - all paths relative to repository root:
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] Remove OPENROUTER_API_KEY from .mcp.json (FR-004, FR-005)
-- [ ] T010 [US3] Add .mcp.json and .env to .gitignore
-- [ ] T011 [P] [US3] Create .env.template with credential documentation
-- [ ] T012 [US3] Verify git history no longer tracks .mcp.json with secrets
-- [ ] T013 [US3] Commit credential removal immediately (git add .gitignore .env.template)
+- [X] T009 [US3] Remove OPENROUTER_API_KEY from .mcp.json (FR-004, FR-005)
+- [X] T010 [US3] Add .mcp.json and .env to .gitignore
+- [X] T011 [P] [US3] Create .env.template with credential documentation
+- [X] T012 [US3] Verify git history no longer tracks .mcp.json with secrets
+- [X] T013 [US3] Commit credential removal immediately (git add .gitignore .env.template)
 
 ### Tests for User Story 3
 
-- [ ] T014 [P] [US3] Unit test for credential scanning utility in tests/unit/test_security.py
-- [ ] T015 [P] [US3] Integration test verifying .gitignore excludes sensitive files in tests/integration/test_security.py
+- [X] T014 [P] [US3] Unit test for credential scanning utility in tests/unit/test_security.py
+- [X] T015 [P] [US3] Integration test verifying .gitignore excludes sensitive files in tests/integration/test_security.py
 
 **Checkpoint**: No credentials exposed in version control (SC-003, SC-004)
 
