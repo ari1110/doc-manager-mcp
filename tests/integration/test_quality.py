@@ -2,10 +2,13 @@
 
 import pytest
 from pathlib import Path
+from unittest.mock import patch
+import sys
+from io import StringIO
 
 from src.models import AssessQualityInput
 from src.constants import ResponseFormat
-from src.tools.quality import assess_quality
+from src.tools.quality import assess_quality, _format_quality_report, _calculate_overall_score
 
 
 @pytest.mark.asyncio
@@ -359,3 +362,203 @@ See that file over there? Update it accordingly.
         ))
 
         assert "Error" in result or "not found" in result.lower()
+
+
+@pytest.mark.asyncio
+class TestQualityScoreEdgeCases:
+    """
+    Integration tests for quality score edge case handling.
+
+    @spec 001
+    @functionalReq FR-030
+    @testType integration
+    """
+
+    """
+    @spec 001
+    @functionalReq FR-030
+    @testType integration
+    """
+    async def test_invalid_score_logs_warning(self, tmp_path):
+        """Test that invalid scores log warnings to stderr and use default."""
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "test.md").write_text("# Test\n\nContent here.")
+
+        # Create mock results with invalid score
+        mock_results = [
+            {
+                "criterion": "relevance",
+                "score": "invalid_score",  # Invalid score value
+                "findings": ["Test finding"],
+                "issues": [],
+                "metrics": {}
+            },
+            {
+                "criterion": "accuracy",
+                "score": "good",
+                "findings": [],
+                "issues": [],
+                "metrics": {}
+            }
+        ]
+
+        # Capture stderr
+        stderr_capture = StringIO()
+        original_stderr = sys.stderr
+
+        try:
+            sys.stderr = stderr_capture
+
+            # Call _calculate_overall_score which should log the warning
+            overall = _calculate_overall_score(mock_results)
+
+            # Restore stderr to read the captured content
+            sys.stderr = original_stderr
+            stderr_output = stderr_capture.getvalue()
+
+            # Verify warning was logged to stderr
+            assert "Warning: Invalid quality score 'invalid_score' for relevance" in stderr_output
+            assert "using default 2 (fair)" in stderr_output
+
+            # Verify the calculation still works (invalid score defaults to 2/fair)
+            # (2 + 3) / 2 = 2.5 = "good"
+            assert overall == "good"
+
+        finally:
+            sys.stderr = original_stderr
+
+    """
+    @spec 001
+    @functionalReq FR-030
+    @testType integration
+    """
+    async def test_missing_score_displays_na(self, tmp_path):
+        """Test that missing scores display as N/A and log warnings."""
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "test.md").write_text("# Test\n\nContent here.")
+
+        # Create mock results with missing score (key not present)
+        mock_results = [
+            {
+                "criterion": "relevance",
+                # score key completely missing to trigger N/A default
+                "findings": ["Test finding"],
+                "issues": [],
+                "metrics": {}
+            },
+            {
+                "criterion": "accuracy",
+                "score": "good",
+                "findings": [],
+                "issues": [],
+                "metrics": {}
+            }
+        ]
+
+        # Capture stderr
+        stderr_capture = StringIO()
+        original_stderr = sys.stderr
+
+        try:
+            sys.stderr = stderr_capture
+
+            # Format the report which should handle missing scores
+            report = _format_quality_report(mock_results, ResponseFormat.MARKDOWN)
+
+            # Restore stderr to read the captured content
+            sys.stderr = original_stderr
+            stderr_output = stderr_capture.getvalue()
+
+            # Verify warning was logged for missing score in summary
+            # (empty score is treated as missing in the summary loop)
+            assert "Warning: Missing quality score for relevance, skipping in summary" in stderr_output
+
+            # Verify warning was logged for missing score in display
+            # (when get() returns default 'N/A', it triggers the warning)
+            assert "Warning: Missing quality score for relevance, displaying as N/A" in stderr_output
+
+            # Verify N/A appears in the report
+            assert "**Score:** N/A" in report
+            assert "## Relevance" in report
+
+        finally:
+            sys.stderr = original_stderr
+
+    """
+    @spec 001
+    @functionalReq FR-030
+    @testType integration
+    """
+    async def test_valid_scores_work_correctly(self, tmp_path):
+        """Test that valid scores work correctly without warnings."""
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "test.md").write_text("# Test\n\nContent here.")
+
+        # Create mock results with all valid scores
+        mock_results = [
+            {
+                "criterion": "relevance",
+                "score": "excellent",
+                "findings": ["Test finding"],
+                "issues": [],
+                "metrics": {}
+            },
+            {
+                "criterion": "accuracy",
+                "score": "good",
+                "findings": [],
+                "issues": [],
+                "metrics": {}
+            },
+            {
+                "criterion": "purposefulness",
+                "score": "fair",
+                "findings": [],
+                "issues": [],
+                "metrics": {}
+            },
+            {
+                "criterion": "uniqueness",
+                "score": "poor",
+                "findings": [],
+                "issues": [],
+                "metrics": {}
+            }
+        ]
+
+        # Capture stderr
+        stderr_capture = StringIO()
+        original_stderr = sys.stderr
+
+        try:
+            sys.stderr = stderr_capture
+
+            # Calculate overall score and format report
+            overall = _calculate_overall_score(mock_results)
+            report = _format_quality_report(mock_results, ResponseFormat.MARKDOWN)
+
+            # Restore stderr to read the captured content
+            sys.stderr = original_stderr
+            stderr_output = stderr_capture.getvalue()
+
+            # Verify NO warnings were logged
+            assert "Warning" not in stderr_output
+
+            # Verify scores are calculated correctly
+            # excellent=4, good=3, fair=2, poor=1 -> (4+3+2+1)/4 = 2.5 = "good"
+            assert overall == "good"
+
+            # Verify all scores appear correctly in the report
+            assert "**Score:** EXCELLENT" in report
+            assert "**Score:** GOOD" in report
+            assert "**Score:** FAIR" in report
+            assert "**Score:** POOR" in report
+
+            # Verify score summary is present
+            assert "## Score Summary" in report
+
+        finally:
+            sys.stderr = original_stderr

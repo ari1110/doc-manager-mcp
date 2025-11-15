@@ -421,3 +421,85 @@ Call `User.authenticate(username, password)`.
 
         # Should still be valid JSON (or truncation message)
         assert result.startswith("{") or "truncated" in result.lower()
+
+
+@pytest.mark.asyncio
+class TestPreciseDependencyMatching:
+    """Integration tests for precise dependency matching without substring false positives.
+
+    @spec 001
+    @functionalReq FR-026
+    """
+
+    async def test_no_substring_false_positives(self, tmp_path):
+        """Test that substring matching false positives are eliminated (T091 - FR-026).
+
+        Verifies that:
+        - "save.py" matches only "save.py", NOT "autosave.py"
+        - "add" command matches only "cmd/add.go", NOT "cmd/add_user.go"
+
+        This test proves the implementation uses path separators to prevent
+        false positives that would occur with naive substring matching.
+        """
+        # Setup: create source files that would trigger false positives with substring matching
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "save.py").write_text("def save(): pass")
+        (src_dir / "autosave.py").write_text("def autosave(): pass")
+
+        cmd_dir = tmp_path / "cmd"
+        cmd_dir.mkdir()
+        (cmd_dir / "add.go").write_text("package main\nfunc add() {}")
+        (cmd_dir / "add_user.go").write_text("package main\nfunc addUser() {}")
+
+        # Create docs mentioning save.py (should NOT match autosave.py)
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "api.md").write_text("See `save.py` for details")
+
+        # Track dependencies
+        result = await track_dependencies(TrackDependenciesInput(
+            project_path=str(tmp_path),
+            docs_path="docs",
+            response_format=ResponseFormat.JSON
+        ))
+
+        result_data = json.loads(result)
+
+        # Verify save.py matched, autosave.py did NOT match
+        all_matched_files = []
+        for doc_file, source_files in result_data.get("doc_to_code", {}).items():
+            all_matched_files.extend(source_files)
+
+        # save.py should be matched
+        assert any("save.py" in f and "autosave.py" not in f for f in all_matched_files), \
+            f"save.py should be matched. Got: {all_matched_files}"
+
+        # autosave.py should NOT be matched (this is the critical assertion)
+        assert not any("autosave.py" in f for f in all_matched_files), \
+            f"autosave.py should NOT be matched (substring false positive). Got: {all_matched_files}"
+
+        # Create docs mentioning "add" command (should NOT match add_user)
+        (docs_dir / "cli.md").write_text("Run the `add` command to add items")
+
+        # Track dependencies again
+        result2 = await track_dependencies(TrackDependenciesInput(
+            project_path=str(tmp_path),
+            docs_path="docs",
+            response_format=ResponseFormat.JSON
+        ))
+
+        result_data2 = json.loads(result2)
+
+        # Collect all matched files
+        all_matched_files2 = []
+        for doc_file, source_files in result_data2.get("doc_to_code", {}).items():
+            all_matched_files2.extend(source_files)
+
+        # cmd/add.go should be matched
+        assert any("cmd/add.go" in f for f in all_matched_files2), \
+            f"cmd/add.go should be matched. Got: {all_matched_files2}"
+
+        # cmd/add_user.go should NOT be matched (this proves no substring false positive)
+        assert not any("cmd/add_user.go" in f for f in all_matched_files2), \
+            f"cmd/add_user.go should NOT be matched (substring false positive). Got: {all_matched_files2}"

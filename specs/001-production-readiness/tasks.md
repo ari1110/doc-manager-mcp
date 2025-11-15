@@ -255,9 +255,9 @@ Single project structure - all paths relative to repository root:
 
 **Tests for Additional Bug Fixes**
 
-- [ ] T094 [P] Integration test for accurate line numbers in validation reports in tests/integration/test_validation.py
-- [ ] T095 [P] Integration test for quality score edge cases in tests/integration/test_quality.py
-- [ ] T096 [P] Integration test for precise dependency matching in tests/integration/test_dependencies.py
+- [x] T094 [P] Integration test for accurate line numbers in validation reports in tests/integration/test_validation.py
+- [x] T095 [P] Integration test for quality score edge cases in tests/integration/test_quality.py
+- [x] T096 [P] Integration test for precise dependency matching in tests/integration/test_dependencies.py
 
 ---
 
