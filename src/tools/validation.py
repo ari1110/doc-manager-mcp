@@ -3,11 +3,12 @@
 from pathlib import Path
 import re
 import sys
+import asyncio
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 
 from ..models import ValidateDocsInput
-from ..constants import ResponseFormat, MAX_FILES
+from ..constants import ResponseFormat, MAX_FILES, OPERATION_TIMEOUT
 from ..utils import find_docs_directory, handle_error, enforce_response_limit, safe_json_dumps
 
 
@@ -365,6 +366,29 @@ def _format_validation_report(issues: List[Dict[str, Any]], response_format: Res
         return enforce_response_limit("\n".join(lines))
 
 
+def with_timeout(timeout_seconds):
+    """Decorator to enforce timeout on async function execution (FR-021)."""
+    def decorator(func):
+        from functools import wraps
+
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                # Use asyncio.wait_for for async timeout enforcement
+                return await asyncio.wait_for(
+                    func(*args, **kwargs),
+                    timeout=timeout_seconds
+                )
+            except asyncio.TimeoutError:
+                raise TimeoutError(
+                    f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                    f"→ Consider processing fewer files or increasing timeout limit."
+                )
+        return wrapper
+    return decorator
+
+
+@with_timeout(OPERATION_TIMEOUT)
 async def validate_docs(params: ValidateDocsInput) -> str:
     """Validate documentation for broken links, missing assets, and code snippet issues.
 

@@ -3,9 +3,11 @@
 from pathlib import Path
 from datetime import datetime
 import json
+import asyncio
+from functools import wraps
 
 from ..models import InitializeMemoryInput
-from ..constants import ResponseFormat, MAX_FILES
+from ..constants import ResponseFormat, MAX_FILES, OPERATION_TIMEOUT
 from ..utils import (
     detect_project_language,
     find_docs_directory,
@@ -20,6 +22,33 @@ from ..utils import (
     file_lock
 )
 
+def with_timeout(timeout_seconds):
+    """Decorator to add timeout enforcement to async functions.
+
+    Args:
+        timeout_seconds (int): Maximum execution time in seconds
+
+    Raises:
+        TimeoutError: If operation exceeds timeout limit
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                # Use asyncio.wait_for for async timeout enforcement
+                return await asyncio.wait_for(
+                    func(*args, **kwargs),
+                    timeout=timeout_seconds
+                )
+            except asyncio.TimeoutError:
+                raise TimeoutError(
+                    f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                    f"→ Consider processing fewer files or increasing timeout limit."
+                )
+        return wrapper
+    return decorator
+
+@with_timeout(OPERATION_TIMEOUT)
 async def initialize_memory(params: InitializeMemoryInput) -> str:
     """Initialize the documentation memory system for tracking project state.
 

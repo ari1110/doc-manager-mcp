@@ -5,9 +5,10 @@ import json
 import sys
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+import asyncio
 
 from ..models import MapChangesInput
-from ..constants import ResponseFormat, ChangeDetectionMode, MAX_FILES
+from ..constants import ResponseFormat, ChangeDetectionMode, MAX_FILES, OPERATION_TIMEOUT
 from ..utils import calculate_checksum, run_git_command, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps
 
 
@@ -403,37 +404,8 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
         return enforce_response_limit("\n".join(lines))
 
 
-async def map_changes(params: MapChangesInput) -> str:
-    """Map code changes to affected documentation.
-
-    Compares current codebase state against baseline (from memory or git commit)
-    and identifies which documentation files need updates based on code changes.
-
-    Uses pattern-based mapping:
-    - CLI changes → command reference, workflow guides
-    - API changes → API reference, architecture docs
-    - Config changes → configuration reference, installation docs
-    - Dependency changes → installation guide, contributing guide
-
-    Args:
-        params (MapChangesInput): Validated input parameters containing:
-            - project_path (str): Absolute path to project root
-            - since_commit (Optional[str]): Git commit to compare from (uses memory baseline if not specified)
-            - response_format (ResponseFormat): Output format (markdown or json)
-
-    Returns:
-        str: Change mapping report with affected documentation
-
-    Examples:
-        - Use when: After making code changes
-        - Use when: Before updating documentation
-        - Use when: In CI/CD to detect doc update needs
-
-    Error Handling:
-        - Returns error if project_path doesn't exist
-        - Returns error if no baseline found and no commit specified
-        - Returns empty change list if no changes detected
-    """
+async def _map_changes_impl(params: MapChangesInput) -> str:
+    """Implementation of map_changes without timeout."""
     try:
         project_path = Path(params.project_path).resolve()
 
@@ -464,3 +436,49 @@ async def map_changes(params: MapChangesInput) -> str:
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "map_changes"))
+
+
+async def map_changes(params: MapChangesInput) -> str:
+    """Map code changes to affected documentation.
+
+    Compares current codebase state against baseline (from memory or git commit)
+    and identifies which documentation files need updates based on code changes.
+
+    Uses pattern-based mapping:
+    - CLI changes → command reference, workflow guides
+    - API changes → API reference, architecture docs
+    - Config changes → configuration reference, installation docs
+    - Dependency changes → installation guide, contributing guide
+
+    Args:
+        params (MapChangesInput): Validated input parameters containing:
+            - project_path (str): Absolute path to project root
+            - since_commit (Optional[str]): Git commit to compare from (uses memory baseline if not specified)
+            - response_format (ResponseFormat): Output format (markdown or json)
+
+    Returns:
+        str: Change mapping report with affected documentation
+
+    Examples:
+        - Use when: After making code changes
+        - Use when: Before updating documentation
+        - Use when: In CI/CD to detect doc update needs
+
+    Error Handling:
+        - Returns error if project_path doesn't exist
+        - Returns error if no baseline found and no commit specified
+        - Returns empty change list if no changes detected
+        - Raises TimeoutError if operation exceeds OPERATION_TIMEOUT (60s)
+    """
+    try:
+        # Wrap the implementation with timeout enforcement (FR-021)
+        result = await asyncio.wait_for(
+            _map_changes_impl(params),
+            timeout=OPERATION_TIMEOUT
+        )
+        return result
+    except asyncio.TimeoutError:
+        raise TimeoutError(
+            f"Operation exceeded timeout ({OPERATION_TIMEOUT}s)\n"
+            f"→ Consider processing fewer files or increasing timeout limit."
+        )

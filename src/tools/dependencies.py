@@ -4,11 +4,13 @@ from pathlib import Path
 import json
 import re
 import sys
+import asyncio
 from typing import List, Dict, Any, Set
 from datetime import datetime
+from functools import wraps
 
 from ..models import TrackDependenciesInput
-from ..constants import ResponseFormat, MAX_FILES
+from ..constants import ResponseFormat, MAX_FILES, OPERATION_TIMEOUT
 from ..utils import find_docs_directory, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps, file_lock
 
 
@@ -454,6 +456,34 @@ def _format_dependency_report(dependencies: Dict[str, List[str]], reverse_index:
         return enforce_response_limit("\n".join(lines))
 
 
+def with_timeout(timeout_seconds):
+    """Decorator to add timeout enforcement to async functions.
+
+    Args:
+        timeout_seconds (int): Maximum execution time in seconds
+
+    Raises:
+        TimeoutError: If operation exceeds timeout limit
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                # Use asyncio.wait_for for async timeout enforcement
+                return await asyncio.wait_for(
+                    func(*args, **kwargs),
+                    timeout=timeout_seconds
+                )
+            except asyncio.TimeoutError:
+                raise TimeoutError(
+                    f"Operation exceeded timeout ({timeout_seconds}s)\n"
+                    f"→ Consider processing fewer files or increasing timeout limit."
+                )
+        return wrapper
+    return decorator
+
+
+@with_timeout(OPERATION_TIMEOUT)
 async def track_dependencies(params: TrackDependenciesInput) -> str:
     """Track code-to-docs dependencies by analyzing references in documentation.
 
