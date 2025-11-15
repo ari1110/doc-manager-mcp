@@ -205,13 +205,89 @@ export class JavaScriptAdapter extends BaseLanguageAdapter {
 
   /**
    * Insert metadata into JavaScript/TypeScript source code
-   * TODO: Implement proper handling of existing JSDoc comments
+   * Handles JSDoc comments for test() and it() calls
    */
   insertMetadataIntoSource(
     sourceCode: string,
     testNode: SyntaxNode,
     metadata: InferredMetadata
   ): string {
-    throw new Error('insertMetadataIntoSource not yet implemented for JavaScript/TypeScript');
+    const lines = sourceCode.split('\n');
+    const testLine = testNode.startPosition.row;
+
+    // Get indentation from the test line
+    const testLineText = lines[testLine];
+    const indent = testLineText.match(/^\s*/)?.[0] || '';
+
+    // Check if there's already a JSDoc comment above this test
+    let insertLine = testLine;
+    let hasExistingJSDoc = false;
+    let jsdocStartLine = -1;
+    let jsdocEndLine = -1;
+
+    // Look backwards for JSDoc
+    let checkLine = testLine - 1;
+    while (checkLine >= 0 && lines[checkLine].trim() === '') {
+      checkLine--; // Skip blank lines
+    }
+
+    if (checkLine >= 0 && lines[checkLine].trim() === '*/') {
+      // Found end of JSDoc block
+      jsdocEndLine = checkLine;
+      checkLine--;
+
+      // Find start of JSDoc block
+      while (checkLine >= 0) {
+        if (lines[checkLine].trim().startsWith('/**')) {
+          jsdocStartLine = checkLine;
+          hasExistingJSDoc = true;
+          break;
+        }
+        checkLine--;
+      }
+    }
+
+    if (hasExistingJSDoc && jsdocStartLine >= 0 && jsdocEndLine >= 0) {
+      // Merge metadata into existing JSDoc
+      const metadataLines: string[] = [];
+      metadataLines.push(' *');
+      if (metadata.spec) metadataLines.push(` * @spec ${metadata.spec}`);
+      for (const story of metadata.userStories) {
+        metadataLines.push(` * @userStory ${story}`);
+      }
+      for (const req of metadata.functionalReqs) {
+        metadataLines.push(` * @functionalReq ${req}`);
+      }
+      metadataLines.push(` * @testType ${metadata.testType}`);
+      if (metadata.mockDependent) {
+        metadataLines.push(` * @mockDependent`);
+      }
+
+      // Insert before closing */
+      const indentedLines = metadataLines.map(line => indent + line);
+      lines.splice(jsdocEndLine, 0, ...indentedLines);
+    } else {
+      // No existing JSDoc - create new one
+      const jsdocLines: string[] = [];
+      jsdocLines.push('/**');
+      if (metadata.spec) jsdocLines.push(` * @spec ${metadata.spec}`);
+      for (const story of metadata.userStories) {
+        jsdocLines.push(` * @userStory ${story}`);
+      }
+      for (const req of metadata.functionalReqs) {
+        jsdocLines.push(` * @functionalReq ${req}`);
+      }
+      jsdocLines.push(` * @testType ${metadata.testType}`);
+      if (metadata.mockDependent) {
+        jsdocLines.push(` * @mockDependent`);
+      }
+      jsdocLines.push(' */');
+
+      // Insert before test line
+      const indentedLines = jsdocLines.map(line => indent + line);
+      lines.splice(testLine, 0, ...indentedLines);
+    }
+
+    return lines.join('\n');
   }
 }

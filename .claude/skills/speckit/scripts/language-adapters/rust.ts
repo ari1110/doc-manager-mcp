@@ -196,13 +196,82 @@ export class RustAdapter extends BaseLanguageAdapter {
 
   /**
    * Insert metadata into Rust source code
-   * TODO: Implement proper handling of existing doc comments
+   * Handles Rust doc comments (/// style) and attributes (#[test])
    */
   insertMetadataIntoSource(
     sourceCode: string,
     testNode: SyntaxNode,
     metadata: InferredMetadata
   ): string {
-    throw new Error('insertMetadataIntoSource not yet implemented for Rust');
+    const lines = sourceCode.split('\n');
+    const testLine = testNode.startPosition.row;
+
+    // Get indentation from the test line
+    const testLineText = lines[testLine];
+    const indent = testLineText.match(/^\s*/)?.[0] || '';
+
+    // Find the insertion point - after attributes but before function
+    let insertLine = testLine;
+    let checkLine = testLine - 1;
+
+    // Skip blank lines
+    while (checkLine >= 0 && lines[checkLine].trim() === '') {
+      checkLine--;
+    }
+
+    // Skip attribute lines (#[test], #[tokio::test], etc.) - we want to insert AFTER these
+    const attributeLines: number[] = [];
+    while (checkLine >= 0 && lines[checkLine].trim().startsWith('#[')) {
+      attributeLines.unshift(checkLine);
+      checkLine--;
+    }
+
+    // If there are attributes, insert after the last attribute
+    if (attributeLines.length > 0) {
+      insertLine = attributeLines[attributeLines.length - 1] + 1;
+    }
+
+    // Skip more blank lines
+    while (checkLine >= 0 && lines[checkLine].trim() === '') {
+      checkLine--;
+    }
+
+    // Check if there are existing doc comments (///)
+    let hasExistingComments = false;
+    const existingCommentLines: number[] = [];
+    while (checkLine >= 0 && lines[checkLine].trim().startsWith('///')) {
+      existingCommentLines.unshift(checkLine);
+      checkLine--;
+    }
+
+    if (existingCommentLines.length > 0) {
+      hasExistingComments = true;
+      insertLine = existingCommentLines[0];
+    }
+
+    // Generate metadata comment lines
+    const metadataLines: string[] = [];
+    if (metadata.spec) metadataLines.push(`/// @spec ${metadata.spec}`);
+    for (const story of metadata.userStories) {
+      metadataLines.push(`/// @userStory ${story}`);
+    }
+    for (const req of metadata.functionalReqs) {
+      metadataLines.push(`/// @functionalReq ${req}`);
+    }
+    metadataLines.push(`/// @testType ${metadata.testType}`);
+    if (metadata.mockDependent) {
+      metadataLines.push(`/// @mockDependent`);
+    }
+
+    if (hasExistingComments) {
+      // Add blank comment line separator if merging
+      metadataLines.push('///');
+    }
+
+    // Insert metadata comments
+    const indentedLines = metadataLines.map(line => indent + line);
+    lines.splice(insertLine, 0, ...indentedLines);
+
+    return lines.join('\n');
   }
 }
