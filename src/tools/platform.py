@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import sys
 from typing import List, Dict, Any
 
 from ..models import DetectPlatformInput
@@ -148,7 +149,8 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "medium",
                         "evidence": ["Found VitePress in package.json dependencies"]
                     })
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to parse package.json: {e}", file=sys.stderr)
             pass
 
     # Check requirements.txt or setup.py for Python projects
@@ -169,7 +171,8 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "medium",
                         "evidence": ["Found sphinx in requirements.txt"]
                     })
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read requirements.txt: {e}", file=sys.stderr)
             pass
 
     # Check setup.py for Sphinx (common in Python projects)
@@ -185,7 +188,8 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "low",
                         "evidence": ["Found setup.py (Sphinx is common for setuptools-based Python projects)"]
                     })
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read setup.py: {e}", file=sys.stderr)
             pass
 
     # Check go.mod for Go projects
@@ -200,7 +204,8 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "medium",
                         "evidence": ["Found hugo reference in go.mod"]
                     })
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read go.mod: {e}", file=sys.stderr)
             pass
 
     return detected

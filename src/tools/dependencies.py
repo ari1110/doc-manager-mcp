@@ -3,12 +3,13 @@
 from pathlib import Path
 import json
 import re
+import sys
 from typing import List, Dict, Any, Set
 from datetime import datetime
 
 from ..models import TrackDependenciesInput
 from ..constants import ResponseFormat
-from ..utils import find_docs_directory, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps
+from ..utils import find_docs_directory, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps, file_lock
 
 
 def _find_markdown_files(docs_path: Path, project_path: Path) -> List[Path]:
@@ -209,7 +210,8 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
                             dependencies[doc_file].add(relative_path)
                             break
 
-                except Exception:
+                except Exception as e:
+                    print(f"Warning: Failed to read source file {source_file}: {e}", file=sys.stderr)
                     continue
 
         # Match command references to CLI source files
@@ -289,7 +291,8 @@ def _save_dependencies_to_memory(project_path: Path, dependencies: Dict[str, Lis
     # Create memory directory if it doesn't exist
     try:
         memory_dir.mkdir(parents=True, exist_ok=True)
-    except Exception:
+    except Exception as e:
+        print(f"Warning: Failed to create memory directory {memory_dir}: {e}", file=sys.stderr)
         return
 
     dependency_file = memory_dir / "dependencies.json"
@@ -318,9 +321,12 @@ def _save_dependencies_to_memory(project_path: Path, dependencies: Dict[str, Lis
         data["all_references"] = refs_by_type
 
     try:
-        with open(dependency_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2)
-    except Exception:
+        # T066: Use file locking to prevent concurrent modification (FR-018)
+        with file_lock(dependency_file):
+            with open(dependency_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Failed to save dependencies to {dependency_file}: {e}", file=sys.stderr)
         pass
 
 
@@ -494,7 +500,8 @@ async def track_dependencies(params: TrackDependenciesInput) -> str:
 
                     references = _extract_code_references(content, md_file.relative_to(docs_path))
                     all_references.extend(references)
-                except Exception:
+                except Exception as e:
+                    print(f"Warning: Failed to read markdown file {md_file}: {e}", file=sys.stderr)
                     continue
 
         # Find source files

@@ -187,23 +187,23 @@ Single project structure - all paths relative to repository root:
 
 ### Implementation for User Story 6
 
-- [ ] T057 [US6] Replace silent error handler in src/tools/config.py with stderr logging (FR-015)
-- [ ] T058 [P] [US6] Replace silent error handlers in src/tools/memory.py with stderr logging (FR-015)
-- [ ] T059 [P] [US6] Replace silent error handlers in src/tools/platform.py with stderr logging (FR-015)
-- [ ] T060 [P] [US6] Replace silent error handlers in src/tools/validation.py with stderr logging (FR-015)
-- [ ] T061 [P] [US6] Replace silent error handlers in src/tools/quality.py with stderr logging (FR-015)
-- [ ] T062 [P] [US6] Replace silent error handlers in src/tools/changes.py with stderr logging (FR-015)
-- [ ] T063 [P] [US6] Replace silent error handlers in src/tools/dependencies.py with stderr logging (FR-015)
-- [ ] T064 [P] [US6] Replace silent error handlers in src/tools/workflows.py with stderr logging (FR-015)
-- [ ] T065 [US6] Implement file locking for .doc-manager/repo-baseline.json in src/tools/memory.py (FR-018)
-- [ ] T066 [US6] Implement file locking for .doc-manager/dependencies.json in src/tools/dependencies.py (FR-018)
-- [ ] T067 [US6] Sanitize error messages to remove full paths in src/utils.py error formatter (FR-017)
-- [ ] T068 [US6] Add actionable guidance to all error messages in src/tools/*.py (FR-016)
+- [x] T057 [US6] Replace silent error handler in src/tools/config.py with stderr logging (FR-015)
+- [x] T058 [P] [US6] Replace silent error handlers in src/tools/memory.py with stderr logging (FR-015)
+- [x] T059 [P] [US6] Replace silent error handlers in src/tools/platform.py with stderr logging (FR-015)
+- [x] T060 [P] [US6] Replace silent error handlers in src/tools/validation.py with stderr logging (FR-015)
+- [x] T061 [P] [US6] Replace silent error handlers in src/tools/quality.py with stderr logging (FR-015)
+- [x] T062 [P] [US6] Replace silent error handlers in src/tools/changes.py with stderr logging (FR-015)
+- [x] T063 [P] [US6] Replace silent error handlers in src/tools/dependencies.py with stderr logging (FR-015)
+- [x] T064 [P] [US6] Replace silent error handlers in src/tools/workflows.py with stderr logging (FR-015)
+- [x] T065 [US6] Implement file locking for .doc-manager/repo-baseline.json in src/tools/memory.py (FR-018)
+- [x] T066 [US6] Implement file locking for .doc-manager/dependencies.json in src/tools/dependencies.py (FR-018)
+- [x] T067 [US6] Sanitize error messages to remove full paths in src/utils.py error formatter (FR-017)
+- [x] T068 [US6] Add actionable guidance to all error messages in src/tools/*.py (FR-016)
 
 ### Tests for User Story 6
 
-- [ ] T069 [P] [US6] Unit test for error message sanitization in tests/unit/test_utils.py
-- [ ] T070 [P] [US6] Integration test for file lock timeout behavior in tests/integration/test_utils.py
+- [x] T069 [P] [US6] Unit test for error message sanitization in tests/unit/test_utils.py
+- [x] T070 [P] [US6] Integration test for file lock timeout behavior in tests/integration/test_utils.py
 - [ ] T071 [P] [US6] Integration test for concurrent file modification with locks in tests/integration/test_concurrency.py
 - [ ] T072 [US6] E2E test for error message content (no paths, stack traces) in tests/test_e2e.py
 

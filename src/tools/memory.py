@@ -16,7 +16,8 @@ from ..utils import (
     matches_exclude_pattern,
     validate_path_boundary,
     enforce_response_limit,
-    safe_json_dumps
+    safe_json_dumps,
+    file_lock
 )
 
 async def initialize_memory(params: InitializeMemoryInput) -> str:
@@ -111,8 +112,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
         }
 
         baseline_path = memory_dir / "memory" / "repo-baseline.json"
-        with open(baseline_path, 'w', encoding='utf-8') as f:
-            json.dump(baseline, f, indent=2)
+        # T065: Use file locking to prevent concurrent modification (FR-018)
+        with file_lock(baseline_path):
+            with open(baseline_path, 'w', encoding='utf-8') as f:
+                json.dump(baseline, f, indent=2)
 
         # Create doc conventions template
         conventions = """# Documentation Conventions
