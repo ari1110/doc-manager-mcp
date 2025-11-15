@@ -209,13 +209,23 @@ docs_path: docs
     """
     async def test_nonexistent_project_path(self):
         """Test error handling for nonexistent path."""
-        result = await initialize_memory(InitializeMemoryInput(
-            project_path="/nonexistent/path",
-            response_format=ResponseFormat.MARKDOWN
-        ))
+        import platform
+        from pydantic import ValidationError
 
-        assert "Error" in result
-        assert "does not exist" in result
+        # Use platform-specific absolute path
+        if platform.system() == "Windows":
+            nonexistent_path = "C:\\nonexistent\\project\\path"
+        else:
+            nonexistent_path = "/nonexistent/project/path"
+
+        # Pydantic validator should raise ValidationError for nonexistent path
+        with pytest.raises(ValidationError) as exc_info:
+            InitializeMemoryInput(
+                project_path=nonexistent_path,
+                response_format=ResponseFormat.MARKDOWN
+            )
+
+        assert "does not exist" in str(exc_info.value)
 
     """
     @spec 001

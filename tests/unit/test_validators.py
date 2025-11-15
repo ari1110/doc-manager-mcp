@@ -313,3 +313,189 @@ class TestPathTraversalValidator:
         )
 
         assert model.docs_path is None
+
+
+class TestPatternListValidators:
+    """Test pattern list validation to prevent injection and DoS attacks (T042-T044 - US5)."""
+
+    def test_reject_too_many_exclude_patterns(self, tmp_path):
+        """Test that exclude_patterns rejects >50 items (T042 - FR-006)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # Create 51 patterns (over the limit)
+        too_many_patterns = [f"**/pattern{i}" for i in range(51)]
+
+        with pytest.raises(ValidationError) as exc_info:
+            InitializeConfigInput(
+                project_path=str(project_dir),
+                exclude_patterns=too_many_patterns,
+                response_format=ResponseFormat.MARKDOWN
+            )
+
+        error = str(exc_info.value)
+        assert ("too many items" in error.lower() or "at most 50 items" in error.lower()) and "50" in error
+
+    def test_accept_valid_exclude_patterns(self, tmp_path):
+        """Test that valid exclude_patterns are accepted (T042)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        valid_patterns = [
+            "**/node_modules",
+            "**/dist",
+            "**/*.log",
+            "**/vendor",
+            "**/.git"
+        ]
+
+        model = InitializeConfigInput(
+            project_path=str(project_dir),
+            exclude_patterns=valid_patterns,
+            response_format=ResponseFormat.MARKDOWN
+        )
+
+        assert model.exclude_patterns == valid_patterns
+
+    def test_reject_pattern_too_long(self, tmp_path):
+        """Test that patterns >512 chars are rejected (T043 - FR-007)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # Create a pattern that's 513 characters long
+        long_pattern = "a" * 513
+
+        with pytest.raises(ValidationError) as exc_info:
+            InitializeConfigInput(
+                project_path=str(project_dir),
+                exclude_patterns=[long_pattern],
+                response_format=ResponseFormat.MARKDOWN
+            )
+
+        error = str(exc_info.value)
+        assert "too long" in error.lower() and "512" in error
+
+    def test_accept_pattern_at_length_limit(self, tmp_path):
+        """Test that patterns exactly 512 chars are accepted (T043)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # Create a pattern that's exactly 512 characters long
+        max_length_pattern = "a" * 512
+
+        model = InitializeConfigInput(
+            project_path=str(project_dir),
+            exclude_patterns=[max_length_pattern],
+            response_format=ResponseFormat.MARKDOWN
+        )
+
+        assert model.exclude_patterns == [max_length_pattern]
+
+    def test_reject_redos_nested_quantifiers(self, tmp_path):
+        """Test that ReDoS-vulnerable patterns are rejected (T044 - FR-008)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # ReDoS-vulnerable patterns with nested quantifiers
+        redos_patterns = [
+            "(a+)+",      # Classic nested quantifier
+            "(a*)*",      # Nested star quantifier
+            "(a+)*",      # Mixed nested quantifiers
+            "(.*)*",      # Dangerous wildcard nesting
+        ]
+
+        for dangerous_pattern in redos_patterns:
+            with pytest.raises(ValidationError) as exc_info:
+                InitializeConfigInput(
+                    project_path=str(project_dir),
+                    exclude_patterns=[dangerous_pattern],
+                    response_format=ResponseFormat.MARKDOWN
+                )
+
+            error = str(exc_info.value).lower()
+            assert "redos" in error or "nested quantifiers" in error, \
+                f"Should detect ReDoS in: {dangerous_pattern}"
+
+    def test_reject_globstar_abuse(self, tmp_path):
+        """Test that multiple consecutive globstars are rejected (T044)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # Multiple consecutive ** (globstar abuse)
+        with pytest.raises(ValidationError) as exc_info:
+            InitializeConfigInput(
+                project_path=str(project_dir),
+                exclude_patterns=["****"],
+                response_format=ResponseFormat.MARKDOWN
+            )
+
+        error = str(exc_info.value).lower()
+        assert "nested quantifiers" in error or "dangerous" in error
+
+    def test_accept_safe_glob_patterns(self, tmp_path):
+        """Test that safe glob patterns are accepted (T044)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        safe_patterns = [
+            "**/*.js",
+            "**/node_modules/**",
+            "src/**/*.py",
+            "docs/**/images/*",
+            "*.{ts,tsx,js,jsx}",
+        ]
+
+        model = InitializeConfigInput(
+            project_path=str(project_dir),
+            exclude_patterns=safe_patterns,
+            response_format=ResponseFormat.MARKDOWN
+        )
+
+        assert model.exclude_patterns == safe_patterns
+
+    def test_reject_too_many_sources(self, tmp_path):
+        """Test that sources rejects >50 items (T042)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        too_many_sources = [f"src{i}/**/*.py" for i in range(51)]
+
+        with pytest.raises(ValidationError) as exc_info:
+            InitializeConfigInput(
+                project_path=str(project_dir),
+                sources=too_many_sources,
+                response_format=ResponseFormat.MARKDOWN
+            )
+
+        error = str(exc_info.value)
+        assert "too many items" in error.lower() or "at most 50 items" in error.lower()
+
+    def test_accept_none_for_optional_patterns(self, tmp_path):
+        """Test that None is accepted for optional pattern fields (T040)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        model = InitializeConfigInput(
+            project_path=str(project_dir),
+            exclude_patterns=None,
+            sources=None,
+            response_format=ResponseFormat.MARKDOWN
+        )
+
+        assert model.exclude_patterns is None
+        assert model.sources is None
+
+    def test_reject_empty_string_pattern(self, tmp_path):
+        """Test that empty string patterns are rejected (T042)."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        with pytest.raises(ValidationError) as exc_info:
+            InitializeConfigInput(
+                project_path=str(project_dir),
+                exclude_patterns=[""],
+                response_format=ResponseFormat.MARKDOWN
+            )
+
+        error = str(exc_info.value)
+        assert "non-empty" in error.lower() or "must be" in error.lower()

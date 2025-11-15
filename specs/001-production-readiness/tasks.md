@@ -134,20 +134,20 @@ Single project structure - all paths relative to repository root:
 
 ### Implementation for User Story 5
 
-- [ ] T036 [P] [US5] Add exclude_patterns validator to InitializeConfigInput in src/models.py (FR-007)
-- [ ] T037 [P] [US5] Add sources validator to InitializeConfigInput in src/models.py (FR-007)
-- [ ] T038 [P] [US5] Add pattern length validators to all list fields in src/models.py (FR-006, FR-007)
-- [ ] T039 [US5] Add glob pattern syntax validation to prevent ReDoS in src/models.py (FR-008)
-- [ ] T040 [P] [US5] Add field validators for all optional fields to handle None gracefully in src/models.py
-- [ ] T041 [US5] Verify all tool parameter names match Pydantic model field names in src/tools/workflows.py (FR-014, FR-024)
+- [x] T036 [P] [US5] Add exclude_patterns validator to InitializeConfigInput in src/models.py (FR-007)
+- [x] T037 [P] [US5] Add sources validator to InitializeConfigInput in src/models.py (FR-007)
+- [x] T038 [P] [US5] Add pattern length validators to all list fields in src/models.py (FR-006, FR-007)
+- [x] T039 [US5] Add glob pattern syntax validation to prevent ReDoS in src/models.py (FR-008)
+- [x] T040 [P] [US5] Add field validators for all optional fields to handle None gracefully in src/models.py
+- [x] T041 [US5] Verify all tool parameter names match Pydantic model field names in src/tools/workflows.py (FR-014, FR-024)
 
 ### Tests for User Story 5
 
-- [ ] T042 [P] [US5] Unit test for exclude_patterns validator (max 50 items) in tests/unit/test_validators.py
-- [ ] T043 [P] [US5] Unit test for pattern item length validator (max 512 chars) in tests/unit/test_validators.py
-- [ ] T044 [P] [US5] Unit test for ReDoS pattern detection in tests/unit/test_validators.py
-- [ ] T045 [US5] Integration test with None/empty values for optional fields in tests/integration/test_models.py
-- [ ] T046 [US5] Integration test for workflows.py parameter name correctness in tests/integration/test_workflows.py
+- [x] T042 [P] [US5] Unit test for exclude_patterns validator (max 50 items) in tests/unit/test_validators.py
+- [x] T043 [P] [US5] Unit test for pattern item length validator (max 512 chars) in tests/unit/test_validators.py
+- [x] T044 [P] [US5] Unit test for ReDoS pattern detection in tests/unit/test_validators.py
+- [x] T045 [US5] Integration test with None/empty values for optional fields in tests/integration/test_models.py
+- [x] T046 [US5] Integration test for workflows.py parameter name correctness in tests/integration/test_workflows.py
 
 **Checkpoint**: All inputs validated (SC-011, SC-012, SC-013)
 

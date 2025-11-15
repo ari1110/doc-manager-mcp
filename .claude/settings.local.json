@@ -5,7 +5,10 @@
       "Bash(python -m py_compile:*)",
       "Bash(uv run pytest:*)",
       "Bash(uv run python:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(cat:*)",
+      "Skill(speckit)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
