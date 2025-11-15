@@ -443,3 +443,36 @@ def enforce_response_limit(response: str, limit: int = 25000) -> str:
     truncated += "\n[Tip: Request specific sections or use filters to reduce output size]"
 
     return truncated
+
+
+def safe_json_dumps(obj: any, **kwargs) -> str:
+    """Safely serialize object to JSON with error handling (T050 - FR-012).
+
+    Args:
+        obj: Object to serialize
+        **kwargs: Additional arguments to pass to json.dumps (e.g., indent=2)
+
+    Returns:
+        JSON string or error message if serialization fails
+
+    Note:
+        Prevents crashes from unserializable objects (e.g., datetime, Path, custom classes).
+        Returns a structured error message that's still valid for MCP responses.
+    """
+    import json
+
+    try:
+        return json.dumps(obj, **kwargs)
+    except (TypeError, ValueError) as e:
+        # JSON serialization failed - return error as JSON
+        error_response = {
+            "status": "error",
+            "message": "JSON serialization error",
+            "error": str(e),
+            "type": type(e).__name__
+        }
+        try:
+            return json.dumps(error_response, indent=2)
+        except:
+            # Fallback if even error serialization fails
+            return '{"status": "error", "message": "Critical JSON serialization failure"}'

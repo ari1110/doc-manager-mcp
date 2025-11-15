@@ -118,7 +118,7 @@ async def docmgr_assess_quality(params: AssessQualityInput) -> str:
     name="docmgr_map_changes",
     annotations={
         "title": "Map Code Changes to Documentation",
-        "readOnlyHint": True,
+        "readOnlyHint": False,  # T047: Writes to memory baseline
         "destructiveHint": False,
         "idempotentHint": True,
         "openWorldHint": False
@@ -132,7 +132,7 @@ async def docmgr_map_changes(params: MapChangesInput) -> str:
     name="docmgr_track_dependencies",
     annotations={
         "title": "Track Code-to-Documentation Dependencies",
-        "readOnlyHint": True,
+        "readOnlyHint": False,  # T048: Writes dependencies.json file
         "destructiveHint": False,
         "idempotentHint": True,
         "openWorldHint": False

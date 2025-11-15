@@ -161,19 +161,19 @@ Single project structure - all paths relative to repository root:
 
 ### Implementation for User Story 4
 
-- [ ] T047 [US4] Fix readOnlyHint for docmgr_map_changes in server.py (currently True, should be False) (FR-009)
-- [ ] T048 [US4] Fix readOnlyHint for docmgr_track_dependencies in server.py (currently True, should be False) (FR-009)
-- [ ] T049 [P] [US4] Add response size enforcement to all tool wrappers using utility from T008 (FR-010)
-- [ ] T050 [P] [US4] Add JSON serialization error handling to all tools returning JSON in src/tools/*.py (FR-012)
-- [ ] T051 [US4] Remove unicode/emoji from JSON responses in src/tools/*.py (FR-011)
-- [ ] T052 [US4] Ensure all tools return strings on error (not raise to MCP layer) in src/tools/*.py (FR-013)
+- [x] T047 [US4] Fix readOnlyHint for docmgr_map_changes in server.py (currently True, should be False) (FR-009)
+- [x] T048 [US4] Fix readOnlyHint for docmgr_track_dependencies in server.py (currently True, should be False) (FR-009)
+- [x] T049 [P] [US4] Add response size enforcement to all tool wrappers using utility from T008 (FR-010)
+- [x] T050 [P] [US4] Add JSON serialization error handling to all tools returning JSON in src/tools/*.py (FR-012)
+- [x] T051 [US4] Remove unicode/emoji from JSON responses in src/tools/*.py (FR-011)
+- [x] T052 [US4] Ensure all tools return strings on error (not raise to MCP layer) in src/tools/*.py (FR-013)
 
 ### Tests for User Story 4
 
-- [ ] T053 [P] [US4] Integration test verifying readOnlyHint accuracy for all 10 tools in tests/integration/test_server.py
-- [ ] T054 [P] [US4] Integration test for response size limit enforcement in tests/integration/test_protocol.py
-- [ ] T055 [P] [US4] Unit test for JSON serialization error handling in tests/unit/test_utils.py
-- [ ] T056 [US4] Integration test with large dependency graph triggering truncation in tests/integration/test_dependencies.py
+- [x] T053 [P] [US4] Integration test verifying readOnlyHint accuracy for all 10 tools in tests/integration/test_server.py
+- [x] T054 [P] [US4] Integration test for response size limit enforcement in tests/integration/test_protocol.py
+- [x] T055 [P] [US4] Unit test for JSON serialization error handling in tests/unit/test_utils.py
+- [x] T056 [US4] Integration test with large dependency graph triggering truncation in tests/integration/test_dependencies.py
 
 **Checkpoint**: MCP protocol compliance (SC-006, SC-007, SC-008, SC-009, SC-010)
 

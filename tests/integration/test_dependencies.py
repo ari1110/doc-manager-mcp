@@ -343,3 +343,81 @@ Call `User.authenticate(username, password)`.
             assert "generated_at" in deps
             assert "doc_to_code" in deps
             assert "code_to_doc" in deps
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US4
+    @functionalReq FR-010
+    """
+    async def test_large_dependency_graph_triggers_truncation(self, tmp_path):
+        """Test that large dependency graphs are properly truncated (T056 - US4).
+
+        This test creates many documentation files with many references to generate
+        a dependency graph large enough to trigger the 25K character response limit.
+        """
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create many documentation files, each with many references
+        # This should generate a response > 25K characters
+        for doc_num in range(150):
+            content_lines = [f"# Documentation File {doc_num}\n\n"]
+
+            # Add many code references to create large dependency graph
+            for ref_num in range(40):
+                content_lines.append(f"- Function `function_{ref_num}()` in `module{ref_num}.py`\n")
+                content_lines.append(f"- Class `Class{ref_num}` implementation details\n")
+                content_lines.append(f"- See `utils/helper{ref_num}.py` for utilities\n")
+
+            (docs_dir / f"doc{doc_num}.md").write_text("".join(content_lines))
+
+        # Track dependencies - should generate very large output
+        result = await track_dependencies(TrackDependenciesInput(
+            project_path=str(tmp_path),
+            docs_path="docs",
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # Verify response is truncated to limit
+        assert len(result) <= 25000, (
+            f"Response should be truncated to 25K, got {len(result)} chars"
+        )
+
+        # Verify truncation message is present
+        assert "truncated" in result.lower()
+        assert "25,000 character limit" in result
+
+        # Verify helpful tip is included
+        assert "Tip:" in result or "reduce output" in result.lower()
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US4
+    @functionalReq FR-010
+    """
+    async def test_json_dependency_graph_also_truncated(self, tmp_path):
+        """Test that JSON responses are also truncated for large graphs (T056 - US4)."""
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create many files with references
+        for i in range(120):
+            content = f"# Doc {i}\n\n"
+            for j in range(35):
+                content += f"Reference `file{j}.py`, `class{j}`, `function{j}()`\n"
+            (docs_dir / f"doc{i}.md").write_text(content)
+
+        # Request JSON format
+        result = await track_dependencies(TrackDependenciesInput(
+            project_path=str(tmp_path),
+            docs_path="docs",
+            response_format=ResponseFormat.JSON
+        ))
+
+        # JSON responses should also be limited
+        assert len(result) <= 25000, f"JSON response should be truncated, got {len(result)} chars"
+
+        # Should still be valid JSON (or truncation message)
+        assert result.startswith("{") or "truncated" in result.lower()

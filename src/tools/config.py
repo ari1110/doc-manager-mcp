@@ -1,12 +1,11 @@
 """Configuration management tools for doc-manager."""
 
-import json
 from pathlib import Path
 from datetime import datetime
 
 from ..models import InitializeConfigInput
 from ..constants import DocumentationPlatform, ResponseFormat
-from ..utils import detect_project_language, find_docs_directory, save_config, handle_error
+from ..utils import detect_project_language, find_docs_directory, save_config, handle_error, enforce_response_limit, safe_json_dumps
 
 async def initialize_config(params: InitializeConfigInput) -> str:
     """Initialize .doc-manager.yml configuration file for the project.
@@ -38,10 +37,10 @@ async def initialize_config(params: InitializeConfigInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         if not project_path.is_dir():
-            return f"Error: Project path is not a directory: {project_path}"
+            return enforce_response_limit(f"Error: Project path is not a directory: {project_path}")
 
         # Check if config already exists (allow overwrite)
         config_path = project_path / ".doc-manager.yml"
@@ -89,11 +88,11 @@ async def initialize_config(params: InitializeConfigInput) -> str:
 
         # Save configuration
         if not save_config(project_path, config):
-            return "Error: Failed to write configuration file"
+            return enforce_response_limit("Error: Failed to write configuration file")
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
+            return enforce_response_limit(safe_json_dumps({
                 "status": "success",
                 "message": "Configuration created successfully",
                 "config_path": str(config_path),
@@ -102,9 +101,9 @@ async def initialize_config(params: InitializeConfigInput) -> str:
                 "language": language,
                 "exclude_patterns": len(params.exclude_patterns),
                 "sources": len(sources)
-            }, indent=2)
+            }, indent=2))
         else:
-            return f"""✓ Configuration created successfully
+            return enforce_response_limit(f"""✓ Configuration created successfully
 
 **Configuration Summary:**
 - Platform: {platform.value}
@@ -117,7 +116,7 @@ Next steps:
 1. Run `docmgr_initialize_memory` to set up the memory system
 2. Run `docmgr_bootstrap` to generate documentation (if starting fresh)
 3. Run `docmgr_migrate` to restructure existing documentation (if docs exist)
-"""
+""")
 
     except Exception as e:
-        return handle_error(e, "initialize_config")
+        return enforce_response_limit(handle_error(e, "initialize_config"))

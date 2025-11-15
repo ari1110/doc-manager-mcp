@@ -8,7 +8,7 @@ from datetime import datetime
 
 from ..models import TrackDependenciesInput
 from ..constants import ResponseFormat
-from ..utils import find_docs_directory, handle_error, validate_path_boundary
+from ..utils import find_docs_directory, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps
 
 
 def _find_markdown_files(docs_path: Path, project_path: Path) -> List[Path]:
@@ -329,14 +329,14 @@ def _format_dependency_report(dependencies: Dict[str, List[str]], reverse_index:
                               response_format: ResponseFormat) -> str:
     """Format dependency tracking report."""
     if response_format == ResponseFormat.JSON:
-        return json.dumps({
+        return enforce_response_limit(safe_json_dumps({
             "generated_at": datetime.now().isoformat(),
             "total_references": total_references,
             "total_doc_files": len(dependencies),
             "total_source_files": len(reverse_index),
             "doc_to_code": dependencies,
             "code_to_doc": reverse_index
-        }, indent=2)
+        }, indent=2))
     else:
         lines = ["# Code-to-Documentation Dependency Graph", ""]
         lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -431,7 +431,7 @@ def _format_dependency_report(dependencies: Dict[str, List[str]], reverse_index:
             if len(orphaned_docs) > 10:
                 lines.append(f"  ... and {len(orphaned_docs) - 10} more")
 
-        return "\n".join(lines)
+        return enforce_response_limit("\n".join(lines))
 
 
 async def track_dependencies(params: TrackDependenciesInput) -> str:
@@ -469,17 +469,17 @@ async def track_dependencies(params: TrackDependenciesInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Find docs directory (use provided path or auto-detect)
         if params.docs_path:
             docs_path = project_path / params.docs_path
             if not docs_path.exists():
-                return f"Error: Documentation directory not found at {docs_path}"
+                return enforce_response_limit(f"Error: Documentation directory not found at {docs_path}")
         else:
             docs_path = find_docs_directory(project_path)
             if not docs_path:
-                return "Error: Could not find documentation directory. Specify docs_path parameter."
+                return enforce_response_limit("Error: Could not find documentation directory. Specify docs_path parameter.")
 
         # Find all markdown files
         markdown_files = _find_markdown_files(docs_path, project_path)
@@ -513,7 +513,7 @@ async def track_dependencies(params: TrackDependenciesInput) -> str:
         # Save to memory
         _save_dependencies_to_memory(project_path, dependencies, reverse_index, all_references, reference_index)
 
-        return _format_dependency_report(dependencies, reverse_index, len(all_references), all_references, params.response_format)
+        return enforce_response_limit(_format_dependency_report(dependencies, reverse_index, len(all_references), all_references, params.response_format))
 
     except Exception as e:
-        return handle_error(e, "track_dependencies")
+        return enforce_response_limit(handle_error(e, "track_dependencies"))

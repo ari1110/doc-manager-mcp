@@ -10,7 +10,9 @@ from src.utils import (
     detect_project_language,
     find_docs_directory,
     handle_error,
-    validate_path_boundary
+    validate_path_boundary,
+    safe_json_dumps,
+    enforce_response_limit
 )
 
 
@@ -420,3 +422,200 @@ class TestValidatePathBoundary:
             validate_path_boundary(symlink_path, project_root)
 
         assert "symlink" in str(exc_info.value).lower()
+
+
+class TestSafeJsonDumps:
+    """Tests for safe_json_dumps function (T055 - US4)."""
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-012
+    """
+    def test_serializes_valid_dict(self):
+        """Test that valid dictionaries are serialized normally."""
+        data = {"status": "success", "count": 42, "items": ["a", "b", "c"]}
+        result = safe_json_dumps(data, indent=2)
+
+        assert '"status": "success"' in result
+        assert '"count": 42' in result
+        assert result.startswith("{")
+        assert result.endswith("}")
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-012
+    """
+    def test_handles_unserializable_datetime(self):
+        """Test that datetime objects cause graceful error (T055 - FR-012)."""
+        from datetime import datetime
+
+        data = {"timestamp": datetime.now(), "message": "test"}
+
+        result = safe_json_dumps(data)
+
+        # Should return error JSON instead of crashing
+        assert '"status": "error"' in result
+        assert '"message": "JSON serialization error"' in result
+        assert "not JSON serializable" in result or "Object of type" in result
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-012
+    """
+    def test_handles_unserializable_path(self):
+        """Test that Path objects cause graceful error (FR-012)."""
+        from pathlib import Path
+
+        data = {"path": Path("/tmp/test"), "status": "ok"}
+
+        result = safe_json_dumps(data)
+
+        # Should return error JSON
+        assert '"status": "error"' in result
+        assert '"message": "JSON serialization error"' in result
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-012
+    """
+    def test_handles_custom_class(self):
+        """Test that custom class instances cause graceful error."""
+        class CustomClass:
+            def __init__(self):
+                self.value = 42
+
+        data = {"custom": CustomClass(), "message": "test"}
+
+        result = safe_json_dumps(data)
+
+        # Should return error JSON
+        assert '"status": "error"' in result
+        assert "JSON serialization error" in result
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-012
+    """
+    def test_preserves_indent_parameter(self):
+        """Test that indent parameter is passed through correctly."""
+        data = {"a": 1, "b": 2}
+
+        result_no_indent = safe_json_dumps(data)
+        result_with_indent = safe_json_dumps(data, indent=2)
+
+        # Indented version should have newlines
+        assert "\n" in result_with_indent
+        assert len(result_with_indent) > len(result_no_indent)
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-012
+    """
+    def test_handles_nested_unserializable(self):
+        """Test handling of unserializable objects nested in data structure."""
+        from datetime import datetime
+
+        data = {
+            "status": "ok",
+            "nested": {
+                "timestamp": datetime.now(),
+                "count": 5
+            }
+        }
+
+        result = safe_json_dumps(data)
+
+        # Should detect error in nested structure
+        assert '"status": "error"' in result
+
+
+class TestEnforceResponseLimit:
+    """Tests for enforce_response_limit function (T055 - US4)."""
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-010
+    """
+    def test_short_response_unchanged(self):
+        """Test that responses under limit are returned unchanged."""
+        short_response = "This is a short response"
+        result = enforce_response_limit(short_response)
+
+        assert result == short_response
+        assert "truncated" not in result.lower()
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-010
+    """
+    def test_long_response_truncated(self):
+        """Test that responses over 25K are truncated."""
+        # Create response longer than 25K chars
+        long_response = "A" * 30000
+
+        result = enforce_response_limit(long_response)
+
+        assert len(result) <= 25000
+        assert "truncated" in result.lower()
+        assert "25,000 character limit" in result
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-010
+    """
+    def test_truncation_includes_helpful_tip(self):
+        """Test that truncated responses include helpful tip."""
+        long_response = "X" * 26000
+
+        result = enforce_response_limit(long_response)
+
+        assert "Tip:" in result or "reduce output" in result.lower()
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-010
+    """
+    def test_custom_limit_parameter(self):
+        """Test that custom limit parameter works."""
+        response = "A" * 1000
+
+        # Use smaller custom limit
+        result = enforce_response_limit(response, limit=500)
+
+        assert len(result) <= 500
+        assert "truncated" in result.lower()
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US4
+    @functionalReq FR-010
+    """
+    def test_exactly_at_limit_not_truncated(self):
+        """Test that response exactly at limit is not truncated."""
+        response = "B" * 25000
+
+        result = enforce_response_limit(response)
+
+        assert result == response
+        assert "truncated" not in result.lower()

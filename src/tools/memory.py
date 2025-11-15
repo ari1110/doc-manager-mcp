@@ -14,7 +14,9 @@ from ..utils import (
     handle_error,
     load_config,
     matches_exclude_pattern,
-    validate_path_boundary
+    validate_path_boundary,
+    enforce_response_limit,
+    safe_json_dumps
 )
 
 async def initialize_memory(params: InitializeMemoryInput) -> str:
@@ -44,7 +46,7 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         memory_dir = project_path / ".doc-manager"
 
@@ -175,7 +177,7 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
+            return enforce_response_limit(safe_json_dumps({
                 "status": "success",
                 "message": "Memory system initialized successfully",
                 "baseline_path": str(baseline_path),
@@ -188,9 +190,9 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
                     "git_branch": git_branch
                 },
                 "files_tracked": file_count
-            }, indent=2)
+            }, indent=2))
         else:
-            return f"""✓ Memory system initialized successfully
+            return enforce_response_limit(f"""✓ Memory system initialized successfully
 
 **Memory System Summary:**
 - Repository: {repo_name}
@@ -208,7 +210,7 @@ Next steps:
 1. Customize `doc-conventions.md` to match your project's standards
 2. Run `docmgr_bootstrap` or `docmgr_migrate` to set up documentation
 3. Run `docmgr_sync` to keep docs in sync with code changes
-"""
+""")
 
     except Exception as e:
-        return handle_error(e, "initialize_memory")
+        return enforce_response_limit(handle_error(e, "initialize_memory"))

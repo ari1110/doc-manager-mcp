@@ -7,7 +7,7 @@ from datetime import datetime
 
 from ..models import BootstrapInput, MigrateInput, SyncInput
 from ..constants import ResponseFormat, DocumentationPlatform
-from ..utils import handle_error, detect_project_language
+from ..utils import handle_error, detect_project_language, enforce_response_limit, safe_json_dumps
 from .platform import detect_platform
 from .config import initialize_config
 from .memory import initialize_memory
@@ -48,12 +48,12 @@ async def bootstrap(params: BootstrapInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Check if docs already exist
         docs_path = project_path / params.docs_path
         if docs_path.exists():
-            return f"Error: Documentation directory already exists at {docs_path}. Use migrate workflow to restructure existing docs."
+            return enforce_response_limit(f"Error: Documentation directory already exists at {docs_path}. Use migrate workflow to restructure existing docs.")
 
         lines = ["# Documentation Bootstrap Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -90,7 +90,7 @@ async def bootstrap(params: BootstrapInput) -> str:
         ))
 
         if "Error" in config_result:
-            return f"Bootstrap failed at configuration step:\n{config_result}"
+            return enforce_response_limit(f"Bootstrap failed at configuration step:\n{config_result}")
 
         lines.append("✓ Created `.doc-manager.yml` configuration")
         lines.append("")
@@ -165,7 +165,7 @@ async def bootstrap(params: BootstrapInput) -> str:
         ))
 
         if "Error" in memory_result:
-            return f"Bootstrap failed at memory initialization:\n{memory_result}"
+            return enforce_response_limit(f"Bootstrap failed at memory initialization:\n{memory_result}")
 
         lines.append("✓ Initialized memory system with baseline checksums")
         lines.append("")
@@ -224,7 +224,7 @@ async def bootstrap(params: BootstrapInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
+            return enforce_response_limit(safe_json_dumps({
                 "status": "success",
                 "message": "Documentation bootstrapped successfully",
                 "project": project_path.name,
@@ -240,12 +240,12 @@ async def bootstrap(params: BootstrapInput) -> str:
                 },
                 "created_files": created_files,
                 "quality_score": overall_score
-            }, indent=2)
+            }, indent=2))
         else:
-            return "\n".join(lines)
+            return enforce_response_limit("\n".join(lines))
 
     except Exception as e:
-        return handle_error(e, "bootstrap")
+        return enforce_response_limit(handle_error(e, "bootstrap"))
 
 
 def _create_readme_template(project_path: Path) -> str:
@@ -521,17 +521,17 @@ async def migrate(params: MigrateInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Validate existing docs path
         existing_docs = project_path / params.source_path
         if not existing_docs.exists():
-            return f"Error: Existing documentation path does not exist: {existing_docs}"
+            return enforce_response_limit(f"Error: Existing documentation path does not exist: {existing_docs}")
 
         # Validate new docs path
         new_docs = project_path / params.target_path
         if new_docs.exists():
-            return f"Error: New documentation path already exists: {new_docs}. Please choose a different path or remove the existing directory."
+            return enforce_response_limit(f"Error: New documentation path already exists: {new_docs}. Please choose a different path or remove the existing directory.")
 
         lines = ["# Documentation Migration Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -601,7 +601,7 @@ async def migrate(params: MigrateInput) -> str:
                         "method": "copy"
                     })
         except Exception as e:
-            return f"Error copying documentation: {e}"
+            return enforce_response_limit(f"Error copying documentation: {e}")
 
         lines.append(f"✓ Migrated {len(moved_files)} documentation files")
         lines.append("")
@@ -702,7 +702,7 @@ async def migrate(params: MigrateInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
+            return enforce_response_limit(safe_json_dumps({
                 "status": "success",
                 "message": "Documentation migrated successfully",
                 "source_path": params.source_path,
@@ -718,12 +718,12 @@ async def migrate(params: MigrateInput) -> str:
                     "quality_check": "completed"
                 },
                 "migrated_files": moved_files
-            }, indent=2)
+            }, indent=2))
         else:
-            return "\n".join(lines)
+            return enforce_response_limit("\n".join(lines))
 
     except Exception as e:
-        return handle_error(e, "migrate")
+        return enforce_response_limit(handle_error(e, "migrate"))
 
 
 async def sync(params: SyncInput) -> str:
@@ -760,7 +760,7 @@ async def sync(params: SyncInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         lines = ["# Documentation Sync Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -775,7 +775,7 @@ async def sync(params: SyncInput) -> str:
         # Check if baseline exists
         baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
         if not baseline_path.exists():
-            return "Error: No baseline found. Please run docmgr_initialize_memory first to establish a baseline for change detection."
+            return enforce_response_limit("Error: No baseline found. Please run docmgr_initialize_memory first to establish a baseline for change detection.")
 
         from ..models import MapChangesInput
         changes_result = await map_changes(MapChangesInput(
@@ -790,18 +790,18 @@ async def sync(params: SyncInput) -> str:
 
         if not changes_detected:
             if params.response_format == ResponseFormat.JSON:
-                return json.dumps({
+                return enforce_response_limit(safe_json_dumps({
                     "status": "success",
                     "message": "No changes detected",
                     "changes": 0,
                     "affected_docs": 0,
                     "recommendations": []
-                }, indent=2)
+                }, indent=2))
             else:
                 lines.append("✓ No code changes detected since last baseline")
                 lines.append("")
                 lines.append("**Status:** Documentation is up to date!")
-                return "\n".join(lines)
+                return enforce_response_limit("\n".join(lines))
 
         lines.append(f"⚠️  Detected {total_changes} code changes")
         lines.append("")
@@ -982,7 +982,7 @@ async def sync(params: SyncInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
+            return enforce_response_limit(safe_json_dumps({
                 "status": "success",
                 "message": "Sync analysis completed",
                 "changes": total_changes,
@@ -990,9 +990,9 @@ async def sync(params: SyncInput) -> str:
                 "recommendations": [doc["file"] for doc in affected_docs[:10]],
                 "validation_issues": total_issues if 'total_issues' in locals() else None,
                 "quality_score": overall_score if 'overall_score' in locals() else None
-            }, indent=2)
+            }, indent=2))
         else:
-            return "\n".join(lines)
+            return enforce_response_limit("\n".join(lines))
 
     except Exception as e:
-        return handle_error(e, "sync")
+        return enforce_response_limit(handle_error(e, "sync"))

@@ -7,7 +7,7 @@ from datetime import datetime
 
 from ..models import MapChangesInput
 from ..constants import ResponseFormat, ChangeDetectionMode
-from ..utils import calculate_checksum, run_git_command, handle_error, validate_path_boundary
+from ..utils import calculate_checksum, run_git_command, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps
 
 
 def _load_baseline(project_path: Path) -> Optional[Dict[str, Any]]:
@@ -282,7 +282,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
                            response_format: ResponseFormat, baseline_info: Optional[Dict] = None) -> str:
     """Format change mapping report."""
     if response_format == ResponseFormat.JSON:
-        return json.dumps({
+        return enforce_response_limit(safe_json_dumps({
             "analyzed_at": datetime.now().isoformat(),
             "baseline_commit": baseline_info.get("git_commit") if baseline_info else None,
             "baseline_created": baseline_info.get("timestamp") if baseline_info else None,
@@ -290,7 +290,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
             "total_changes": len(changed_files),
             "changed_files": changed_files,
             "affected_documentation": affected_docs
-        }, indent=2)
+        }, indent=2))
     else:
         lines = ["# Code Change → Documentation Mapping Report", ""]
         lines.append(f"**Analyzed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -305,7 +305,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
 
         if not changed_files:
             lines.append("✓ No changes detected since baseline.")
-            return "\n".join(lines)
+            return enforce_response_limit("\n".join(lines))
 
         # Summary
         lines.append(f"**Total Changes:** {len(changed_files)}")
@@ -389,7 +389,7 @@ def _format_changes_report(changed_files: List[Dict[str, str]], affected_docs: L
                     lines.append(f"  ... and {len(files_in_category) - 10} more")
                 lines.append("")
 
-        return "\n".join(lines)
+        return enforce_response_limit("\n".join(lines))
 
 
 async def map_changes(params: MapChangesInput) -> str:
@@ -427,7 +427,7 @@ async def map_changes(params: MapChangesInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         changed_files = []
         baseline_info = None
@@ -441,7 +441,7 @@ async def map_changes(params: MapChangesInput) -> str:
             # Use checksum comparison from memory (default: CHECKSUM mode)
             baseline = _load_baseline(project_path)
             if not baseline:
-                return f"Error: No baseline found at {project_path}/.doc-manager/memory/repo-baseline.json. Run docmgr_initialize_memory first or use mode='git_diff' with since_commit parameter."
+                return enforce_response_limit(f"Error: No baseline found at {project_path}/.doc-manager/memory/repo-baseline.json. Run docmgr_initialize_memory first or use mode='git_diff' with since_commit parameter.")
 
             changed_files = _get_changed_files_from_checksums(project_path, baseline)
             baseline_info = baseline
@@ -449,7 +449,7 @@ async def map_changes(params: MapChangesInput) -> str:
         # Map changes to affected docs
         affected_docs = _map_to_affected_docs(changed_files, project_path)
 
-        return _format_changes_report(changed_files, affected_docs, params.response_format, baseline_info)
+        return enforce_response_limit(_format_changes_report(changed_files, affected_docs, params.response_format, baseline_info))
 
     except Exception as e:
-        return handle_error(e, "map_changes")
+        return enforce_response_limit(handle_error(e, "map_changes"))

@@ -1,14 +1,13 @@
 """Quality assessment tools for doc-manager."""
 
 from pathlib import Path
-import json
 import re
 from typing import List, Dict, Any, Set
 from datetime import datetime
 
 from ..models import AssessQualityInput
 from ..constants import ResponseFormat, QualityCriterion
-from ..utils import find_docs_directory, handle_error
+from ..utils import find_docs_directory, handle_error, enforce_response_limit, safe_json_dumps
 
 
 def _find_markdown_files(docs_path: Path) -> List[Path]:
@@ -477,11 +476,11 @@ def _assess_structure(docs_path: Path, markdown_files: List[Path]) -> Dict[str, 
 def _format_quality_report(results: List[Dict[str, Any]], response_format: ResponseFormat) -> str:
     """Format quality assessment report."""
     if response_format == ResponseFormat.JSON:
-        return json.dumps({
+        return enforce_response_limit(safe_json_dumps({
             "assessed_at": datetime.now().isoformat(),
             "overall_score": _calculate_overall_score(results),
             "criteria": results
-        }, indent=2)
+        }, indent=2))
     else:
         lines = ["# Documentation Quality Assessment Report", ""]
         lines.append(f"**Assessed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -523,7 +522,7 @@ def _format_quality_report(results: List[Dict[str, Any]], response_format: Respo
                 lines.append(f"*Note: {result['note']}*")
                 lines.append("")
 
-        return "\n".join(lines)
+        return enforce_response_limit("\n".join(lines))
 
 
 def _calculate_overall_score(results: List[Dict[str, Any]]) -> str:
@@ -577,25 +576,25 @@ async def assess_quality(params: AssessQualityInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Determine docs directory
         if params.docs_path:
             docs_path = project_path / params.docs_path
             if not docs_path.exists():
-                return f"Error: Documentation path does not exist: {docs_path}"
+                return enforce_response_limit(f"Error: Documentation path does not exist: {docs_path}")
         else:
             docs_path = find_docs_directory(project_path)
             if not docs_path:
-                return "Error: Could not find documentation directory. Please specify docs_path parameter."
+                return enforce_response_limit("Error: Could not find documentation directory. Please specify docs_path parameter.")
 
         if not docs_path.is_dir():
-            return f"Error: Documentation path is not a directory: {docs_path}"
+            return enforce_response_limit(f"Error: Documentation path is not a directory: {docs_path}")
 
         # Find all markdown files
         markdown_files = _find_markdown_files(docs_path)
         if not markdown_files:
-            return f"Error: No markdown files found in {docs_path}"
+            return enforce_response_limit(f"Error: No markdown files found in {docs_path}")
 
         # Determine which criteria to assess
         criteria_to_assess = params.criteria or [
@@ -627,7 +626,7 @@ async def assess_quality(params: AssessQualityInput) -> str:
             elif criterion == QualityCriterion.STRUCTURE:
                 results.append(_assess_structure(docs_path, markdown_files))
 
-        return _format_quality_report(results, params.response_format)
+        return enforce_response_limit(_format_quality_report(results, params.response_format))
 
     except Exception as e:
-        return handle_error(e, "assess_quality")
+        return enforce_response_limit(handle_error(e, "assess_quality"))

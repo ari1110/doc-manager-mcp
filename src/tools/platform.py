@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 from ..models import DetectPlatformInput
 from ..constants import ResponseFormat
-from ..utils import detect_project_language, handle_error
+from ..utils import detect_project_language, handle_error, enforce_response_limit, safe_json_dumps
 
 
 def _check_root_configs(project_path: Path) -> List[Dict[str, Any]]:
@@ -235,7 +235,7 @@ async def detect_platform(params: DetectPlatformInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Multi-stage detection approach
         detected_platforms = []
@@ -286,7 +286,7 @@ async def detect_platform(params: DetectPlatformInput) -> str:
                 "rationale": rationale,
                 "project_language": language
             }
-            return json.dumps(result, indent=2)
+            return enforce_response_limit(safe_json_dumps(result, indent=2))
         else:
             lines = ["# Documentation Platform Detection", ""]
 
@@ -308,7 +308,7 @@ async def detect_platform(params: DetectPlatformInput) -> str:
             lines.append(f"### Project Context:")
             lines.append(f"- Primary Language: {language}")
 
-            return "\n".join(lines)
+            return enforce_response_limit("\n".join(lines))
 
     except Exception as e:
-        return handle_error(e, "detect_platform")
+        return enforce_response_limit(handle_error(e, "detect_platform"))

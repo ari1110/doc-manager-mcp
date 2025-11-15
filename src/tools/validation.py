@@ -2,13 +2,12 @@
 
 from pathlib import Path
 import re
-import json
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 
 from ..models import ValidateDocsInput
 from ..constants import ResponseFormat
-from ..utils import find_docs_directory, handle_error
+from ..utils import find_docs_directory, handle_error, enforce_response_limit, safe_json_dumps
 
 
 def _find_markdown_files(docs_path: Path) -> List[Path]:
@@ -309,12 +308,12 @@ def _validate_code_snippets(docs_path: Path) -> List[Dict[str, Any]]:
 def _format_validation_report(issues: List[Dict[str, Any]], response_format: ResponseFormat) -> str:
     """Format validation report as JSON or Markdown."""
     if response_format == ResponseFormat.JSON:
-        return json.dumps({
+        return enforce_response_limit(safe_json_dumps({
             "total_issues": len(issues),
             "errors": len([i for i in issues if i['severity'] == 'error']),
             "warnings": len([i for i in issues if i['severity'] == 'warning']),
             "issues": issues
-        }, indent=2)
+        }, indent=2))
     else:
         lines = ["# Documentation Validation Report", ""]
 
@@ -330,7 +329,7 @@ def _format_validation_report(issues: List[Dict[str, Any]], response_format: Res
             lines.append("✓ No issues found! Documentation is valid.")
             lines.append("")
             lines.append("**Status:** Validation complete.")
-            return "\n".join(lines)
+            return enforce_response_limit("\n".join(lines))
 
         if errors:
             lines.append("## Errors")
@@ -350,7 +349,7 @@ def _format_validation_report(issues: List[Dict[str, Any]], response_format: Res
                 lines.append(f"**Message:** {issue['message']}")
                 lines.append("")
 
-        return "\n".join(lines)
+        return enforce_response_limit("\n".join(lines))
 
 
 async def validate_docs(params: ValidateDocsInput) -> str:
@@ -387,20 +386,20 @@ async def validate_docs(params: ValidateDocsInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Determine docs directory
         if params.docs_path:
             docs_path = project_path / params.docs_path
             if not docs_path.exists():
-                return f"Error: Documentation path does not exist: {docs_path}"
+                return enforce_response_limit(f"Error: Documentation path does not exist: {docs_path}")
         else:
             docs_path = find_docs_directory(project_path)
             if not docs_path:
-                return "Error: Could not find documentation directory. Please specify docs_path parameter."
+                return enforce_response_limit("Error: Could not find documentation directory. Please specify docs_path parameter.")
 
         if not docs_path.is_dir():
-            return f"Error: Documentation path is not a directory: {docs_path}"
+            return enforce_response_limit(f"Error: Documentation path is not a directory: {docs_path}")
 
         # Run validation checks
         all_issues = []
@@ -417,7 +416,7 @@ async def validate_docs(params: ValidateDocsInput) -> str:
             snippet_issues = _validate_code_snippets(docs_path)
             all_issues.extend(snippet_issues)
 
-        return _format_validation_report(all_issues, params.response_format)
+        return enforce_response_limit(_format_validation_report(all_issues, params.response_format))
 
     except Exception as e:
-        return handle_error(e, "validate_docs")
+        return enforce_response_limit(handle_error(e, "validate_docs"))
