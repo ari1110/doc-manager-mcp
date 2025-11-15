@@ -217,13 +217,13 @@ function test() {
         assert "missing.md" in result
 
     @pytest.mark.skip(reason="HTML file validation not yet implemented - only markdown files are validated")
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_validate_html_links(self, tmp_path):
-        """Test validation of HTML anchor links."""
+        """Test validation of HTML anchor links.
+
+        @spec 001
+        @testType integration
+        @mockDependent
+        """
         docs_dir = tmp_path / "docs"
         docs_dir.mkdir()
 
