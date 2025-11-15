@@ -10,7 +10,9 @@
       "Skill(speckit)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(python -c:*)"
+      "Bash(python -c:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
