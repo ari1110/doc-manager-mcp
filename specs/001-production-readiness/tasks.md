@@ -29,9 +29,9 @@ Single project structure - all paths relative to repository root:
 
 **Purpose**: Project initialization and verification
 
-- [ ] T001 Verify Python 3.10+ environment and dependencies (FastMCP, Pydantic 2.0+, PyYAML)
-- [ ] T002 [P] Review existing test baseline (125 tests: 18% unit, 75% integration, 6% e2e)
-- [ ] T003 [P] Verify project structure matches plan.md expectations
+- [X] T001 Verify Python 3.10+ environment and dependencies (FastMCP, Pydantic 2.0+, PyYAML)
+- [X] T002 [P] Review existing test baseline (125 tests: 18% unit, 75% integration, 6% e2e)
+- [X] T003 [P] Verify project structure matches plan.md expectations
 
 ---
 
@@ -41,11 +41,11 @@ Single project structure - all paths relative to repository root:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create file locking utility in src/utils.py with cross-platform support (fcntl/msvcrt)
-- [ ] T005 [P] Create error formatting utility in src/utils.py for stderr logging
-- [ ] T006 [P] Create path validation utility in src/utils.py for boundary checking
-- [ ] T007 [P] Create resource limit enforcement utilities in src/utils.py
-- [ ] T008 Add response size enforcement wrapper in src/utils.py (25K char limit)
+- [X] T004 Create file locking utility in src/utils.py with cross-platform support (fcntl/msvcrt)
+- [X] T005 [P] Create error formatting utility in src/utils.py for stderr logging
+- [X] T006 [P] Create path validation utility in src/utils.py for boundary checking
+- [X] T007 [P] Create resource limit enforcement utilities in src/utils.py
+- [X] T008 Add response size enforcement wrapper in src/utils.py (25K char limit)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
