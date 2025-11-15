@@ -8,14 +8,29 @@ from datetime import datetime
 
 from ..models import TrackDependenciesInput
 from ..constants import ResponseFormat
-from ..utils import find_docs_directory, handle_error
+from ..utils import find_docs_directory, handle_error, validate_path_boundary
 
 
-def _find_markdown_files(docs_path: Path) -> List[Path]:
-    """Find all markdown files in documentation directory."""
+def _find_markdown_files(docs_path: Path, project_path: Path) -> List[Path]:
+    """Find all markdown files in documentation directory.
+
+    Args:
+        docs_path: Documentation directory path
+        project_path: Project root path (for boundary validation)
+
+    Returns:
+        List of validated markdown file paths
+    """
     markdown_files = []
     for pattern in ["**/*.md", "**/*.markdown"]:
-        markdown_files.extend(docs_path.glob(pattern))
+        for file_path in docs_path.glob(pattern):
+            # Validate path boundary and check for malicious symlinks (T030 - FR-028)
+            try:
+                validated_path = validate_path_boundary(file_path, project_path)
+                markdown_files.append(file_path)
+            except ValueError:
+                # Skip files that escape project boundary or malicious symlinks
+                continue
     return sorted(markdown_files)
 
 
@@ -129,6 +144,13 @@ def _find_source_files(project_path: Path, docs_path: Path) -> List[Path]:
     for ext in extensions:
         pattern = f"**/*{ext}"
         for file_path in project_path.glob(pattern):
+            # Validate path boundary and check for malicious symlinks (T030 - FR-028)
+            try:
+                validated_path = validate_path_boundary(file_path, project_path)
+            except ValueError:
+                # Skip files that escape project boundary or malicious symlinks
+                continue
+
             # Exclude docs, tests, vendor, node_modules, etc.
             path_str = str(file_path)
             if any(x in path_str for x in ['node_modules', 'vendor', 'venv', '.git', 'dist', 'build']):
@@ -460,7 +482,7 @@ async def track_dependencies(params: TrackDependenciesInput) -> str:
                 return "Error: Could not find documentation directory. Specify docs_path parameter."
 
         # Find all markdown files
-        markdown_files = _find_markdown_files(docs_path)
+        markdown_files = _find_markdown_files(docs_path, project_path)
         all_references = []
 
         if markdown_files:

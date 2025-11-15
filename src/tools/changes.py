@@ -7,7 +7,7 @@ from datetime import datetime
 
 from ..models import MapChangesInput
 from ..constants import ResponseFormat, ChangeDetectionMode
-from ..utils import calculate_checksum, run_git_command, handle_error
+from ..utils import calculate_checksum, run_git_command, handle_error, validate_path_boundary
 
 
 def _load_baseline(project_path: Path) -> Optional[Dict[str, Any]]:
@@ -31,6 +31,13 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: Dict[str, An
     # Check existing files for changes
     for file_path in project_path.rglob("*"):
         if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):
+            # Validate path boundary and check for malicious symlinks (T029 - FR-028)
+            try:
+                validated_path = validate_path_boundary(file_path, project_path)
+            except ValueError:
+                # Skip files that escape project boundary or malicious symlinks
+                continue
+
             relative_path = str(file_path.relative_to(project_path)).replace('\\', '/')
 
             # Skip files in .doc-manager directory

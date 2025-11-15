@@ -106,21 +106,21 @@ Single project structure - all paths relative to repository root:
 
 ### Implementation for User Story 1
 
-- [ ] T024 [P] [US1] Add project_path field validator to InitializeConfigInput in src/models.py (FR-001, FR-006)
-- [ ] T025 [P] [US1] Add docs_path field validator to InitializeConfigInput in src/models.py (FR-001)
-- [ ] T026 [US1] Implement path boundary check after resolution in src/tools/validation.py (FR-025)
-- [ ] T027 [US1] Add symlink detection before resolution in src/tools/validation.py (FR-003, FR-028)
-- [ ] T028 [P] [US1] Add symlink checks to file traversal in src/tools/memory.py (FR-028)
-- [ ] T029 [P] [US1] Add symlink checks to file traversal in src/tools/changes.py (FR-028)
-- [ ] T030 [P] [US1] Add symlink checks to file traversal in src/tools/dependencies.py (FR-028)
+- [X] T024 [P] [US1] Add project_path field validator to InitializeConfigInput in src/models.py (FR-001, FR-006)
+- [X] T025 [P] [US1] Add docs_path field validator to InitializeConfigInput in src/models.py (FR-001)
+- [X] T026 [US1] Implement path boundary check after resolution in src/tools/validation.py (FR-025)
+- [X] T027 [US1] Add symlink detection before resolution in src/tools/validation.py (FR-003, FR-028)
+- [X] T028 [P] [US1] Add symlink checks to file traversal in src/tools/memory.py (FR-028)
+- [X] T029 [P] [US1] Add symlink checks to file traversal in src/tools/changes.py (FR-028)
+- [X] T030 [P] [US1] Add symlink checks to file traversal in src/tools/dependencies.py (FR-028)
 
 ### Tests for User Story 1
 
-- [ ] T031 [P] [US1] Unit test for path traversal validator in tests/unit/test_validators.py
-- [ ] T032 [P] [US1] Unit test for path boundary utility in tests/unit/test_utils.py
-- [ ] T033 [P] [US1] Integration test with ../../../etc/passwd in link validation in tests/integration/test_validation.py
-- [ ] T034 [P] [US1] Integration test with symlink escaping project boundary in tests/integration/test_validation.py
-- [ ] T035 [US1] E2E test creating malicious symlinks in test project in tests/test_e2e_security.py
+- [X] T031 [P] [US1] Unit test for path traversal validator in tests/unit/test_validators.py
+- [X] T032 [P] [US1] Unit test for path boundary utility in tests/unit/test_utils.py
+- [X] T033 [P] [US1] Integration test with ../../../etc/passwd in link validation in tests/integration/test_validation.py
+- [X] T034 [P] [US1] Integration test with symlink escaping project boundary in tests/integration/test_validation.py
+- [X] T035 [US1] E2E test creating malicious symlinks in test project in tests/test_e2e_security.py
 
 **Checkpoint**: 100% of path traversal attacks rejected (SC-001, SC-005)
 

@@ -13,7 +13,8 @@ from ..utils import (
     calculate_checksum,
     handle_error,
     load_config,
-    matches_exclude_pattern
+    matches_exclude_pattern,
+    validate_path_boundary
 )
 
 async def initialize_memory(params: InitializeMemoryInput) -> str:
@@ -73,6 +74,13 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
         file_count = 0
         for file_path in project_path.rglob("*"):
             if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):
+                # Validate path boundary and check for malicious symlinks (T028 - FR-028)
+                try:
+                    validated_path = validate_path_boundary(file_path, project_path)
+                except ValueError:
+                    # Skip files that escape project boundary or malicious symlinks
+                    continue
+
                 relative_path = file_path.relative_to(project_path)
                 relative_path_str = str(relative_path).replace('\\', '/')
 

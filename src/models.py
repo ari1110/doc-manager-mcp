@@ -3,8 +3,89 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 import re
+from pathlib import Path
 
 from .constants import ResponseFormat, DocumentationPlatform, QualityCriterion, ChangeDetectionMode
+
+
+def _validate_project_path(v: str) -> str:
+    """Shared validator for project_path fields (FR-001, FR-006).
+
+    This function is reused across all input models to ensure consistent
+    path validation and prevent path traversal attacks.
+
+    Args:
+        v: Project path string
+
+    Returns:
+        Validated absolute path string
+
+    Raises:
+        ValueError: If path contains traversal sequences, doesn't exist, or isn't a directory
+    """
+    if not v:
+        raise ValueError("Project path cannot be empty")
+
+    # Check for path traversal sequences
+    if '..' in v:
+        raise ValueError(
+            f"Invalid project path: contains path traversal sequence '..'. "
+            f"Use absolute paths only to prevent directory traversal attacks."
+        )
+
+    # Convert to Path and verify it's absolute
+    path = Path(v)
+    if not path.is_absolute():
+        raise ValueError(
+            f"Invalid project path: must be absolute path (e.g., '/home/user/project' or 'C:\\\\Users\\\\user\\\\project'). "
+            f"Got relative path: '{v}'"
+        )
+
+    # Verify path exists
+    if not path.exists():
+        raise ValueError(f"Project path does not exist: {v}")
+
+    # Verify it's a directory
+    if not path.is_dir():
+        raise ValueError(f"Project path is not a directory: {v}")
+
+    return str(path.resolve())
+
+
+def _validate_relative_path(v: Optional[str], field_name: str = "path") -> Optional[str]:
+    """Shared validator for relative path fields (FR-001).
+
+    Args:
+        v: Relative path string or None
+        field_name: Name of the field for error messages
+
+    Returns:
+        Validated relative path string or None
+
+    Raises:
+        ValueError: If path contains traversal sequences or is absolute
+    """
+    if v is None:
+        return v
+
+    # Check for path traversal sequences
+    if '..' in v:
+        raise ValueError(
+            f"Invalid {field_name}: contains path traversal sequence '..'. "
+            f"Use relative paths within project only"
+        )
+
+    # Verify it's not an absolute path
+    path = Path(v)
+    if path.is_absolute():
+        raise ValueError(
+            f"Invalid {field_name}: must be relative to project root, not absolute. "
+            f"Got: '{v}'"
+        )
+
+    # Normalize path separators
+    return str(path)
+
 
 class InitializeConfigInput(BaseModel):
     """Input for initializing .doc-manager.yml configuration."""
@@ -43,6 +124,18 @@ class InitializeConfigInput(BaseModel):
         description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
     )
 
+    @field_validator('project_path')
+    @classmethod
+    def validate_project_path(cls, v: str) -> str:
+        """Validate project path using shared validator (FR-001, FR-006)."""
+        return _validate_project_path(v)
+
+    @field_validator('docs_path')
+    @classmethod
+    def validate_docs_path(cls, v: Optional[str]) -> Optional[str]:
+        """Validate docs path using shared validator (FR-001)."""
+        return _validate_relative_path(v, field_name="docs_path")
+
 class InitializeMemoryInput(BaseModel):
     """Input for initializing memory system."""
     model_config = ConfigDict(
@@ -60,6 +153,12 @@ class InitializeMemoryInput(BaseModel):
         default=ResponseFormat.MARKDOWN,
         description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
     )
+
+    @field_validator('project_path')
+    @classmethod
+    def validate_project_path(cls, v: str) -> str:
+        """Validate project path using shared validator (FR-001, FR-006)."""
+        return _validate_project_path(v)
 
 class DetectPlatformInput(BaseModel):
     """Input for platform detection."""

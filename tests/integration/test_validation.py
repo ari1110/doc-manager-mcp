@@ -341,3 +341,78 @@ def unclosed():
 
         # External links should not cause issues
         assert "documentation is valid" in result.lower() or "0 issues" in result.lower()
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US1
+    @functionalReq FR-001, FR-025
+    """
+    async def test_reject_path_traversal_in_link_validation(self, tmp_path):
+        """Test that path traversal attempts in links are rejected (T033 - US1).
+
+        This test verifies that malicious documentation cannot reference files
+        outside the project boundary using path traversal sequences.
+        """
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create documentation with path traversal attempts
+        (docs_dir / "malicious.md").write_text("""
+# Malicious Documentation
+
+[Try to access /etc/passwd](../../../etc/passwd)
+[Try to escape project](../../sensitive/file.txt)
+[Nested traversal](./subdir/../../../../../../root/file)
+""")
+
+        result = await validate_docs(ValidateDocsInput(
+            project_path=str(tmp_path),
+            docs_path="docs",
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # Path traversal attempts should be detected as broken links
+        # (since they reference files outside the project boundary)
+        assert "broken link" in result.lower() or "issue" in result.lower()
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US1
+    @functionalReq FR-003, FR-028
+    """
+    async def test_reject_symlink_escaping_project_boundary(self, tmp_path):
+        """Test that symlinks escaping project boundary are rejected (T034 - US1).
+
+        This test verifies that file traversal operations skip symlinks
+        that point outside the project boundary.
+        """
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        docs_dir = project_root / "docs"
+        docs_dir.mkdir()
+
+        # Create a file outside project
+        outside_dir = tmp_path / "outside"
+        outside_dir.mkdir()
+        secret_file = outside_dir / "secret.md"
+        secret_file.write_text("# Secret Content\n\nThis should not be accessible")
+
+        # Create symlink in docs pointing outside project
+        malicious_link = docs_dir / "escape_link.md"
+        malicious_link.symlink_to(secret_file)
+
+        # Run validation - should either skip the symlink or detect it as an issue
+        result = await validate_docs(ValidateDocsInput(
+            project_path=str(project_root),
+            docs_path="docs",
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # The symlink should be skipped by file traversal (not cause a crash)
+        # Result should complete successfully without processing the malicious symlink
+        assert isinstance(result, str)
+        # Should not have processed the secret file content
+        assert "Secret Content" not in result

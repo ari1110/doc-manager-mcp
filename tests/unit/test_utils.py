@@ -9,7 +9,8 @@ from src.utils import (
     calculate_checksum,
     detect_project_language,
     find_docs_directory,
-    handle_error
+    handle_error,
+    validate_path_boundary
 )
 
 
@@ -287,3 +288,135 @@ class TestHandleError:
             result = handle_error(exc, "test")
             assert exc.__class__.__name__ in result
             assert str(exc) in result
+
+
+class TestValidatePathBoundary:
+    """Tests for validate_path_boundary function (T032 - US1).
+
+    @spec 001
+    @userStory US1
+    @functionalReq FR-001, FR-003, FR-025, FR-028
+    """
+
+    def test_path_within_boundary(self, tmp_path):
+        """Test that paths within project boundary are accepted (FR-025)."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        file_path = project_root / "file.txt"
+        file_path.write_text("content")
+
+        # Should not raise ValueError
+        result = validate_path_boundary(file_path, project_root)
+
+        assert result.is_absolute()
+        assert result.is_relative_to(project_root)
+
+    def test_reject_path_escaping_boundary(self, tmp_path):
+        """Test that paths escaping project boundary are rejected (FR-001, FR-025)."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        # Path outside project
+        outside_path = tmp_path / "outside" / "file.txt"
+        outside_path.parent.mkdir()
+        outside_path.write_text("content")
+
+        with pytest.raises(ValueError) as exc_info:
+            validate_path_boundary(outside_path, project_root)
+
+        assert "escapes project boundary" in str(exc_info.value).lower()
+
+    def test_reject_malicious_symlink(self, tmp_path):
+        """Test that symlinks escaping boundary are rejected (FR-003, FR-028)."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        # Create target outside project
+        outside_target = tmp_path / "outside" / "secret.txt"
+        outside_target.parent.mkdir()
+        outside_target.write_text("secret data")
+
+        # Create symlink inside project pointing outside
+        symlink_path = project_root / "link_to_secret"
+        symlink_path.symlink_to(outside_target)
+
+        with pytest.raises(ValueError) as exc_info:
+            validate_path_boundary(symlink_path, project_root)
+
+        error_msg = str(exc_info.value).lower()
+        assert "symlink" in error_msg and "escapes" in error_msg
+
+    def test_accept_safe_symlink(self, tmp_path):
+        """Test that symlinks within boundary are accepted (FR-028)."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        # Create target inside project
+        target_file = project_root / "target.txt"
+        target_file.write_text("content")
+
+        # Create symlink inside project pointing to another file inside project
+        symlink_path = project_root / "link"
+        symlink_path.symlink_to(target_file)
+
+        # Should not raise ValueError
+        result = validate_path_boundary(symlink_path, project_root)
+
+        assert result.is_absolute()
+        assert result.is_relative_to(project_root)
+
+    def test_nested_path_within_boundary(self, tmp_path):
+        """Test deeply nested paths within boundary are accepted."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        # Create deeply nested path
+        nested_path = project_root / "a" / "b" / "c" / "d" / "file.txt"
+        nested_path.parent.mkdir(parents=True)
+        nested_path.write_text("content")
+
+        result = validate_path_boundary(nested_path, project_root)
+
+        assert result.is_absolute()
+        assert result.is_relative_to(project_root)
+
+    def test_resolve_relative_path(self, tmp_path):
+        """Test that relative paths are resolved correctly."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        file_path = project_root / "file.txt"
+        file_path.write_text("content")
+
+        # Use a Path without calling resolve()
+        unresolved_path = Path(str(file_path))
+
+        result = validate_path_boundary(unresolved_path, project_root)
+
+        # Result should be absolute
+        assert result.is_absolute()
+        assert result == file_path.resolve()
+
+    def test_symlink_chain_escaping_boundary(self, tmp_path):
+        """Test that symlink chains escaping boundary are rejected."""
+        project_root = tmp_path / "project"
+        project_root.mkdir()
+
+        # Create target outside project
+        outside_target = tmp_path / "outside" / "secret.txt"
+        outside_target.parent.mkdir()
+        outside_target.write_text("secret")
+
+        # Create intermediate symlink outside project
+        intermediate_link = tmp_path / "outside" / "link1"
+        intermediate_link.symlink_to(outside_target)
+
+        # Create symlink inside project pointing to intermediate
+        symlink_path = project_root / "link2"
+        symlink_path.symlink_to(intermediate_link)
+
+        with pytest.raises(ValueError) as exc_info:
+            validate_path_boundary(symlink_path, project_root)
+
+        assert "symlink" in str(exc_info.value).lower()
