@@ -87,6 +87,82 @@ def _validate_relative_path(v: Optional[str], field_name: str = "path") -> Optio
     return str(path)
 
 
+def _validate_glob_pattern(pattern: str, field_name: str = "pattern") -> None:
+    """Validate glob pattern to prevent ReDoS and enforce length limits (FR-007, FR-008).
+
+    Args:
+        pattern: Glob pattern string
+        field_name: Name of the field for error messages
+
+    Raises:
+        ValueError: If pattern is dangerous or too long
+    """
+    # Check pattern length (FR-007)
+    MAX_PATTERN_LENGTH = 512
+    if len(pattern) > MAX_PATTERN_LENGTH:
+        raise ValueError(
+            f"Invalid {field_name}: pattern too long ({len(pattern)} chars). "
+            f"Maximum allowed: {MAX_PATTERN_LENGTH} characters"
+        )
+
+    # Check for ReDoS-vulnerable patterns (FR-008)
+    # Detect nested quantifiers like (a+)+ or (a*)*
+    redos_patterns = [
+        r'\([^)]*[+*][^)]*\)[+*{]',  # Nested quantifiers: (a+)+ or (a*)*
+        r'\([^)]*[+*{][^)]*\)[+*{]',  # Nested quantifiers with braces
+        r'(\*\*){2,}',  # Multiple consecutive ** (globstar abuse)
+    ]
+
+    for redos_pattern in redos_patterns:
+        if re.search(redos_pattern, pattern):
+            raise ValueError(
+                f"Invalid {field_name}: pattern contains potentially dangerous nested quantifiers. "
+                f"This could cause Regular Expression Denial of Service (ReDoS). "
+                f"Pattern: '{pattern}'"
+            )
+
+
+def _validate_pattern_list(
+    patterns: Optional[List[str]],
+    field_name: str = "patterns",
+    max_items: int = 50
+) -> Optional[List[str]]:
+    """Validate list of glob patterns (FR-006, FR-007, FR-008).
+
+    Args:
+        patterns: List of glob patterns or None
+        field_name: Name of the field for error messages
+        max_items: Maximum number of patterns allowed
+
+    Returns:
+        Validated pattern list or None
+
+    Raises:
+        ValueError: If list exceeds max items or contains invalid patterns
+    """
+    if patterns is None:
+        return None
+
+    # Check list length (FR-006)
+    if len(patterns) > max_items:
+        raise ValueError(
+            f"Invalid {field_name}: too many items ({len(patterns)}). "
+            f"Maximum allowed: {max_items}"
+        )
+
+    # Validate each pattern
+    for i, pattern in enumerate(patterns):
+        if not pattern or not isinstance(pattern, str):
+            raise ValueError(
+                f"Invalid {field_name}[{i}]: pattern must be non-empty string"
+            )
+
+        # Validate pattern safety and length
+        _validate_glob_pattern(pattern, f"{field_name}[{i}]")
+
+    return patterns
+
+
 class InitializeConfigInput(BaseModel):
     """Input for initializing .doc-manager.yml configuration."""
     model_config = ConfigDict(
@@ -135,6 +211,18 @@ class InitializeConfigInput(BaseModel):
     def validate_docs_path(cls, v: Optional[str]) -> Optional[str]:
         """Validate docs path using shared validator (FR-001)."""
         return _validate_relative_path(v, field_name="docs_path")
+
+    @field_validator('exclude_patterns')
+    @classmethod
+    def validate_exclude_patterns(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate exclude patterns (FR-006, FR-007, FR-008) (T036)."""
+        return _validate_pattern_list(v, field_name="exclude_patterns", max_items=50)
+
+    @field_validator('sources')
+    @classmethod
+    def validate_sources(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate source patterns (FR-006, FR-007, FR-008) (T037)."""
+        return _validate_pattern_list(v, field_name="sources", max_items=50)
 
 class InitializeMemoryInput(BaseModel):
     """Input for initializing memory system."""

@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-from src.models import BootstrapInput, MigrateInput, SyncInput
+from src.models import BootstrapInput, MigrateInput, SyncInput, InitializeConfigInput
 from src.constants import ResponseFormat, Platform
 from src.tools.workflows import bootstrap, migrate, sync
 
@@ -428,3 +428,115 @@ parser.add_argument('--verbose')
 
         # Should mention priorities
         assert "priority" in result.lower() or "high" in result.lower() or "medium" in result.lower()
+
+
+@pytest.mark.asyncio
+class TestParameterNameCorrectness:
+    """Test that workflow tool calls use correct parameter names (T046 - US5)."""
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US5
+    @functionalReq FR-014, FR-024
+    """
+    async def test_bootstrap_parameter_names(self, tmp_path):
+        """Test that bootstrap() uses correct parameter names matching BootstrapInput."""
+        # This test verifies parameter correctness by attempting a call
+        # If parameter names don't match model, Pydantic will raise ValidationError
+        result = await bootstrap(BootstrapInput(
+            project_path=str(tmp_path),
+            platform=Platform.MKDOCS,
+            docs_path="docs",
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # If we get a result (not an error), parameter names are correct
+        assert isinstance(result, str)
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US5
+    @functionalReq FR-014, FR-024
+    """
+    async def test_migrate_parameter_names(self, tmp_path):
+        """Test that migrate() uses correct parameter names matching MigrateInput."""
+        source = tmp_path / "source"
+        source.mkdir()
+        (source / "index.md").write_text("# Index")
+
+        result = await migrate(MigrateInput(
+            project_path=str(tmp_path),
+            source_path="source",
+            target_path="docs",
+            target_platform=Platform.MKDOCS,
+            preserve_history=True,
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # If we get a result, parameter names are correct
+        assert isinstance(result, str)
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US5
+    @functionalReq FR-014, FR-024
+    """
+    async def test_sync_parameter_names(self, tmp_path):
+        """Test that sync() uses correct parameter names matching SyncInput."""
+        from src.tools.memory import initialize_memory
+        from src.models import InitializeMemoryInput
+
+        await initialize_memory(InitializeMemoryInput(
+            project_path=str(tmp_path),
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        result = await sync(SyncInput(
+            project_path=str(tmp_path),
+            mode="reactive",
+            docs_path=None,
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # If we get a result, parameter names are correct
+        assert isinstance(result, str)
+
+    """
+    @spec 001
+    @testType integration
+    @userStory US5
+    @functionalReq FR-014, FR-024
+    """
+    async def test_all_input_models_accept_required_fields(self, tmp_path):
+        """Test that all input models accept their required fields without error."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        # Test each model with minimal required fields
+        models = [
+            InitializeConfigInput(
+                project_path=str(project_dir),
+                response_format=ResponseFormat.MARKDOWN
+            ),
+            BootstrapInput(
+                project_path=str(project_dir),
+                response_format=ResponseFormat.MARKDOWN
+            ),
+            MigrateInput(
+                project_path=str(project_dir),
+                source_path="source",
+                response_format=ResponseFormat.MARKDOWN
+            ),
+            SyncInput(
+                project_path=str(project_dir),
+                response_format=ResponseFormat.MARKDOWN
+            ),
+        ]
+
+        # All models should construct successfully
+        for model in models:
+            assert model.project_path == str(project_dir.resolve())
+            assert model.response_format == ResponseFormat.MARKDOWN
