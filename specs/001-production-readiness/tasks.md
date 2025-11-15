@@ -204,8 +204,8 @@ Single project structure - all paths relative to repository root:
 
 - [x] T069 [P] [US6] Unit test for error message sanitization in tests/unit/test_utils.py
 - [x] T070 [P] [US6] Integration test for file lock timeout behavior in tests/integration/test_utils.py
-- [ ] T071 [P] [US6] Integration test for concurrent file modification with locks in tests/integration/test_concurrency.py
-- [ ] T072 [US6] E2E test for error message content (no paths, stack traces) in tests/test_e2e.py
+- [x] T071 [P] [US6] Integration test for concurrent file modification with locks in tests/integration/test_concurrency.py
+- [x] T072 [US6] E2E test for error message content (no paths, stack traces) in tests/test_e2e.py
 
 **Checkpoint**: Zero silent failures, actionable errors (SC-014, SC-015, SC-016)
 

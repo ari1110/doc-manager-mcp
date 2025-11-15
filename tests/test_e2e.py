@@ -600,3 +600,53 @@ mytool --verbose --config config.yaml --output ./out --format json
             response_format=ResponseFormat.MARKDOWN
         ))
         assert "quality assessment" in quality_result.lower()
+
+
+@pytest.mark.asyncio
+class TestErrorMessageQuality:
+    """E2E tests for error message quality and security (T072 - US6)."""
+
+    """
+    @spec 001
+    @testType e2e
+    @userStory US6
+    @functionalReq FR-017
+    """
+    async def test_error_messages_contain_no_full_paths(self, tmp_path):
+        """Test that error messages don't leak full system paths (FR-017)."""
+        from pydantic import ValidationError
+
+        # Try to initialize with nonexistent path
+        nonexistent = tmp_path / "does_not_exist_123456"
+
+        try:
+            InitializeConfigInput(
+                project_path=str(nonexistent),
+                response_format=ResponseFormat.MARKDOWN
+            )
+            assert False, "Should have raised ValidationError"
+        except ValidationError as e:
+            error_msg = str(e)
+            assert "does not exist" in error_msg.lower()
+
+    """
+    @spec 001
+    @testType e2e
+    @userStory US6
+    @functionalReq FR-017
+    """
+    async def test_error_messages_contain_no_stack_traces(self, tmp_path):
+        """Test that error messages don't include Python stack traces."""
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+
+        result = await validate_docs(ValidateDocsInput(
+            project_path=str(project_dir),
+            docs_path="nonexistent_docs",
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        # Should return user-friendly error, not stack trace
+        assert "Error" in result or "not found" in result.lower()
+        assert "Traceback" not in result
+        assert "File \"" not in result
