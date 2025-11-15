@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+import sys
 from typing import List, Dict, Any, Set
 from datetime import datetime
 
@@ -46,7 +47,8 @@ def _assess_relevance(docs_path: Path, markdown_files: List[Path]) -> Dict[str, 
                     if str(md_file) not in files_with_deprecated:
                         files_with_deprecated.append(str(md_file.relative_to(docs_path)))
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     if deprecated_count > 0:
@@ -111,7 +113,8 @@ def _assess_accuracy(docs_path: Path, markdown_files: List[Path]) -> Dict[str, A
                     lang = match.group(1) or "plaintext"
                     code_blocks_by_lang[lang] = code_blocks_by_lang.get(lang, 0) + 1
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     if total_code_blocks > 0:
@@ -179,7 +182,8 @@ def _assess_purposefulness(docs_path: Path, markdown_files: List[Path]) -> Dict[
             if re.search(r'(table of contents|toc)', content, re.IGNORECASE):
                 files_with_toc += 1
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     findings.append(f"Document types found: {', '.join([f'{k}: {v}' for k, v in doc_types.items() if v > 0])}")
@@ -235,7 +239,8 @@ def _assess_uniqueness(docs_path: Path, markdown_files: List[Path]) -> Dict[str,
                     headers[header_text] = []
                 headers[header_text].append(str(md_file.relative_to(docs_path)))
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     # Find duplicate headers (same header text in multiple files)
@@ -296,7 +301,8 @@ def _assess_consistency(docs_path: Path, markdown_files: List[Path]) -> Dict[str
             atx_style_count += len(re.findall(r'^#{1,6} ', content, re.MULTILINE))
             setext_style_count += len(re.findall(r'^.+\n[=\-]+$', content, re.MULTILINE))
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     if code_langs_without_lang > 0:
@@ -370,7 +376,8 @@ def _assess_clarity(docs_path: Path, markdown_files: List[Path]) -> Dict[str, An
             if has_example:
                 files_with_examples += 1
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     avg_words = total_words // len(markdown_files) if markdown_files else 0
@@ -440,7 +447,8 @@ def _assess_structure(docs_path: Path, markdown_files: List[Path]) -> Dict[str, 
                     heading_issues += 1
                     break  # Count once per file
 
-        except Exception:
+        except Exception as e:
+            print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
             pass
 
     if heading_issues > 0:

@@ -541,6 +541,53 @@ class TestSafeJsonDumps:
         assert '"status": "error"' in result
 
 
+class TestErrorMessageSanitization:
+    """Tests for error message sanitization (T069 - US6)."""
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US6
+    @functionalReq FR-017
+    """
+    def test_sanitizes_windows_paths(self):
+        """Test that Windows paths are removed from error messages."""
+        error = ValueError("File not found: C:\\Users\\username\\project\\file.txt")
+        result = handle_error(error, "test", log_to_stderr=False)
+
+        assert "C:\\Users\\username\\project\\file.txt" not in result
+        assert "[path]" in result
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US6
+    @functionalReq FR-017
+    """
+    def test_sanitizes_unix_paths(self):
+        """Test that Unix paths are removed from error messages."""
+        error = FileNotFoundError("/home/user/project/src/file.py")
+        result = handle_error(error, "test", log_to_stderr=False)
+
+        assert "/home/user/project" not in result
+        assert "[path]" in result
+
+    """
+    @spec 001
+    @testType unit
+    @userStory US6
+    @functionalReq FR-017
+    """
+    def test_preserves_error_type_and_context(self):
+        """Test that error type and context are preserved."""
+        error = ValueError("Invalid input")
+        result = handle_error(error, "config_init", log_to_stderr=False)
+
+        assert "ValueError" in result
+        assert "config_init" in result
+        assert "Invalid input" in result
+
+
 class TestEnforceResponseLimit:
     """Tests for enforce_response_limit function (T055 - US4)."""
 

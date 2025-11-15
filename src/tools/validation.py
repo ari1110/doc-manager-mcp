@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+import sys
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 
@@ -76,7 +77,8 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path) -> Opt
     # Normalize path
     try:
         target = target.resolve()
-    except Exception:
+    except Exception as e:
+        print(f"Warning: Failed to resolve link path {link_url}: {e}", file=sys.stderr)
         return f"Invalid path format: {link_url}"
 
     # Check if target exists
@@ -202,7 +204,8 @@ def _validate_assets(docs_path: Path) -> List[Dict[str, Any]]:
                                 "message": f"Image file not found: {img['src']}",
                                 "image_src": img['src']
                             })
-                    except Exception:
+                    except Exception as e:
+                        print(f"Warning: Failed to resolve image path {img['src']}: {e}", file=sys.stderr)
                         issues.append({
                             "type": "invalid_asset_path",
                             "severity": "error",

@@ -37,10 +37,16 @@ async def initialize_config(params: InitializeConfigInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
+            return enforce_response_limit(
+                f"Error: Project path does not exist: {project_path}\n"
+                f"→ Please verify the path and try again with an existing directory."
+            )
 
         if not project_path.is_dir():
-            return enforce_response_limit(f"Error: Project path is not a directory: {project_path}")
+            return enforce_response_limit(
+                f"Error: Project path is not a directory: {project_path}\n"
+                f"→ Please provide a path to a directory, not a file."
+            )
 
         # Check if config already exists (allow overwrite)
         config_path = project_path / ".doc-manager.yml"

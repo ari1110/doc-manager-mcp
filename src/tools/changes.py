@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import sys
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -19,7 +20,8 @@ def _load_baseline(project_path: Path) -> Optional[Dict[str, Any]]:
     try:
         with open(baseline_path, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except Exception:
+    except Exception as e:
+        print(f"Warning: Failed to load baseline from {baseline_path}: {e}", file=sys.stderr)
         return None
 
 
