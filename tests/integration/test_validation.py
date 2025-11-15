@@ -416,3 +416,112 @@ def unclosed():
         assert isinstance(result, str)
         # Should not have processed the secret file content
         assert "Secret Content" not in result
+
+
+@pytest.mark.asyncio
+class TestValidationLineNumbers:
+    """Integration tests for accurate line numbers in validation reports.
+
+    @spec 001
+    @functionalReq FR-029
+    @testType integration
+    """
+
+    async def test_accurate_line_numbers_in_reports(self, tmp_path):
+        """Test that validation reports show accurate line numbers (1-based indexing).
+
+        This test creates markdown files with errors at specific line numbers
+        and verifies that the validation report correctly identifies those lines.
+
+        @spec 001
+        @functionalReq FR-029
+        @testType integration
+        """
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+
+        # Create test file with broken link at line 5
+        # Each line is explicitly counted to prove accuracy
+        doc_content = (
+            "# Test Doc\n"              # line 1
+            "\n"                          # line 2
+            "Some content here.\n"       # line 3
+            "\n"                          # line 4
+            "[broken](./missing.md)\n"   # line 5 - BROKEN LINK HERE
+            "\n"                          # line 6
+            "More content.\n"            # line 7
+        )
+        (docs_dir / "test.md").write_text(doc_content)
+
+        # Create second file with error at line 10
+        doc2_content = (
+            "# Another Test\n"           # line 1
+            "\n"                          # line 2
+            "Line 3\n"                   # line 3
+            "Line 4\n"                   # line 4
+            "Line 5\n"                   # line 5
+            "Line 6\n"                   # line 6
+            "Line 7\n"                   # line 7
+            "Line 8\n"                   # line 8
+            "\n"                          # line 9
+            "![missing](./img.png)\n"    # line 10 - MISSING IMAGE HERE
+            "\n"                          # line 11
+        )
+        (docs_dir / "test2.md").write_text(doc2_content)
+
+        # Create third file with missing alt text at line 3
+        doc3_content = (
+            "# Alt Text Test\n"          # line 1
+            "\n"                          # line 2
+            "![](./valid.png)\n"         # line 3 - MISSING ALT TEXT
+        )
+        (docs_dir / "test3.md").write_text(doc3_content)
+
+        # Create the valid image referenced
+        (docs_dir / "valid.png").write_bytes(b"fake image")
+
+        result = await validate_docs(ValidateDocsInput(
+            project_path=str(tmp_path),
+            docs_path="docs",
+            response_format=ResponseFormat.MARKDOWN
+        ))
+
+        result_lower = result.lower()
+
+        # Verify line 5 appears in report for broken link
+        # Check multiple formats: "line 5", "5:", ":5", etc.
+        assert ("line 5" in result_lower or
+                ":5:" in result or
+                " 5:" in result or
+                "test.md:5" in result.lower()), \
+            f"Expected line 5 for broken link in test.md, got:\n{result}"
+
+        # Verify line 10 appears in report for missing image
+        assert ("line 10" in result_lower or
+                ":10:" in result or
+                " 10:" in result or
+                "test2.md:10" in result.lower()), \
+            f"Expected line 10 for missing image in test2.md, got:\n{result}"
+
+        # Verify line 3 appears in report for missing alt text
+        assert ("line 3" in result_lower or
+                ":3:" in result or
+                " 3:" in result or
+                "test3.md:3" in result.lower()), \
+            f"Expected line 3 for missing alt text in test3.md, got:\n{result}"
+
+        # Critical: Verify NO line 0 appears (off-by-one error check)
+        assert "line 0" not in result_lower, \
+            f"Found 'line 0' in report (off-by-one error):\n{result}"
+        assert ":0:" not in result, \
+            f"Found ':0:' in report (off-by-one error):\n{result}"
+
+        # Verify we don't have off-by-one errors (line 4 instead of 5, etc.)
+        # The broken link is NOT on line 4 or 6
+        if "test.md" in result:
+            # Extract the line number for test.md's broken link
+            test_md_section = result[result.find("test.md"):result.find("test.md") + 200]
+            assert "line 4" not in test_md_section or "line 5" in test_md_section, \
+                f"Broken link reported on wrong line (should be 5, not 4):\n{test_md_section}"
+            assert "line 6" not in test_md_section or "line 5" in test_md_section, \
+                f"Broken link reported on wrong line (should be 5, not 6):\n{test_md_section}"
