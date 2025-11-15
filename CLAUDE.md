@@ -149,3 +149,10 @@ If you think the spec is wrong, unclear, or could be improved:
 **When in doubt**: Read the spec docs, check existing patterns, and ask the user a question if the information isn't 100% clear according to the existing documentation.
 
 ---
+
+## Active Technologies
+- Python 3.10+ + FastMCP (mcp>=1.0.0), Pydantic 2.0+, PyYAML 6.0+ (001-production-readiness)
+- File system (.doc-manager/ directory for state, YAML configs) (001-production-readiness)
+
+## Recent Changes
+- 001-production-readiness: Added Python 3.10+ + FastMCP (mcp>=1.0.0), Pydantic 2.0+, PyYAML 6.0+
