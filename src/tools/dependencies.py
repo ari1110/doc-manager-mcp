@@ -206,7 +206,9 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
                 relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
                 # Normalize reference path separators too
                 ref_normalized = reference.replace('\\', '/')
-                if ref_normalized in relative_path or relative_path.endswith(ref_normalized):
+                # T091: Use precise path matching with path separators to avoid false positives (FR-026)
+                # Match exact path or path ending with separator (e.g., "save.py" won't match "autosave.py")
+                if relative_path == ref_normalized or relative_path.endswith('/' + ref_normalized):
                     dependencies[doc_file].add(relative_path)
 
         # Match function/class references by searching in source files
@@ -243,8 +245,10 @@ def _match_references_to_sources(references: List[Dict[str, Any]], source_files:
             command_name = reference.split()[0]
             for source_file in source_files:
                 relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
+                # T091: Use precise path matching with path separators to avoid false positives (FR-026)
                 # Look for command files (e.g., cmd/add.go for "add" command)
-                if f"cmd/{command_name}" in relative_path or f"cli/{command_name}" in relative_path:
+                # Match with path separators to prevent "add" matching "add_user" or "badder"
+                if re.search(rf'\b(cmd|cli)/{re.escape(command_name)}(/|\.)', relative_path):
                     dependencies[doc_file].add(relative_path)
 
     # Convert sets to sorted lists

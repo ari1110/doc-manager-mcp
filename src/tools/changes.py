@@ -9,7 +9,7 @@ import asyncio
 
 from ..models import MapChangesInput
 from ..constants import ResponseFormat, ChangeDetectionMode, MAX_FILES, OPERATION_TIMEOUT
-from ..utils import calculate_checksum, run_git_command, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps
+from ..utils import calculate_checksum, run_git_command, handle_error, validate_path_boundary, enforce_response_limit, safe_json_dumps, load_config, matches_exclude_pattern
 
 
 def _load_baseline(project_path: Path) -> Optional[Dict[str, Any]]:
@@ -31,6 +31,13 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: Dict[str, An
     changed_files = []
     baseline_checksums = baseline.get("files", {})
 
+    # Load config to get exclude patterns (FR-027)
+    config = load_config(project_path)
+    exclude_patterns = config.get("exclude", []) if config else []
+    # Add default excludes if not in config
+    if not exclude_patterns:
+        exclude_patterns = ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"]
+
     # Check existing files for changes
     file_count = 0
     for file_path in project_path.rglob("*"):
@@ -50,8 +57,8 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: Dict[str, An
 
             relative_path = str(file_path.relative_to(project_path)).replace('\\', '/')
 
-            # Skip files in .doc-manager directory
-            if relative_path.startswith(".doc-manager"):
+            # Skip if matches exclude patterns (FR-027)
+            if matches_exclude_pattern(relative_path, exclude_patterns):
                 continue
 
             current_checksum = calculate_checksum(file_path)
@@ -73,6 +80,10 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: Dict[str, An
 
     # Check for deleted files
     for baseline_file in baseline_checksums.keys():
+        # Skip deleted files if they match exclude patterns (FR-027)
+        if matches_exclude_pattern(baseline_file, exclude_patterns):
+            continue
+
         file_path = project_path / baseline_file
         if not file_path.exists():
             changed_files.append({
@@ -86,6 +97,13 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: Dict[str, An
 def _get_changed_files_from_git(project_path: Path, since_commit: str) -> List[Dict[str, str]]:
     """Get changed files from git diff."""
     changed_files = []
+
+    # Load config to get exclude patterns (FR-027)
+    config = load_config(project_path)
+    exclude_patterns = config.get("exclude", []) if config else []
+    # Add default excludes if not in config
+    if not exclude_patterns:
+        exclude_patterns = ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"]
 
     # Get list of changed files
     output = run_git_command(project_path, "diff", "--name-status", since_commit, "HEAD")
@@ -103,6 +121,10 @@ def _get_changed_files_from_git(project_path: Path, since_commit: str) -> List[D
 
         status = parts[0]
         file_path = parts[1]
+
+        # Skip if matches exclude patterns (FR-027)
+        if matches_exclude_pattern(file_path, exclude_patterns):
+            continue
 
         if status.startswith('M'):
             change_type = "modified"

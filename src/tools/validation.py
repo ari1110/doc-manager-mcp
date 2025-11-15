@@ -133,7 +133,7 @@ def _check_broken_links(docs_path: Path) -> List[Dict[str, Any]]:
                 "type": "read_error",
                 "severity": "error",
                 "file": str(md_file.relative_to(docs_path)),
-                "line": 0,
+                "line": 1,
                 "message": f"Failed to read file: {str(e)}"
             })
 
@@ -234,7 +234,7 @@ def _validate_assets(docs_path: Path) -> List[Dict[str, Any]]:
                 "type": "read_error",
                 "severity": "error",
                 "file": str(md_file.relative_to(docs_path)),
-                "line": 0,
+                "line": 1,
                 "message": f"Failed to read file: {str(e)}"
             })
 
@@ -315,7 +315,7 @@ def _validate_code_snippets(docs_path: Path) -> List[Dict[str, Any]]:
                 "type": "read_error",
                 "severity": "error",
                 "file": str(md_file.relative_to(docs_path)),
-                "line": 0,
+                "line": 1,
                 "message": f"Failed to read file: {str(e)}"
             })
 

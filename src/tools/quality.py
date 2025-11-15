@@ -498,7 +498,11 @@ def _format_quality_report(results: List[Dict[str, Any]], response_format: Respo
         # Summary by score
         scores = {}
         for result in results:
-            score = result['score']
+            score = result.get('score', '')
+            if not score:
+                criterion = result.get('criterion', 'unknown')
+                print(f"Warning: Missing quality score for {criterion}, skipping in summary", file=sys.stderr)
+                continue
             scores[score] = scores.get(score, 0) + 1
 
         lines.append("## Score Summary")
@@ -509,8 +513,13 @@ def _format_quality_report(results: List[Dict[str, Any]], response_format: Respo
 
         # Detailed results per criterion
         for result in results:
-            lines.append(f"## {result['criterion'].capitalize()}")
-            lines.append(f"**Score:** {result['score'].upper()}")
+            criterion = result.get('criterion', 'unknown')
+            score = result.get('score', 'N/A')
+            if score == 'N/A':
+                print(f"Warning: Missing quality score for {criterion}, displaying as N/A", file=sys.stderr)
+
+            lines.append(f"## {criterion.capitalize()}")
+            lines.append(f"**Score:** {score.upper()}")
             lines.append("")
 
             if result.get('findings'):
@@ -536,7 +545,18 @@ def _format_quality_report(results: List[Dict[str, Any]], response_format: Respo
 def _calculate_overall_score(results: List[Dict[str, Any]]) -> str:
     """Calculate overall quality score from individual criteria."""
     score_values = {'excellent': 4, 'good': 3, 'fair': 2, 'poor': 1}
-    total = sum(score_values.get(r['score'], 2) for r in results)
+
+    # Validate and sum scores with explicit logging for invalid values
+    total = 0
+    for r in results:
+        score = r.get('score', '')
+        if score not in score_values:
+            criterion = r.get('criterion', 'unknown')
+            print(f"Warning: Invalid quality score '{score}' for {criterion}, using default 2 (fair)", file=sys.stderr)
+            total += 2
+        else:
+            total += score_values[score]
+
     avg = total / len(results) if results else 2
 
     if avg >= 3.5:
