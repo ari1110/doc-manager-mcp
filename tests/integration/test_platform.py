@@ -13,10 +13,6 @@ from src.tools.platform import detect_platform
 class TestPlatformDetection:
     """Integration tests for platform detection."""
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_detect_hugo_root_config(self, tmp_path):
         """Test detecting Hugo from root config file."""
         (tmp_path / "hugo.toml").write_text('[params]\ntitle = "Test"')
@@ -30,10 +26,6 @@ class TestPlatformDetection:
         assert "high confidence" in result
         assert "project root" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_detect_mkdocs_root_config(self, tmp_path):
         """Test detecting MkDocs from root config."""
         (tmp_path / "mkdocs.yml").write_text('site_name: Test')
@@ -46,10 +38,6 @@ class TestPlatformDetection:
         assert "MKDOCS" in result
         assert "high confidence" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_detect_docusaurus_root_config(self, tmp_path):
         """Test detecting Docusaurus from root config."""
         (tmp_path / "docusaurus.config.js").write_text('module.exports = {}')
@@ -62,10 +50,6 @@ class TestPlatformDetection:
         assert "DOCUSAURUS" in result
         assert "high confidence" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_detect_hugo_in_subdirectory(self, tmp_path):
         """Test detecting Hugo in docsite subdirectory."""
         docsite = tmp_path / "docsite"
@@ -80,10 +64,6 @@ class TestPlatformDetection:
         assert "HUGO" in result
         assert "docsite" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_detect_from_package_json(self, tmp_path):
         """Test detecting from package.json dependencies."""
         (tmp_path / "package.json").write_text('''
@@ -102,10 +82,6 @@ class TestPlatformDetection:
         assert "DOCUSAURUS" in result
         assert "medium confidence" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_detect_from_requirements_txt(self, tmp_path):
         """Test detecting from requirements.txt."""
         (tmp_path / "requirements.txt").write_text('mkdocs==1.4.0\nmkdocs-material==9.0.0')
@@ -118,10 +94,6 @@ class TestPlatformDetection:
         assert "MKDOCS" in result
         assert "medium confidence" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_recommend_based_on_language(self, tmp_path):
         """Test recommendation based on project language."""
         (tmp_path / "go.mod").write_text('module example.com/test')
@@ -134,10 +106,6 @@ class TestPlatformDetection:
         assert "HUGO" in result
         assert "Go" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_json_output_format(self, tmp_path):
         """Test JSON output format."""
         (tmp_path / "mkdocs.yml").write_text('site_name: Test')
@@ -152,10 +120,6 @@ class TestPlatformDetection:
         assert '"confidence":' in result
         assert '"high"' in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_nonexistent_project_path(self):
         """Test error handling for nonexistent path."""
         result = await detect_platform(DetectPlatformInput(

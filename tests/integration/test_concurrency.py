@@ -1,11 +1,3 @@
-"""Integration tests for concurrent operations (T071 - US6).
-
-Tests concurrent file modifications with locking to ensure data integrity.
-
-@spec 001
-@userStory US6
-@functionalReq FR-018
-"""
 
 import pytest
 from pathlib import Path
@@ -24,12 +16,6 @@ from src.tools.dependencies import track_dependencies
 class TestConcurrentFileModification:
     """Integration tests for concurrent file modifications with locks (T071 - US6)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US6
-    @functionalReq FR-018
-    """
     async def test_concurrent_memory_initialization(self, tmp_path):
         """Test that concurrent memory initializations don't corrupt baseline file.
 
@@ -67,12 +53,6 @@ class TestConcurrentFileModification:
             assert "files" in baseline
             assert baseline["file_count"] == 2
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US6
-    @functionalReq FR-018
-    """
     async def test_concurrent_dependency_tracking(self, tmp_path):
         """Test that concurrent dependency tracking doesn't corrupt dependencies file."""
         project_dir = tmp_path / "project"
@@ -111,12 +91,6 @@ class TestConcurrentFileModification:
             assert "doc_to_code" in deps
             assert "code_to_doc" in deps
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US6
-    @functionalReq FR-018
-    """
     async def test_file_lock_prevents_corruption(self, tmp_path):
         """Test that file locking prevents JSON corruption during concurrent writes."""
         from src.utils import file_lock

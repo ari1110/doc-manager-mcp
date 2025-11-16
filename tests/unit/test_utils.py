@@ -19,10 +19,6 @@ from src.utils import (
 class TestCalculateChecksum:
     """Tests for calculate_checksum function."""
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_checksum_consistency(self, tmp_path):
         """Test that same content produces same checksum."""
         test_file = tmp_path / "test.txt"
@@ -34,10 +30,6 @@ class TestCalculateChecksum:
         assert checksum1 == checksum2
         assert len(checksum1) == 64  # SHA-256 hex length
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_checksum_different_content(self, tmp_path):
         """Test that different content produces different checksums."""
         file1 = tmp_path / "file1.txt"
@@ -51,10 +43,6 @@ class TestCalculateChecksum:
 
         assert checksum1 != checksum2
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_checksum_nonexistent_file(self, tmp_path):
         """Test checksum of nonexistent file returns empty string."""
         nonexistent = tmp_path / "nonexistent.txt"
@@ -66,100 +54,60 @@ class TestCalculateChecksum:
 class TestDetectProjectLanguage:
     """Tests for detect_project_language function."""
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_go(self, tmp_path):
         """Test Go project detection."""
         (tmp_path / "go.mod").write_text("module example.com/project")
         language = detect_project_language(tmp_path)
         assert language == "Go"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_python_requirements(self, tmp_path):
         """Test Python project detection via requirements.txt."""
         (tmp_path / "requirements.txt").write_text("pytest==7.0.0")
         language = detect_project_language(tmp_path)
         assert language == "Python"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_python_setup(self, tmp_path):
         """Test Python project detection via setup.py."""
         (tmp_path / "setup.py").write_text("from setuptools import setup")
         language = detect_project_language(tmp_path)
         assert language == "Python"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_javascript(self, tmp_path):
         """Test JavaScript project detection."""
         (tmp_path / "package.json").write_text('{"name": "test"}')
         language = detect_project_language(tmp_path)
         assert language == "JavaScript/TypeScript"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_rust(self, tmp_path):
         """Test Rust project detection."""
         (tmp_path / "Cargo.toml").write_text('[package]\nname = "test"')
         language = detect_project_language(tmp_path)
         assert language == "Rust"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_java_maven(self, tmp_path):
         """Test Java project detection via pom.xml."""
         (tmp_path / "pom.xml").write_text('<project></project>')
         language = detect_project_language(tmp_path)
         assert language == "Java"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_java_gradle(self, tmp_path):
         """Test Java project detection via build.gradle."""
         (tmp_path / "build.gradle").write_text('plugins {}')
         language = detect_project_language(tmp_path)
         assert language == "Java"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_ruby(self, tmp_path):
         """Test Ruby project detection."""
         (tmp_path / "Gemfile").write_text('source "https://rubygems.org"')
         language = detect_project_language(tmp_path)
         assert language == "Ruby"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_php(self, tmp_path):
         """Test PHP project detection."""
         (tmp_path / "composer.json").write_text('{"require": {}}')
         language = detect_project_language(tmp_path)
         assert language == "PHP"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_detect_unknown(self, tmp_path):
         """Test unknown project returns 'Unknown'."""
         language = detect_project_language(tmp_path)
@@ -169,10 +117,6 @@ class TestDetectProjectLanguage:
 class TestFindDocsDirectory:
     """Tests for find_docs_directory function."""
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_find_docs(self, tmp_path):
         """Test finding 'docs' directory."""
         docs_dir = tmp_path / "docs"
@@ -180,10 +124,6 @@ class TestFindDocsDirectory:
         found = find_docs_directory(tmp_path)
         assert found == docs_dir
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_find_doc(self, tmp_path):
         """Test finding 'doc' directory."""
         doc_dir = tmp_path / "doc"
@@ -191,10 +131,6 @@ class TestFindDocsDirectory:
         found = find_docs_directory(tmp_path)
         assert found == doc_dir
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_find_documentation(self, tmp_path):
         """Test finding 'documentation' directory."""
         doc_dir = tmp_path / "documentation"
@@ -202,10 +138,6 @@ class TestFindDocsDirectory:
         found = find_docs_directory(tmp_path)
         assert found == doc_dir
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_find_docsite(self, tmp_path):
         """Test finding 'docsite' directory."""
         doc_dir = tmp_path / "docsite"
@@ -213,10 +145,6 @@ class TestFindDocsDirectory:
         found = find_docs_directory(tmp_path)
         assert found == doc_dir
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_find_website_docs(self, tmp_path):
         """Test finding 'website/docs' directory."""
         doc_dir = tmp_path / "website" / "docs"
@@ -224,10 +152,6 @@ class TestFindDocsDirectory:
         found = find_docs_directory(tmp_path)
         assert found == doc_dir
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_priority_order(self, tmp_path):
         """Test that 'docs' takes priority over other names."""
         (tmp_path / "docs").mkdir()
@@ -235,10 +159,6 @@ class TestFindDocsDirectory:
         found = find_docs_directory(tmp_path)
         assert found.name == "docs"
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_no_docs_directory(self, tmp_path):
         """Test returns None when no docs directory found."""
         found = find_docs_directory(tmp_path)
@@ -248,10 +168,6 @@ class TestFindDocsDirectory:
 class TestHandleError:
     """Tests for handle_error function."""
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_handle_error_with_context(self):
         """Test error handling with context."""
         error = ValueError("test error")
@@ -261,10 +177,6 @@ class TestHandleError:
         assert "test_function" in result
         assert "test error" in result
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_handle_error_without_context(self):
         """Test error handling without context."""
         error = ValueError("test error")
@@ -273,10 +185,6 @@ class TestHandleError:
         assert "Error: ValueError" in result
         assert "test error" in result
 
-    """
-    @spec 001
-    @testType unit
-    """
     def test_handle_different_exception_types(self):
         """Test handling different exception types."""
         exceptions = [
@@ -293,12 +201,6 @@ class TestHandleError:
 
 
 class TestValidatePathBoundary:
-    """Tests for validate_path_boundary function (T032 - US1).
-
-    @spec 001
-    @userStory US1
-    @functionalReq FR-001, FR-003, FR-025, FR-028
-    """
 
     def test_path_within_boundary(self, tmp_path):
         """Test that paths within project boundary are accepted (FR-025)."""
@@ -427,12 +329,6 @@ class TestValidatePathBoundary:
 class TestSafeJsonDumps:
     """Tests for safe_json_dumps function (T055 - US4)."""
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-012
-    """
     def test_serializes_valid_dict(self):
         """Test that valid dictionaries are serialized normally."""
         data = {"status": "success", "count": 42, "items": ["a", "b", "c"]}
@@ -443,12 +339,6 @@ class TestSafeJsonDumps:
         assert result.startswith("{")
         assert result.endswith("}")
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-012
-    """
     def test_handles_unserializable_datetime(self):
         """Test that datetime objects cause graceful error (T055 - FR-012)."""
         from datetime import datetime
@@ -462,12 +352,6 @@ class TestSafeJsonDumps:
         assert '"message": "JSON serialization error"' in result
         assert "not JSON serializable" in result or "Object of type" in result
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-012
-    """
     def test_handles_unserializable_path(self):
         """Test that Path objects cause graceful error (FR-012)."""
         from pathlib import Path
@@ -480,12 +364,6 @@ class TestSafeJsonDumps:
         assert '"status": "error"' in result
         assert '"message": "JSON serialization error"' in result
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-012
-    """
     def test_handles_custom_class(self):
         """Test that custom class instances cause graceful error."""
         class CustomClass:
@@ -500,12 +378,6 @@ class TestSafeJsonDumps:
         assert '"status": "error"' in result
         assert "JSON serialization error" in result
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-012
-    """
     def test_preserves_indent_parameter(self):
         """Test that indent parameter is passed through correctly."""
         data = {"a": 1, "b": 2}
@@ -517,12 +389,6 @@ class TestSafeJsonDumps:
         assert "\n" in result_with_indent
         assert len(result_with_indent) > len(result_no_indent)
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-012
-    """
     def test_handles_nested_unserializable(self):
         """Test handling of unserializable objects nested in data structure."""
         from datetime import datetime
@@ -544,12 +410,6 @@ class TestSafeJsonDumps:
 class TestErrorMessageSanitization:
     """Tests for error message sanitization (T069 - US6)."""
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US6
-    @functionalReq FR-017
-    """
     def test_sanitizes_windows_paths(self):
         """Test that Windows paths are removed from error messages."""
         error = ValueError("File not found: C:\\Users\\username\\project\\file.txt")
@@ -558,12 +418,6 @@ class TestErrorMessageSanitization:
         assert "C:\\Users\\username\\project\\file.txt" not in result
         assert "[path]" in result
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US6
-    @functionalReq FR-017
-    """
     def test_sanitizes_unix_paths(self):
         """Test that Unix paths are removed from error messages."""
         error = FileNotFoundError("/home/user/project/src/file.py")
@@ -572,12 +426,6 @@ class TestErrorMessageSanitization:
         assert "/home/user/project" not in result
         assert "[path]" in result
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US6
-    @functionalReq FR-017
-    """
     def test_preserves_error_type_and_context(self):
         """Test that error type and context are preserved."""
         error = ValueError("Invalid input")
@@ -589,12 +437,6 @@ class TestErrorMessageSanitization:
 
 
 class TestFileCountLimits:
-    """Tests for file count limit enforcement (T084 - US1).
-
-    @spec 001
-    @userStory US1
-    @functionalReq FR-019
-    """
 
     def test_file_count_under_limit_succeeds(self, tmp_path):
         """Test that operations with < 10K files succeed (FR-019)."""
@@ -801,12 +643,6 @@ class TestFileCountLimits:
 class TestEnforceResponseLimit:
     """Tests for enforce_response_limit function (T055 - US4)."""
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-010
-    """
     def test_short_response_unchanged(self):
         """Test that responses under limit are returned unchanged."""
         short_response = "This is a short response"
@@ -815,12 +651,6 @@ class TestEnforceResponseLimit:
         assert result == short_response
         assert "truncated" not in result.lower()
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-010
-    """
     def test_long_response_truncated(self):
         """Test that responses over 25K are truncated."""
         # Create response longer than 25K chars
@@ -832,12 +662,6 @@ class TestEnforceResponseLimit:
         assert "truncated" in result.lower()
         assert "25,000 character limit" in result
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-010
-    """
     def test_truncation_includes_helpful_tip(self):
         """Test that truncated responses include helpful tip."""
         long_response = "X" * 26000
@@ -846,12 +670,6 @@ class TestEnforceResponseLimit:
 
         assert "Tip:" in result or "reduce output" in result.lower()
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-010
-    """
     def test_custom_limit_parameter(self):
         """Test that custom limit parameter works."""
         response = "A" * 1000
@@ -862,12 +680,6 @@ class TestEnforceResponseLimit:
         assert len(result) <= 500
         assert "truncated" in result.lower()
 
-    """
-    @spec 001
-    @testType unit
-    @userStory US4
-    @functionalReq FR-010
-    """
     def test_exactly_at_limit_not_truncated(self):
         """Test that response exactly at limit is not truncated."""
         response = "B" * 25000
@@ -879,13 +691,6 @@ class TestEnforceResponseLimit:
 
 
 class TestOperationTimeouts:
-    """Tests for operation timeout enforcement (T085 - US6).
-
-    @spec 001
-    @testType unit
-    @userStory US6
-    @functionalReq FR-021
-    """
 
     @pytest.mark.asyncio
     async def test_with_timeout_fast_operation_succeeds(self):

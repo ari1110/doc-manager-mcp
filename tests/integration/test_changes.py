@@ -13,10 +13,6 @@ from src.tools.changes import map_changes
 class TestChangeMapping:
     """Integration tests for change mapping."""
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_map_changes_checksum_mode(self, tmp_path):
         """Test mapping changes using checksum comparison."""
         # Initialize memory system
@@ -46,10 +42,6 @@ class TestChangeMapping:
         assert "change" in result.lower()
         assert "README.md" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_categorize_cli_changes(self, tmp_path):
         """Test categorizing CLI-related changes."""
         from src.tools.memory import initialize_memory
@@ -76,11 +68,6 @@ def main():
         ))
 
         assert "cli" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_categorize_api_changes(self, tmp_path):
         """Test categorizing API-related changes."""
         from src.tools.memory import initialize_memory
@@ -108,11 +95,6 @@ def create_user(): pass
         ))
 
         assert "api" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_categorize_config_changes(self, tmp_path):
         """Test categorizing configuration changes."""
         from src.tools.memory import initialize_memory
@@ -136,10 +118,6 @@ def create_user(): pass
 
         assert "config" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_map_with_docs_mapping(self, tmp_path):
         """Test mapping changes to affected documentation."""
         from src.tools.memory import initialize_memory
@@ -177,11 +155,6 @@ def authenticate(username, password):
 
         assert "api.py" in result
         assert "docs" in result.lower() or "documentation" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_priority_levels(self, tmp_path):
         """Test that changes are assigned priority levels."""
         from src.tools.memory import initialize_memory
@@ -207,10 +180,6 @@ def authenticate(username, password):
         # Should mention priority (since src/ changes trigger API doc mapping)
         assert "priority" in result.lower() or "high" in result.lower() or "medium" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_json_output_format(self, tmp_path):
         """Test JSON output format."""
         from src.tools.memory import initialize_memory
@@ -235,10 +204,6 @@ def authenticate(username, password):
         assert '"change_type":' in result
         assert '"affected_documentation":' in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_no_changes_detected(self, tmp_path):
         """Test when no changes are detected."""
         from src.tools.memory import initialize_memory
@@ -259,10 +224,6 @@ def authenticate(username, password):
 
         assert "no changes" in result.lower() or "0 changes" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_new_files_detected(self, tmp_path):
         """Test detecting newly added files."""
         from src.tools.memory import initialize_memory
@@ -285,10 +246,6 @@ def authenticate(username, password):
         assert "new" in result.lower() or "added" in result.lower()
         assert "new_feature.py" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_multiple_change_categories(self, tmp_path):
         """Test detecting multiple categories of changes."""
         from src.tools.memory import initialize_memory
@@ -322,12 +279,6 @@ def authenticate(username, password):
         ])
         assert categories_found >= 2
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US2
-    @functionalReq FR-002
-    """
     async def test_command_injection_via_commit_hash_rejected(self, tmp_path):
         """Test that shell metacharacters in commit hash are rejected (T022 - US2).
 
@@ -366,12 +317,6 @@ def authenticate(username, password):
             assert "command injection" in str(error).lower(), \
                 f"Error should mention command injection for: {malicious_hash}"
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US2
-    @functionalReq FR-002
-    """
     async def test_valid_commit_hash_accepted_in_git_mode(self, tmp_path, monkeypatch):
         """Test that valid commit hashes are accepted in git diff mode (T022 - US2).
 
@@ -411,12 +356,6 @@ def authenticate(username, password):
             assert isinstance(result, str)
             assert "Error" not in result or "no changes" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US2
-    @functionalReq FR-002
-    """
     async def test_missing_git_binary_failure_mode(self, tmp_path, monkeypatch):
         """Test clear error when git binary is missing (T023 - US2).
 

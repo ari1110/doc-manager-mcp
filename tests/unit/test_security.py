@@ -1,11 +1,3 @@
-"""Unit tests for security utilities (T014 - US3).
-
-Tests credential scanning and validation functions.
-
-@spec 001
-@userStory US3
-@functionalReq FR-004,FR-005
-"""
 
 import re
 from pathlib import Path

@@ -1,9 +1,3 @@
-"""Integration tests for utility functions (T070 - US6).
-
-@spec 001
-@userStory US6
-@functionalReq FR-018
-"""
 
 import pytest
 from pathlib import Path
@@ -16,12 +10,6 @@ from src.utils import file_lock
 class TestFileLocking:
     """Integration tests for file locking behavior (T070 - US6)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US6
-    @functionalReq FR-018
-    """
     def test_file_lock_prevents_concurrent_writes(self, tmp_path):
         """Test that file locking prevents concurrent writes."""
         test_file = tmp_path / "test.json"
@@ -51,12 +39,6 @@ class TestFileLocking:
         assert write_order == ["start-1", "end-1", "start-2", "end-2"] or \
                write_order == ["start-2", "end-2", "start-1", "end-1"]
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US6
-    @functionalReq FR-018
-    """
     def test_file_lock_releases_on_exception(self, tmp_path):
         """Test that file lock is released even if exception occurs."""
         test_file = tmp_path / "test.json"

@@ -30,10 +30,6 @@ from src.tools.dependencies import track_dependencies
 class TestCompleteBootstrapWorkflow:
     """Test complete bootstrap workflow from start to finish."""
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_bootstrap_new_python_project(self, tmp_path):
         """Test bootstrapping a new Python project with MkDocs."""
         # Setup: Create a minimal Python project
@@ -98,11 +94,6 @@ def greet(name: str):
             response_format=ResponseFormat.MARKDOWN
         ))
         assert "dependency" in deps_result.lower()
-
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_bootstrap_go_project_with_hugo(self, tmp_path):
         """Test bootstrapping a Go project with Hugo."""
         # Setup: Create a Go project
@@ -144,10 +135,6 @@ func main() {
 class TestCompleteSyncWorkflow:
     """Test complete synchronization workflow."""
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_full_sync_cycle(self, tmp_path):
         """Test complete sync cycle: init -> changes -> sync."""
         # Setup: Initialize project
@@ -268,10 +255,6 @@ def create_user(username: str, email: str):
 class TestCompleteQualityWorkflow:
     """Test complete quality assurance workflow."""
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_quality_improvement_cycle(self, tmp_path):
         """Test cycle of quality assessment and improvement."""
         # Setup: Create initial low-quality docs
@@ -372,10 +355,6 @@ Complete API documentation.
 class TestMultiPlatformWorkflow:
     """Test workflows across different platforms."""
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_detect_and_bootstrap_all_platforms(self, tmp_path):
         """Test detection and bootstrap for all supported platforms."""
         platforms_to_test = [
@@ -419,10 +398,6 @@ class TestMultiPlatformWorkflow:
 class TestErrorRecoveryWorkflow:
     """Test error handling and recovery scenarios."""
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_recovery_from_invalid_state(self, tmp_path):
         """Test recovery when project is in invalid state."""
         # Create corrupted config
@@ -440,10 +415,6 @@ class TestErrorRecoveryWorkflow:
         # Verify fixed
         assert (tmp_path / ".doc-manager.yml").exists()
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_missing_baseline_recovery(self, tmp_path):
         """Test recovery when baseline is missing."""
         # Create config but no memory
@@ -480,10 +451,6 @@ class TestErrorRecoveryWorkflow:
 class TestRealWorldScenario:
     """Test realistic end-to-end scenario."""
 
-    """
-    @spec 001
-    @testType e2e
-    """
     async def test_realistic_project_lifecycle(self, tmp_path):
         """Test realistic project documentation lifecycle."""
         # Phase 1: Project Creation
@@ -606,12 +573,6 @@ mytool --verbose --config config.yaml --output ./out --format json
 class TestErrorMessageQuality:
     """E2E tests for error message quality and security (T072 - US6)."""
 
-    """
-    @spec 001
-    @testType e2e
-    @userStory US6
-    @functionalReq FR-017
-    """
     async def test_error_messages_contain_no_full_paths(self, tmp_path):
         """Test that error messages don't leak full system paths (FR-017)."""
         from pydantic import ValidationError
@@ -629,12 +590,6 @@ class TestErrorMessageQuality:
             error_msg = str(e)
             assert "does not exist" in error_msg.lower()
 
-    """
-    @spec 001
-    @testType e2e
-    @userStory US6
-    @functionalReq FR-017
-    """
     async def test_error_messages_contain_no_stack_traces(self, tmp_path):
         """Test that error messages don't include Python stack traces."""
         project_dir = tmp_path / "project"
