@@ -1,11 +1,3 @@
-"""Unit tests for Pydantic field validators (T020, T031 - US2, US1).
-
-Tests input validation to prevent command injection and path traversal attacks.
-
-@spec 001
-@userStory US2, US1
-@functionalReq FR-002, FR-001, FR-006
-"""
 
 import pytest
 from pathlib import Path

@@ -1,13 +1,3 @@
-"""Integration tests for resource limits and timeout enforcement.
-
-Tests:
-- T086: File count limit with 10K+ file project
-- T087: Operation timeout triggering with real tool operations
-
-@spec 001
-@userStory US7
-@functionalReq FR-019, FR-021
-"""
 
 import pytest
 import asyncio

@@ -1,11 +1,3 @@
-"""Integration tests for MCP server configuration and hints (T053 - US4).
-
-Tests that server annotations match actual tool behavior.
-
-@spec 001
-@userStory US4
-@functionalReq FR-009
-"""
 
 import pytest
 
@@ -13,12 +5,6 @@ import pytest
 class TestReadOnlyHintAccuracy:
     """Test that readOnlyHint annotations match actual tool behavior (T053 - US4)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-009
-    """
     def test_readonly_hints_match_behavior(self):
         """Test that all 10 tools have correct readOnlyHint values (FR-009).
 
@@ -68,12 +54,6 @@ class TestReadOnlyHintAccuracy:
                     f"expected {expected_hint}, got {actual_hint}"
                 )
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-009
-    """
     def test_destructive_hints_all_false(self):
         """Test that all tools have destructiveHint=False (none are destructive)."""
         import server
@@ -89,12 +69,6 @@ class TestReadOnlyHintAccuracy:
                     f"got {destructive_hint}"
                 )
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-009
-    """
     def test_idempotent_hints_accuracy(self):
         """Test that idempotentHint values are correct."""
         import server

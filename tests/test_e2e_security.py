@@ -1,11 +1,3 @@
-"""E2E security tests for doc-manager (T035 - US1).
-
-Tests end-to-end security scenarios including malicious symlinks and path traversal.
-
-@spec 001
-@userStory US1
-@functionalReq FR-001, FR-003, FR-025, FR-028
-"""
 
 import pytest
 from pathlib import Path
@@ -19,12 +11,6 @@ from src.tools.memory import initialize_memory
 class TestE2ESecuritySymlinks:
     """E2E tests for symlink security across all operations."""
 
-    """
-    @spec 001
-    @testType e2e
-    @userStory US1
-    @functionalReq FR-003, FR-028
-    """
     async def test_malicious_symlinks_in_memory_initialization(self, tmp_path):
         """Test that malicious symlinks are skipped during memory initialization (T035 - US1).
 
@@ -85,12 +71,6 @@ class TestE2ESecuritySymlinks:
         # Verify file count is correct (only safe files)
         assert baseline["file_count"] == 2  # README.md + main.py
 
-    """
-    @spec 001
-    @testType e2e
-    @userStory US1
-    @functionalReq FR-003, FR-025, FR-028
-    """
     async def test_symlink_chain_attack(self, tmp_path):
         """Test that symlink chains escaping boundary are blocked (T035 - US1).
 
@@ -139,12 +119,6 @@ class TestE2ESecuritySymlinks:
         assert "README.md" in baseline["files"]
         assert "chain_attack" not in str(baseline["files"])
 
-    """
-    @spec 001
-    @testType e2e
-    @userStory US1
-    @functionalReq FR-003, FR-028
-    """
     async def test_safe_symlinks_within_boundary(self, tmp_path):
         """Test that safe symlinks within project boundary are allowed (T035 - US1).
 

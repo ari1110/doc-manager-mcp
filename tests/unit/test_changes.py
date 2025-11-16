@@ -1,11 +1,3 @@
-"""Unit tests for change mapping utilities (T021 - US2).
-
-Tests git command construction to prevent command injection.
-
-@spec 001
-@userStory US2
-@functionalRereq FR-002
-"""
 
 import pytest
 from pathlib import Path

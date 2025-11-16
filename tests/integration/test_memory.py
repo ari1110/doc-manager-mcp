@@ -13,10 +13,6 @@ from src.tools.memory import initialize_memory
 class TestMemoryInitialization:
     """Integration tests for memory initialization."""
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_initialize_memory_system(self, tmp_path):
         """Test initializing memory system."""
         # Create some files to track
@@ -45,10 +41,6 @@ class TestMemoryInitialization:
             assert "files" in baseline
             assert "metadata" in baseline
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_baseline_includes_checksums(self, tmp_path):
         """Test that baseline includes file checksums."""
         # Create test files
@@ -73,10 +65,6 @@ class TestMemoryInitialization:
                 assert len(checksum) == 64
                 assert all(c in "0123456789abcdef" for c in checksum)
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_conventions_file_created(self, tmp_path):
         """Test that doc-conventions.md is created."""
         result = await initialize_memory(InitializeMemoryInput(
@@ -91,10 +79,6 @@ class TestMemoryInitialization:
         assert "Documentation Conventions" in content
         assert "Writing Style" in content
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_reinitialize_preserves_conventions(self, tmp_path):
         """Test that reinitializing preserves customized conventions."""
         # First initialization
@@ -117,10 +101,6 @@ class TestMemoryInitialization:
         # Check conventions preserved
         assert conventions_file.read_text() == custom_content
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_tracks_git_metadata(self, tmp_path):
         """Test that git metadata is included if available."""
         # Create a git repo
@@ -146,10 +126,6 @@ class TestMemoryInitialization:
             # Should have git info (using git_branch and git_commit keys)
             assert "git_branch" in metadata or "git_commit" in metadata
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_respects_exclude_patterns(self, tmp_path):
         """Test that excluded patterns are not tracked."""
         # Create config with exclude patterns
@@ -187,11 +163,6 @@ docs_path: docs
 
             # README should be tracked
             assert any("README.md" in path for path in file_paths)
-
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_json_output_format(self, tmp_path):
         """Test JSON output format."""
         result = await initialize_memory(InitializeMemoryInput(
@@ -203,10 +174,6 @@ docs_path: docs
         assert '"success"' in result.lower()
         assert '"baseline_path":' in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_nonexistent_project_path(self):
         """Test error handling for nonexistent path."""
         import platform
@@ -227,10 +194,6 @@ docs_path: docs
 
         assert "does not exist" in str(exc_info.value)
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_file_count_in_output(self, tmp_path):
         """Test that output includes file count."""
         # Create several files
@@ -245,10 +208,6 @@ docs_path: docs
         # Output should mention number of files tracked
         assert "5" in result or "file" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_handles_empty_project(self, tmp_path):
         """Test handling of project with no files."""
         result = await initialize_memory(InitializeMemoryInput(

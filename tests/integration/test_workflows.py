@@ -12,10 +12,6 @@ from src.tools.workflows import bootstrap, migrate, sync
 class TestBootstrapWorkflow:
     """Integration tests for bootstrap workflow."""
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_bootstrap_mkdocs_project(self, tmp_path):
         """Test bootstrapping a new MkDocs project."""
         # Create minimal project
@@ -41,10 +37,6 @@ class TestBootstrapWorkflow:
         # Check memory initialized
         assert (tmp_path / ".doc-manager" / "memory").exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_bootstrap_hugo_project(self, tmp_path):
         """Test bootstrapping a Hugo project."""
         result = await bootstrap(BootstrapInput(
@@ -62,10 +54,6 @@ class TestBootstrapWorkflow:
         content_dir = docs_dir / "content"
         assert content_dir.exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_bootstrap_docusaurus_project(self, tmp_path):
         """Test bootstrapping a Docusaurus project."""
         result = await bootstrap(BootstrapInput(
@@ -81,10 +69,6 @@ class TestBootstrapWorkflow:
         assert docs_dir.exists()
         assert (docs_dir / "intro.md").exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_bootstrap_with_custom_docs_path(self, tmp_path):
         """Test bootstrap with custom docs path."""
         result = await bootstrap(BootstrapInput(
@@ -100,10 +84,6 @@ class TestBootstrapWorkflow:
         docs_dir = tmp_path / "documentation"
         assert docs_dir.exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_bootstrap_includes_quality_assessment(self, tmp_path):
         """Test that bootstrap includes quality assessment."""
         result = await bootstrap(BootstrapInput(
@@ -115,10 +95,6 @@ class TestBootstrapWorkflow:
         # Should mention quality assessment
         assert "quality" in result.lower() or "assessment" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_bootstrap_json_output(self, tmp_path):
         """Test bootstrap with JSON output."""
         result = await bootstrap(BootstrapInput(
@@ -136,10 +112,6 @@ class TestBootstrapWorkflow:
 class TestMigrateWorkflow:
     """Integration tests for migrate workflow."""
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_migrate_to_new_platform(self, tmp_path):
         """Test migrating documentation to new platform."""
         # Create existing docs
@@ -163,10 +135,6 @@ class TestMigrateWorkflow:
         assert new_docs.exists()
         assert (new_docs / "index.md").exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_migrate_with_custom_target_path(self, tmp_path):
         """Test migration with custom target path."""
         source = tmp_path / "source"
@@ -185,10 +153,6 @@ class TestMigrateWorkflow:
         target = tmp_path / "hugo-docs"
         assert target.exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_migrate_preserves_content(self, tmp_path):
         """Test that migration preserves content."""
         source = tmp_path / "source"
@@ -210,10 +174,6 @@ class TestMigrateWorkflow:
         assert migrated_file.exists()
         assert "Important Documentation" in migrated_file.read_text()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_migrate_nested_structure(self, tmp_path):
         """Test migrating nested directory structure."""
         source = tmp_path / "source"
@@ -234,10 +194,6 @@ class TestMigrateWorkflow:
         assert (target / "index.md").exists()
         assert (target / "guides" / "tutorial.md").exists()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_migrate_nonexistent_source(self, tmp_path):
         """Test error handling for nonexistent source."""
         result = await migrate(MigrateInput(
@@ -254,10 +210,6 @@ class TestMigrateWorkflow:
 class TestSyncWorkflow:
     """Integration tests for sync workflow."""
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_detects_changes(self, tmp_path):
         """Test that sync detects code changes."""
         # Initialize project
@@ -285,10 +237,6 @@ class TestSyncWorkflow:
         assert "change" in result.lower()
         assert "api.py" in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_recommends_updates(self, tmp_path):
         """Test that sync recommends documentation updates."""
         from src.tools.memory import initialize_memory
@@ -315,11 +263,6 @@ parser.add_argument('--verbose')
         ))
 
         assert "update" in result.lower() or "recommend" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_with_custom_docs_path(self, tmp_path):
         """Test sync with custom docs path."""
         from src.tools.memory import initialize_memory
@@ -345,10 +288,6 @@ parser.add_argument('--verbose')
 
         assert "change" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_no_changes(self, tmp_path):
         """Test sync when no changes detected."""
         from src.tools.memory import initialize_memory
@@ -368,10 +307,6 @@ parser.add_argument('--verbose')
 
         assert "no changes" in result.lower() or "up to date" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_json_output(self, tmp_path):
         """Test sync with JSON output."""
         from src.tools.memory import initialize_memory
@@ -390,10 +325,6 @@ parser.add_argument('--verbose')
         assert '"changes":' in result
         assert '"recommendations":' in result
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_without_baseline(self, tmp_path):
         """Test sync error when baseline doesn't exist."""
         result = await sync(SyncInput(
@@ -403,10 +334,6 @@ parser.add_argument('--verbose')
 
         assert "baseline" in result.lower() or "initialize" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    """
     async def test_sync_includes_priority_levels(self, tmp_path):
         """Test that sync output includes priority levels."""
         from src.tools.memory import initialize_memory
@@ -434,12 +361,6 @@ parser.add_argument('--verbose')
 class TestParameterNameCorrectness:
     """Test that workflow tool calls use correct parameter names (T046 - US5)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-014, FR-024
-    """
     async def test_bootstrap_parameter_names(self, tmp_path):
         """Test that bootstrap() uses correct parameter names matching BootstrapInput."""
         # This test verifies parameter correctness by attempting a call
@@ -454,12 +375,6 @@ class TestParameterNameCorrectness:
         # If we get a result (not an error), parameter names are correct
         assert isinstance(result, str)
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-014, FR-024
-    """
     async def test_migrate_parameter_names(self, tmp_path):
         """Test that migrate() uses correct parameter names matching MigrateInput."""
         source = tmp_path / "source"
@@ -478,12 +393,6 @@ class TestParameterNameCorrectness:
         # If we get a result, parameter names are correct
         assert isinstance(result, str)
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-014, FR-024
-    """
     async def test_sync_parameter_names(self, tmp_path):
         """Test that sync() uses correct parameter names matching SyncInput."""
         from src.tools.memory import initialize_memory
@@ -504,12 +413,6 @@ class TestParameterNameCorrectness:
         # If we get a result, parameter names are correct
         assert isinstance(result, str)
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-014, FR-024
-    """
     async def test_all_input_models_accept_required_fields(self, tmp_path):
         """Test that all input models accept their required fields without error."""
         project_dir = tmp_path / "project"

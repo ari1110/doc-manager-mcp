@@ -1,12 +1,3 @@
-"""Integration tests for security features (T015 - US3).
-
-Tests that gitignore properly excludes sensitive files and that
-the repository doesn't contain exposed credentials.
-
-@spec 001
-@userStory US3
-@functionalReq FR-004,FR-005
-"""
 
 import subprocess
 from pathlib import Path

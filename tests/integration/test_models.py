@@ -1,11 +1,3 @@
-"""Integration tests for Pydantic models with None/empty values (T045 - US5).
-
-Tests that all input models handle None and empty values gracefully for optional fields.
-
-@spec 001
-@userStory US5
-@functionalReq FR-006, FR-014
-"""
 
 import pytest
 from pathlib import Path
@@ -28,12 +20,6 @@ from src.constants import ResponseFormat, DocumentationPlatform, ChangeDetection
 class TestOptionalFieldHandling:
     """Test that all models handle None values gracefully for optional fields (T045 - US5)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_initialize_config_with_all_none_optionals(self, tmp_path):
         """Test InitializeConfigInput with all optional fields as None."""
         project_dir = tmp_path / "project"
@@ -56,12 +42,6 @@ class TestOptionalFieldHandling:
         assert model.sources is None
         assert model.response_format == ResponseFormat.MARKDOWN
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_initialize_config_with_empty_lists(self, tmp_path):
         """Test InitializeConfigInput with empty lists for pattern fields."""
         project_dir = tmp_path / "project"
@@ -78,12 +58,6 @@ class TestOptionalFieldHandling:
         assert model.exclude_patterns == []
         assert model.sources == []
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_assess_quality_with_none_optionals(self, tmp_path):
         """Test AssessQualityInput with None for optional fields."""
         project_dir = tmp_path / "project"
@@ -99,12 +73,6 @@ class TestOptionalFieldHandling:
         assert model.docs_path is None
         assert model.criteria is None
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_validate_docs_with_none_optionals(self, tmp_path):
         """Test ValidateDocsInput with None docs_path."""
         project_dir = tmp_path / "project"
@@ -121,12 +89,6 @@ class TestOptionalFieldHandling:
         assert model.check_assets is True
         assert model.check_snippets is True
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_map_changes_with_none_optionals(self, tmp_path):
         """Test MapChangesInput with None since_commit."""
         project_dir = tmp_path / "project"
@@ -141,12 +103,6 @@ class TestOptionalFieldHandling:
         assert model.since_commit is None
         assert model.mode == ChangeDetectionMode.CHECKSUM  # Default
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_track_dependencies_with_none_optionals(self, tmp_path):
         """Test TrackDependenciesInput with None docs_path."""
         project_dir = tmp_path / "project"
@@ -160,12 +116,6 @@ class TestOptionalFieldHandling:
 
         assert model.docs_path is None
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_bootstrap_with_none_platform(self, tmp_path):
         """Test BootstrapInput with None platform (auto-detect)."""
         project_dir = tmp_path / "project"
@@ -181,12 +131,6 @@ class TestOptionalFieldHandling:
         assert model.platform is None
         assert model.docs_path == "docs"
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_migrate_with_none_platform(self, tmp_path):
         """Test MigrateInput with None target_platform."""
         project_dir = tmp_path / "project"
@@ -202,12 +146,6 @@ class TestOptionalFieldHandling:
         assert model.target_platform is None
         assert model.preserve_history is True  # Default
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_sync_with_none_docs_path(self, tmp_path):
         """Test SyncInput with None docs_path."""
         project_dir = tmp_path / "project"
@@ -226,12 +164,6 @@ class TestOptionalFieldHandling:
 class TestOptionalFieldDefaults:
     """Test that optional fields use correct default values (T045 - US5)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_initialize_config_default_exclude_patterns(self, tmp_path):
         """Test that InitializeConfigInput uses sensible default exclude patterns."""
         project_dir = tmp_path / "project"
@@ -249,12 +181,6 @@ class TestOptionalFieldDefaults:
         assert "**/dist" in model.exclude_patterns
         assert "**/.git" in model.exclude_patterns
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_validate_docs_boolean_defaults(self, tmp_path):
         """Test that ValidateDocsInput boolean fields default to True."""
         project_dir = tmp_path / "project"
@@ -270,12 +196,6 @@ class TestOptionalFieldDefaults:
         assert model.check_assets is True
         assert model.check_snippets is True
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_map_changes_mode_default(self, tmp_path):
         """Test that MapChangesInput defaults to checksum mode."""
         project_dir = tmp_path / "project"
@@ -288,12 +208,6 @@ class TestOptionalFieldDefaults:
 
         assert model.mode == ChangeDetectionMode.CHECKSUM
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_sync_mode_default(self, tmp_path):
         """Test that SyncInput defaults to reactive mode."""
         project_dir = tmp_path / "project"
@@ -306,12 +220,6 @@ class TestOptionalFieldDefaults:
 
         assert model.mode == "reactive"
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US5
-    @functionalReq FR-006, FR-014
-    """
     def test_migrate_preserve_history_default(self, tmp_path):
         """Test that MigrateInput defaults to preserving history."""
         project_dir = tmp_path / "project"

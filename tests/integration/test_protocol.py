@@ -1,11 +1,3 @@
-"""Integration tests for MCP protocol compliance (T054 - US4).
-
-Tests response size limits and protocol requirements.
-
-@spec 001
-@userStory US4
-@functionalReq FR-010
-"""
 
 import pytest
 from pathlib import Path
@@ -20,12 +12,6 @@ from src.tools.validation import validate_docs
 class TestResponseSizeLimits:
     """Test that response size limits are enforced (T054 - US4)."""
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-010
-    """
     async def test_large_dependency_graph_truncated(self, tmp_path):
         """Test that large dependency graphs are truncated to 25K chars (FR-010).
 
@@ -68,12 +54,6 @@ class TestResponseSizeLimits:
             assert "25,000 character limit" in result
             assert "Tip:" in result or "reduce output" in result
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-010
-    """
     async def test_large_validation_report_truncated(self, tmp_path):
         """Test that large validation reports are truncated (FR-010)."""
         docs_dir = tmp_path / "docs"
@@ -98,12 +78,6 @@ class TestResponseSizeLimits:
             f"Response exceeds 25K limit: {len(result)} characters"
         )
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-010
-    """
     async def test_small_responses_not_truncated(self, tmp_path):
         """Test that small responses are not unnecessarily truncated."""
         project_dir = tmp_path / "small_project"
@@ -126,12 +100,6 @@ class TestResponseSizeLimits:
         assert "Response truncated" not in result
         assert len(result) < 25000
 
-    """
-    @spec 001
-    @testType integration
-    @userStory US4
-    @functionalReq FR-010
-    """
     async def test_json_responses_also_limited(self, tmp_path):
         """Test that JSON responses are also size-limited."""
         project_dir = tmp_path / "large_project"

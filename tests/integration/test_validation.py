@@ -12,11 +12,6 @@ from src.tools.validation import validate_docs
 class TestDocumentationValidation:
     """Integration tests for documentation validation."""
 
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_validate_clean_documentation(self, tmp_path):
         """Test validating documentation with no issues."""
         docs_dir = tmp_path / "docs"
@@ -40,12 +35,6 @@ This is a clean documentation page.
 
         assert "documentation is valid" in result.lower()
         assert "0 issues" in result.lower() or "no issues" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_detect_broken_internal_links(self, tmp_path):
         """Test detecting broken internal markdown links."""
         docs_dir = tmp_path / "docs"
@@ -67,12 +56,6 @@ This is a clean documentation page.
         assert "broken link" in result.lower()
         assert "nonexistent.md" in result
         assert "missing.md" in result
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_detect_missing_images(self, tmp_path):
         """Test detecting missing image files."""
         docs_dir = tmp_path / "docs"
@@ -94,12 +77,6 @@ This is a clean documentation page.
         assert "missing" in result.lower() or "not found" in result.lower()
         assert "missing.png" in result
         assert "another-missing.jpg" in result
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_detect_missing_alt_text(self, tmp_path):
         """Test detecting images without alt text."""
         docs_dir = tmp_path / "docs"
@@ -124,12 +101,6 @@ This is a clean documentation page.
         ))
 
         assert "alt text" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_validate_code_snippet_syntax(self, tmp_path):
         """Test basic code snippet syntax validation."""
         docs_dir = tmp_path / "docs"
@@ -165,12 +136,6 @@ function test() {
         # Should detect unclosed code block and JSON syntax issues
         # JavaScript has unclosed block, JSON has missing comma
         assert "unmatched" in result.lower() or "syntax" in result.lower() or "issue" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_validate_with_custom_docs_path(self, tmp_path):
         """Test validation with custom docs path."""
         custom_docs = tmp_path / "documentation"
@@ -187,11 +152,6 @@ function test() {
         assert "broken link" in result.lower()
         assert "missing.md" in result
 
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_validate_nested_directories(self, tmp_path):
         """Test validation across nested directory structure."""
         docs_dir = tmp_path / "docs"
@@ -205,25 +165,6 @@ function test() {
 # Getting Started
 
 [Missing](../reference/missing.md)
-""")
-
-        result = await validate_docs(ValidateDocsInput(
-            project_path=str(tmp_path),
-            docs_path="docs",
-            response_format=ResponseFormat.MARKDOWN
-        ))
-
-        assert "broken link" in result.lower()
-        assert "missing.md" in result
-
-    @pytest.mark.skip(reason="HTML file validation not yet implemented - only markdown files are validated")
-    async def test_validate_html_links(self, tmp_path):
-        """Test validation of HTML anchor links.
-
-        @spec 001
-        @testType integration
-        @mockDependent
-        """
         docs_dir = tmp_path / "docs"
         docs_dir.mkdir()
 
@@ -244,12 +185,6 @@ function test() {
         ))
 
         assert "missing.html" in result or "broken link" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_json_output_format(self, tmp_path):
         """Test JSON output format."""
         docs_dir = tmp_path / "docs"
@@ -266,11 +201,6 @@ function test() {
         assert '"type":' in result
         assert '"file":' in result
 
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_nonexistent_docs_path(self, tmp_path):
         """Test error handling for nonexistent docs path."""
         result = await validate_docs(ValidateDocsInput(
@@ -281,11 +211,6 @@ function test() {
 
         assert "Error" in result or "not found" in result.lower()
 
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_multiple_issues_in_single_file(self, tmp_path):
         """Test detecting multiple issues in one file."""
         docs_dir = tmp_path / "docs"
@@ -314,12 +239,6 @@ def unclosed():
         # Should detect multiple issues
         issues_count = result.lower().count("issue") + result.lower().count("error")
         assert issues_count > 0
-
-    """
-    @spec 001
-    @testType integration
-    @mockDependent
-    """
     async def test_ignore_external_links(self, tmp_path):
         """Test that external links are not validated."""
         docs_dir = tmp_path / "docs"
@@ -341,13 +260,6 @@ def unclosed():
 
         # External links should not cause issues
         assert "documentation is valid" in result.lower() or "0 issues" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    @userStory US1
-    @functionalReq FR-001, FR-025
-    """
     async def test_reject_path_traversal_in_link_validation(self, tmp_path):
         """Test that path traversal attempts in links are rejected (T033 - US1).
 
@@ -375,13 +287,6 @@ def unclosed():
         # Path traversal attempts should be detected as broken links
         # (since they reference files outside the project boundary)
         assert "broken link" in result.lower() or "issue" in result.lower()
-
-    """
-    @spec 001
-    @testType integration
-    @userStory US1
-    @functionalReq FR-003, FR-028
-    """
     async def test_reject_symlink_escaping_project_boundary(self, tmp_path):
         """Test that symlinks escaping project boundary are rejected (T034 - US1).
 
@@ -420,23 +325,8 @@ def unclosed():
 
 @pytest.mark.asyncio
 class TestValidationLineNumbers:
-    """Integration tests for accurate line numbers in validation reports.
-
-    @spec 001
-    @functionalReq FR-029
-    @testType integration
-    """
 
     async def test_accurate_line_numbers_in_reports(self, tmp_path):
-        """Test that validation reports show accurate line numbers (1-based indexing).
-
-        This test creates markdown files with errors at specific line numbers
-        and verifies that the validation report correctly identifies those lines.
-
-        @spec 001
-        @functionalReq FR-029
-        @testType integration
-        """
         docs_dir = tmp_path / "docs"
         docs_dir.mkdir()
 

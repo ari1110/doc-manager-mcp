@@ -1,8 +1,3 @@
-"""End-to-end stress tests for doc-manager concurrency handling.
-
-@spec 001
-@userStory US7
-"""
 
 import pytest
 import json
@@ -24,11 +19,6 @@ from src.tools.quality import assess_quality
 
 @pytest.mark.asyncio
 class TestConcurrentStress:
-    """Test system behavior under high concurrency (100+ concurrent operations).
-
-    @spec 001
-    @userStory US7
-    """
 
     async def test_100_concurrent_tool_invocations(self, tmp_path):
         """Test 100 concurrent tool invocations to verify no race conditions, deadlocks, or corruption.
