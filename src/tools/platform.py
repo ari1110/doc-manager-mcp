@@ -207,7 +207,7 @@ def _check_dependencies(project_path: Path) -> list[dict[str, Any]]:
     return detected
 
 
-async def detect_platform(params: DetectPlatformInput) -> str:
+async def detect_platform(params: DetectPlatformInput) -> str | dict[str, any]:
     """Detect and recommend documentation platform for the project.
 
     This tool uses a multi-stage detection approach:
@@ -287,7 +287,7 @@ async def detect_platform(params: DetectPlatformInput) -> str:
                 "rationale": rationale,
                 "project_language": language
             }
-            return enforce_response_limit(safe_json_dumps(result, indent=2))
+            return enforce_response_limit(result)
         else:
             lines = ["# Documentation Platform Detection", ""]
 

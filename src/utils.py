@@ -465,20 +465,28 @@ def operation_timeout(seconds: int = 60):
 # T008: Response Size Enforcement (FR-010)
 # ============================================================================
 
-def enforce_response_limit(response: str, limit: int = 25000) -> str:
+def enforce_response_limit(response: str | dict, limit: int = 25000) -> str | dict:
     """Truncate response if exceeds CHARACTER_LIMIT.
 
     Args:
-        response: Response string to check
+        response: Response string or dict to check
         limit: Character limit (default: 25,000 per constants.py)
 
     Returns:
-        Response truncated if necessary with continuation marker
+        Response truncated if necessary (str) or dict as-is
 
     Note:
         MCP protocol has response size limits. Large dependency graphs
         or validation reports can exceed limits.
+
+        Dicts are passed through unchanged - FastMCP handles JSON serialization
+        and size limits. Only strings (markdown) need truncation.
     """
+    # If dict, return as-is (FastMCP will serialize it)
+    if isinstance(response, dict):
+        return response
+
+    # String handling (existing logic)
     if len(response) <= limit:
         return response
 

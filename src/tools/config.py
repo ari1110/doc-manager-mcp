@@ -15,7 +15,7 @@ from ..utils import (
 )
 
 
-async def initialize_config(params: InitializeConfigInput) -> str:
+async def initialize_config(params: InitializeConfigInput) -> str | dict[str, any]:
     """Initialize .doc-manager.yml configuration file for the project.
 
     This tool creates a new configuration file that defines how the documentation
@@ -106,7 +106,7 @@ async def initialize_config(params: InitializeConfigInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit(safe_json_dumps({
+            return enforce_response_limit({
                 "status": "success",
                 "message": "Configuration created successfully",
                 "config_path": str(config_path),
@@ -115,7 +115,7 @@ async def initialize_config(params: InitializeConfigInput) -> str:
                 "language": language,
                 "exclude_patterns": len(params.exclude_patterns or []),
                 "sources": len(sources)
-            }, indent=2))
+            }})
         else:
             return enforce_response_limit(f"""✓ Configuration created successfully
 

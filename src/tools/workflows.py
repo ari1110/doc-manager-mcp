@@ -15,7 +15,7 @@ from .quality import assess_quality
 from .validation import validate_docs
 
 
-async def bootstrap(params: BootstrapInput) -> str:
+async def bootstrap(params: BootstrapInput) -> str | dict[str, any]:
     """Bootstrap fresh documentation for a project.
 
     Orchestrates multiple tools to set up documentation from scratch:
@@ -223,7 +223,7 @@ async def bootstrap(params: BootstrapInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit(safe_json_dumps({
+            return enforce_response_limit({
                 "status": "success",
                 "message": "Documentation bootstrapped successfully",
                 "project": project_path.name,
@@ -239,7 +239,7 @@ async def bootstrap(params: BootstrapInput) -> str:
                 },
                 "created_files": created_files,
                 "quality_score": overall_score
-            }, indent=2))
+            }})
         else:
             return enforce_response_limit("\n".join(lines))
 
@@ -482,7 +482,7 @@ option1: value
 """
 
 
-async def migrate(params: MigrateInput) -> str:
+async def migrate(params: MigrateInput) -> str | dict[str, any]:
     """Migrate existing documentation to new structure.
 
     Orchestrates documentation restructuring:
@@ -699,7 +699,7 @@ async def migrate(params: MigrateInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit(safe_json_dumps({
+            return enforce_response_limit({
                 "status": "success",
                 "message": "Documentation migrated successfully",
                 "source_path": params.source_path,
@@ -715,7 +715,7 @@ async def migrate(params: MigrateInput) -> str:
                     "quality_check": "completed"
                 },
                 "migrated_files": moved_files
-            }, indent=2))
+            }})
         else:
             return enforce_response_limit("\n".join(lines))
 
@@ -723,7 +723,7 @@ async def migrate(params: MigrateInput) -> str:
         return enforce_response_limit(handle_error(e, "migrate"))
 
 
-async def sync(params: SyncInput) -> str:
+async def sync(params: SyncInput) -> str | dict[str, any]:
     """Sync documentation with code changes.
 
     Orchestrates documentation synchronization:
@@ -787,13 +787,13 @@ async def sync(params: SyncInput) -> str:
 
         if not changes_detected:
             if params.response_format == ResponseFormat.JSON:
-                return enforce_response_limit(safe_json_dumps({
+                return enforce_response_limit({
                     "status": "success",
                     "message": "No changes detected",
                     "changes": 0,
                     "affected_docs": 0,
                     "recommendations": []
-                }, indent=2))
+                }})
             else:
                 lines.append("✓ No code changes detected since last baseline")
                 lines.append("")
@@ -988,7 +988,7 @@ async def sync(params: SyncInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit(safe_json_dumps({
+            return enforce_response_limit({
                 "status": "success",
                 "message": "Sync analysis completed",
                 "changes": total_changes,
@@ -996,7 +996,7 @@ async def sync(params: SyncInput) -> str:
                 "recommendations": [doc["file"] for doc in affected_docs[:10]],
                 "validation_issues": total_issues,
                 "quality_score": overall_score
-            }, indent=2))
+            }})
         else:
             return enforce_response_limit("\n".join(lines))
 

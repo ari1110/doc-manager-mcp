@@ -330,12 +330,12 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
 def _format_validation_report(issues: list[dict[str, Any]], response_format: ResponseFormat) -> str:
     """Format validation report as JSON or Markdown."""
     if response_format == ResponseFormat.JSON:
-        return enforce_response_limit(safe_json_dumps({
+        return enforce_response_limit({
             "total_issues": len(issues),
             "errors": len([i for i in issues if i['severity'] == 'error']),
             "warnings": len([i for i in issues if i['severity'] == 'warning']),
             "issues": issues
-        }, indent=2))
+        }})
     else:
         lines = ["# Documentation Validation Report", ""]
 
@@ -397,7 +397,7 @@ def with_timeout(timeout_seconds):
 
 
 @with_timeout(OPERATION_TIMEOUT)
-async def validate_docs(params: ValidateDocsInput) -> str:
+async def validate_docs(params: ValidateDocsInput) -> str | dict[str, any]:
     """Validate documentation for broken links, missing assets, and code snippet issues.
 
     This tool performs comprehensive validation:

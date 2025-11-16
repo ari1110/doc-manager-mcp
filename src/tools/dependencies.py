@@ -369,14 +369,14 @@ def _format_dependency_report(dependencies: dict[str, list[str]], reverse_index:
                               response_format: ResponseFormat) -> str:
     """Format dependency tracking report."""
     if response_format == ResponseFormat.JSON:
-        return enforce_response_limit(safe_json_dumps({
+        return enforce_response_limit({
             "generated_at": datetime.now().isoformat(),
             "total_references": total_references,
             "total_doc_files": len(dependencies),
             "total_source_files": len(reverse_index),
             "doc_to_code": dependencies,
             "code_to_doc": reverse_index
-        }, indent=2))
+        }})
     else:
         lines = ["# Code-to-Documentation Dependency Graph", ""]
         lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -502,7 +502,7 @@ def with_timeout(timeout_seconds):
 
 
 @with_timeout(OPERATION_TIMEOUT)
-async def track_dependencies(params: TrackDependenciesInput) -> str:
+async def track_dependencies(params: TrackDependenciesInput) -> str | dict[str, any]:
     """Track code-to-docs dependencies by analyzing references in documentation.
 
     Builds a bidirectional dependency graph:

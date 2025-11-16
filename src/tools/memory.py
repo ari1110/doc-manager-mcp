@@ -50,7 +50,7 @@ def with_timeout(timeout_seconds):
     return decorator
 
 @with_timeout(OPERATION_TIMEOUT)
-async def initialize_memory(params: InitializeMemoryInput) -> str:
+async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, any]:
     """Initialize the documentation memory system for tracking project state.
 
     This tool creates the `.doc-manager/` directory structure with memory files
@@ -216,7 +216,7 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
 
         # Return JSON or Markdown based on response_format
         if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit(safe_json_dumps({
+            return enforce_response_limit({
                 "status": "success",
                 "message": "Memory system initialized successfully",
                 "baseline_path": str(baseline_path),
@@ -229,7 +229,7 @@ async def initialize_memory(params: InitializeMemoryInput) -> str:
                     "git_branch": git_branch
                 },
                 "files_tracked": file_count
-            }, indent=2))
+            }})
         else:
             return enforce_response_limit(f"""✓ Memory system initialized successfully
 

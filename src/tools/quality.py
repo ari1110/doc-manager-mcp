@@ -477,11 +477,11 @@ def _assess_structure(docs_path: Path, markdown_files: list[Path]) -> dict[str, 
 def _format_quality_report(results: list[dict[str, Any]], response_format: ResponseFormat) -> str:
     """Format quality assessment report."""
     if response_format == ResponseFormat.JSON:
-        return enforce_response_limit(safe_json_dumps({
+        return enforce_response_limit({
             "assessed_at": datetime.now().isoformat(),
             "overall_score": _calculate_overall_score(results),
             "criteria": results
-        }, indent=2))
+        }})
     else:
         lines = ["# Documentation Quality Assessment Report", ""]
         lines.append(f"**Assessed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -562,7 +562,7 @@ def _calculate_overall_score(results: list[dict[str, Any]]) -> str:
         return "poor"
 
 
-async def assess_quality(params: AssessQualityInput) -> str:
+async def assess_quality(params: AssessQualityInput) -> str | dict[str, any]:
     """Assess documentation quality against 7 criteria.
 
     Evaluates documentation against:

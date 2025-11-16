@@ -324,7 +324,7 @@ def _format_changes_report(changed_files: list[dict[str, str]], affected_docs: l
                            response_format: ResponseFormat, baseline_info: dict | None = None) -> str:
     """Format change mapping report."""
     if response_format == ResponseFormat.JSON:
-        return enforce_response_limit(safe_json_dumps({
+        return enforce_response_limit({
             "analyzed_at": datetime.now().isoformat(),
             "baseline_commit": baseline_info.get("git_commit") if baseline_info else None,
             "baseline_created": baseline_info.get("timestamp") if baseline_info else None,
@@ -332,7 +332,7 @@ def _format_changes_report(changed_files: list[dict[str, str]], affected_docs: l
             "total_changes": len(changed_files),
             "changed_files": changed_files,
             "affected_documentation": affected_docs
-        }, indent=2))
+        }})
     else:
         lines = ["# Code Change → Documentation Mapping Report", ""]
         lines.append(f"**Analyzed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -468,7 +468,7 @@ async def _map_changes_impl(params: MapChangesInput) -> str:
         return enforce_response_limit(handle_error(e, "map_changes"))
 
 
-async def map_changes(params: MapChangesInput) -> str:
+async def map_changes(params: MapChangesInput) -> str | dict[str, any]:
     """Map code changes to affected documentation.
 
     Compares current codebase state against baseline (from memory or git commit)
