@@ -210,7 +210,7 @@ export class RustAdapter extends BaseLanguageAdapter {
     const testLineText = lines[testLine];
     const indent = testLineText.match(/^\s*/)?.[0] || '';
 
-    // Find the insertion point - after attributes but before function
+    // Find the insertion point - BEFORE attributes and function (canonical pattern)
     let insertLine = testLine;
     let checkLine = testLine - 1;
 
@@ -219,16 +219,16 @@ export class RustAdapter extends BaseLanguageAdapter {
       checkLine--;
     }
 
-    // Skip attribute lines (#[test], #[tokio::test], etc.) - we want to insert AFTER these
+    // Find attribute lines (#[test], #[tokio::test], etc.) - we want to insert BEFORE these
     const attributeLines: number[] = [];
     while (checkLine >= 0 && lines[checkLine].trim().startsWith('#[')) {
       attributeLines.unshift(checkLine);
       checkLine--;
     }
 
-    // If there are attributes, insert after the last attribute
+    // CRITICAL FIX: Insert BEFORE first attribute, not after last (Gemini audit finding)
     if (attributeLines.length > 0) {
-      insertLine = attributeLines[attributeLines.length - 1] + 1;
+      insertLine = attributeLines[0];
     }
 
     // Skip more blank lines
@@ -240,6 +240,11 @@ export class RustAdapter extends BaseLanguageAdapter {
     let hasExistingComments = false;
     const existingCommentLines: number[] = [];
     while (checkLine >= 0 && lines[checkLine].trim().startsWith('///')) {
+      const commentText = lines[checkLine].trim().substring(3).trim();
+      // Check for existing metadata tags (holistic remediation - idempotency)
+      if (commentText.includes('@spec') || commentText.includes('@testType')) {
+        return sourceCode; // Skip if metadata already exists
+      }
       existingCommentLines.unshift(checkLine);
       checkLine--;
     }

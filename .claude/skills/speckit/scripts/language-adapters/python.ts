@@ -188,7 +188,8 @@ export class PythonAdapter extends BaseLanguageAdapter {
 
   /**
    * Insert metadata into Python source code
-   * Handles decorators and existing docstrings properly
+   * Creates standalone docstring ABOVE function definition, AFTER decorators
+   * Matches canonical pattern from metadata-schema.md
    */
   insertMetadataIntoSource(
     sourceCode: string,
@@ -197,92 +198,58 @@ export class PythonAdapter extends BaseLanguageAdapter {
   ): string {
     const lines = sourceCode.split('\n');
 
-    // Get the function body node
-    const body = testNode.childForFieldName('body');
-    if (!body) {
-      throw new Error('Function has no body');
+    // Get function name node (on same line as 'def' keyword)
+    const nameNode = testNode.childForFieldName('name');
+    if (!nameNode) {
+      throw new Error('Function has no name node');
     }
 
-    // Get indentation from function definition line
-    const defLine = lines[testNode.startPosition.row];
+    // Extract indentation from 'def' line (after any decorators)
+    const defLine = lines[nameNode.startPosition.row];
     const baseIndent = defLine.match(/^\s*/)?.[0] || '';
-    const bodyIndent = baseIndent + '    '; // Python uses 4-space indent
 
-    // Check if first statement in body is a docstring
-    const firstStatement = filterNullNodes(body.children).find(
-      (child) => child.type === 'expression_statement'
-    );
+    // Check for existing metadata docstring before function
+    // Skip newlines, indents, AND comments (Gemini recommendation)
+    let prevSibling = testNode.previousSibling;
+    while (prevSibling && ['newline', 'indent', 'comment'].includes(prevSibling.type)) {
+      prevSibling = prevSibling.previousSibling;
+    }
 
-    let hasExistingDocstring = false;
-    let docstringNode: SyntaxNode | null = null;
-
-    if (firstStatement) {
-      const stringNode = filterNullNodes(firstStatement.children).find(
+    // Check if previous sibling is a metadata docstring
+    if (prevSibling && prevSibling.type === 'expression_statement') {
+      const stringNode = filterNullNodes(prevSibling.children).find(
         (child) => child.type === 'string'
       );
       if (stringNode) {
-        hasExistingDocstring = true;
-        docstringNode = stringNode;
+        const docstringText = sourceCode.slice(stringNode.startIndex, stringNode.endIndex);
+        // Skip if metadata tags already exist (holistic remediation - idempotency)
+        if (docstringText.includes('@spec') || docstringText.includes('@testType')) {
+          return sourceCode;
+        }
       }
     }
 
-    if (hasExistingDocstring && docstringNode) {
-      // Merge metadata into existing docstring
-      const docstringLine = docstringNode.startPosition.row;
-      const docstringText = lines[docstringLine];
-
-      // Check if it's a multi-line docstring (""")
-      if (docstringText.trim().startsWith('"""')) {
-        // Find the closing """
-        let closingLine = docstringLine;
-        for (let i = docstringLine; i < lines.length; i++) {
-          if (i > docstringLine && lines[i].includes('"""')) {
-            closingLine = i;
-            break;
-          }
-        }
-
-        // Generate metadata lines
-        const metadataLines: string[] = [];
-        metadataLines.push('');
-        if (metadata.spec) metadataLines.push(`${bodyIndent}@spec ${metadata.spec}`);
-        for (const story of metadata.userStories) {
-          metadataLines.push(`${bodyIndent}@userStory ${story}`);
-        }
-        for (const req of metadata.functionalReqs) {
-          metadataLines.push(`${bodyIndent}@functionalReq ${req}`);
-        }
-        metadataLines.push(`${bodyIndent}@testType ${metadata.testType}`);
-        if (metadata.mockDependent) {
-          metadataLines.push(`${bodyIndent}@mockDependent`);
-        }
-
-        // Insert metadata before closing """
-        lines.splice(closingLine, 0, ...metadataLines);
-      }
-    } else {
-      // No existing docstring - create one as first line of function body
-      // Find the line after the function definition (after decorators and def line)
-      const bodyStartLine = body.startPosition.row;
-
-      const metadataLines: string[] = [];
-      metadataLines.push(`${bodyIndent}"""`);
-      if (metadata.spec) metadataLines.push(`${bodyIndent}@spec ${metadata.spec}`);
-      for (const story of metadata.userStories) {
-        metadataLines.push(`${bodyIndent}@userStory ${story}`);
-      }
-      for (const req of metadata.functionalReqs) {
-        metadataLines.push(`${bodyIndent}@functionalReq ${req}`);
-      }
-      metadataLines.push(`${bodyIndent}@testType ${metadata.testType}`);
-      if (metadata.mockDependent) {
-        metadataLines.push(`${bodyIndent}@mockDependent`);
-      }
-      metadataLines.push(`${bodyIndent}"""`);
-
-      // Insert at the beginning of the function body
-      lines.splice(bodyStartLine, 0, ...metadataLines);
+    // Build metadata lines with base indentation
+    const metadataLines: string[] = [];
+    metadataLines.push(`${baseIndent}"""`);
+    if (metadata.spec) {
+      metadataLines.push(`${baseIndent}@spec ${metadata.spec}`);
     }
+    for (const story of metadata.userStories) {
+      metadataLines.push(`${baseIndent}@userStory ${story}`);
+    }
+    for (const req of metadata.functionalReqs) {
+      metadataLines.push(`${baseIndent}@functionalReq ${req}`);
+    }
+    metadataLines.push(`${baseIndent}@testType ${metadata.testType}`);
+    if (metadata.mockDependent) {
+      metadataLines.push(`${baseIndent}@mockDependent`);
+    }
+    metadataLines.push(`${baseIndent}"""`);
+
+    // Insert metadata docstring BEFORE the 'def' line (after decorators)
+    const insertLine = nameNode.startPosition.row;
+    lines.splice(insertLine, 0, ...metadataLines);
 
     return lines.join('\n');
   }

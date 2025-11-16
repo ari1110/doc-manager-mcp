@@ -12,7 +12,9 @@
       "Bash(git commit:*)",
       "Bash(python -c:*)",
       "Bash(python -m pytest:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "mcp__zen__clink",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

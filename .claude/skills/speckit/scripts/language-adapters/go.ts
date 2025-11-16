@@ -169,6 +169,11 @@ export class GoAdapter extends BaseLanguageAdapter {
     // Collect existing comment lines
     const existingCommentLines: number[] = [];
     while (checkLine >= 0 && lines[checkLine].trim().startsWith('//')) {
+      const commentText = lines[checkLine].trim();
+      // Check for existing metadata tags (holistic remediation - idempotency)
+      if (commentText.includes('@spec') || commentText.includes('@testType')) {
+        return sourceCode; // Skip if metadata already exists
+      }
       existingCommentLines.unshift(checkLine);
       checkLine--;
     }

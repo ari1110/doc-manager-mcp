@@ -25,6 +25,7 @@ REGISTRY_FILE="test-registry.json"
 PARSER_SCRIPT="$SCRIPT_DIR/parse-test-file-universal.ts"
 TAGGER_SCRIPT="$SCRIPT_DIR/add-test-tags-universal.ts"
 JSON_MODE=false
+YES_FLAG=false
 COMMAND=""
 SPEC_NUMBER=""
 FILTER_TAG=""
@@ -40,18 +41,19 @@ USAGE:
     test-registry.sh <command> [options]
 
 COMMANDS:
-    init                    Initialize new test registry file
-    bootstrap [--spec NUM]  Auto-tag existing tests (brownfield projects)
-    scan                    Scan codebase and update test registry
-    report                  Show pyramid metrics, health, and issues
-    spec <number>           Show tests for specific spec (e.g., spec 001)
-    retire [--filter TAG]   List retirement candidate tests
-    validate                Validate all tests have required metadata tags
-    export-for-plan         Export test data for speckit workflow
-    self-check              Run self-diagnostic tests
+    init                           Initialize new test registry file
+    bootstrap [--spec NUM] [--yes] Auto-tag existing tests (brownfield projects)
+    scan                           Scan codebase and update test registry
+    report                         Show pyramid metrics, health, and issues
+    spec <number>                  Show tests for specific spec (e.g., spec 001)
+    retire [--filter TAG]          List retirement candidate tests
+    validate                       Validate all tests have required metadata tags
+    export-for-plan                Export test data for speckit workflow
+    self-check                     Run self-diagnostic tests
 
 OPTIONS:
     --json                  Output in JSON format
+    --yes, -y               Auto-confirm prompts (non-interactive mode)
     --filter <tag>          Filter tests by metadata tag (retire command only)
     --help, -h              Show this help message
 
@@ -133,17 +135,29 @@ parse_args() {
             bootstrap)
                 COMMAND="bootstrap"
                 shift
-                # Capture optional --spec argument
-                if [[ $# -gt 0 && "$1" == "--spec" ]]; then
-                    shift
-                    if [[ $# -gt 0 ]]; then
-                        SPEC_NUMBER="$1"
-                        shift
-                    else
-                        echo "Error: --spec requires a spec number" >&2
-                        exit 1
-                    fi
-                fi
+                # Capture optional --spec and --yes arguments
+                while [[ $# -gt 0 ]]; do
+                    case "$1" in
+                        --spec)
+                            shift
+                            if [[ $# -gt 0 ]]; then
+                                SPEC_NUMBER="$1"
+                                shift
+                            else
+                                echo "Error: --spec requires a spec number" >&2
+                                exit 1
+                            fi
+                            ;;
+                        --yes|-y)
+                            YES_FLAG=true
+                            shift
+                            ;;
+                        *)
+                            # Not a bootstrap argument, stop parsing
+                            break
+                            ;;
+                    esac
+                done
                 ;;
             spec)
                 COMMAND="spec"
@@ -328,12 +342,16 @@ cmd_bootstrap() {
     echo "========================================"
     echo ""
 
-    # Confirm with user
-    read -p "Apply these changes? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Bootstrap cancelled."
-        exit 0
+    # Confirm with user (skip if --yes flag provided)
+    if [[ "$YES_FLAG" == "true" ]]; then
+        echo "Auto-confirming (--yes flag provided)"
+    else
+        read -p "Apply these changes? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Bootstrap cancelled."
+            exit 0
+        fi
     fi
 
     # Run auto-tagger with --write

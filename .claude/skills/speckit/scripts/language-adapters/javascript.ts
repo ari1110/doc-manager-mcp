@@ -248,6 +248,12 @@ export class JavaScriptAdapter extends BaseLanguageAdapter {
     }
 
     if (hasExistingJSDoc && jsdocStartLine >= 0 && jsdocEndLine >= 0) {
+      // Check if metadata tags already exist (holistic remediation - idempotency)
+      const jsdocContent = lines.slice(jsdocStartLine, jsdocEndLine + 1).join('\n');
+      if (jsdocContent.includes('@spec') || jsdocContent.includes('@testType')) {
+        return sourceCode; // Skip if metadata already exists
+      }
+
       // Merge metadata into existing JSDoc
       const metadataLines: string[] = [];
       metadataLines.push(' *');
