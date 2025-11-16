@@ -47,6 +47,38 @@
 - [ ] Add progress indicators for long operations
 - [ ] Optimize file checksumming (parallel processing?)
 
+### 3. Tool responses are double-encoded JSON strings (2025-11-16)
+**Observation**: Tool responses are returned as stringified JSON inside a `result` wrapper, unlike standard MCP servers.
+
+**Details**:
+- **Our tools return**:
+  ```json
+  {"result": "{\"key\": \"value\", \"nested\": \"data\"}"}
+  ```
+  (JSON string with escaped `\n` characters)
+
+- **Standard MCP servers return** (e.g., exa):
+  ```json
+  {"key": "value", "nested": "data"}
+  ```
+  (Actual structured JSON)
+
+**Impact**:
+- Harder to parse responses (requires JSON.parse twice)
+- Inconsistent with MCP ecosystem conventions
+- `\n` characters appear as literal escapes instead of formatting
+
+**Root cause**:
+- Tools return strings (via `safe_json_dumps()` or markdown formatting)
+- FastMCP wraps string responses in `{"result": "..."}` envelope
+- Should return actual Python dicts/objects instead
+
+**Follow-up**:
+- [ ] Investigate FastMCP response handling
+- [ ] Consider returning structured data instead of pre-formatted strings
+- [ ] Check if response_format parameter should control serialization layer
+- [ ] Review MCP spec for response format guidelines
+
 ## Refactoring Completed
 
 ### ✅ MCP tool handlers now use direct parameters (2025-11-16)
