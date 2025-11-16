@@ -9,6 +9,7 @@ An MCP server for comprehensive documentation lifecycle management including:
 - Quality assessment (7 criteria)
 - Validation (links, assets, code snippets)
 - Monorepo support
+- Testing change detection
 """
 
 from mcp.server.fastmcp import FastMCP
