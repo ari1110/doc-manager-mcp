@@ -12,29 +12,30 @@ An MCP server for comprehensive documentation lifecycle management including:
 """
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 # Import models
 from src.models import (
+    AssessQualityInput,
+    BootstrapInput,
+    DetectPlatformInput,
     InitializeConfigInput,
     InitializeMemoryInput,
-    DetectPlatformInput,
-    ValidateDocsInput,
-    AssessQualityInput,
     MapChangesInput,
-    TrackDependenciesInput,
-    BootstrapInput,
     MigrateInput,
-    SyncInput
+    SyncInput,
+    TrackDependenciesInput,
+    ValidateDocsInput,
 )
+from src.tools.changes import map_changes
 
 # Import tool implementations
 from src.tools.config import initialize_config
+from src.tools.dependencies import track_dependencies
 from src.tools.memory import initialize_memory
 from src.tools.platform import detect_platform
-from src.tools.validation import validate_docs
 from src.tools.quality import assess_quality
-from src.tools.changes import map_changes
-from src.tools.dependencies import track_dependencies
+from src.tools.validation import validate_docs
 from src.tools.workflows import bootstrap, migrate, sync
 
 # Initialize the MCP server
@@ -46,13 +47,13 @@ mcp = FastMCP("doc_manager_mcp")
 
 @mcp.tool(
     name="docmgr_initialize_config",
-    annotations={
-        "title": "Initialize Documentation Manager Configuration",
-        "readOnlyHint": False,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Initialize Documentation Manager Configuration",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_initialize_config(params: InitializeConfigInput) -> str:
     """Initialize .doc-manager.yml configuration file for the project."""
@@ -60,13 +61,13 @@ async def docmgr_initialize_config(params: InitializeConfigInput) -> str:
 
 @mcp.tool(
     name="docmgr_initialize_memory",
-    annotations={
-        "title": "Initialize Documentation Memory System",
-        "readOnlyHint": False,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Initialize Documentation Memory System",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_initialize_memory(params: InitializeMemoryInput) -> str:
     """Initialize the documentation memory system for tracking project state."""
@@ -74,13 +75,13 @@ async def docmgr_initialize_memory(params: InitializeMemoryInput) -> str:
 
 @mcp.tool(
     name="docmgr_detect_platform",
-    annotations={
-        "title": "Detect Documentation Platform",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Detect Documentation Platform",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_detect_platform(params: DetectPlatformInput) -> str:
     """Detect and recommend documentation platform for the project."""
@@ -88,13 +89,13 @@ async def docmgr_detect_platform(params: DetectPlatformInput) -> str:
 
 @mcp.tool(
     name="docmgr_validate_docs",
-    annotations={
-        "title": "Validate Documentation",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Validate Documentation",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_validate_docs(params: ValidateDocsInput) -> str:
     """Validate documentation for broken links, missing assets, and code snippet issues."""
@@ -102,27 +103,29 @@ async def docmgr_validate_docs(params: ValidateDocsInput) -> str:
 
 @mcp.tool(
     name="docmgr_assess_quality",
-    annotations={
-        "title": "Assess Documentation Quality",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Assess Documentation Quality",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_assess_quality(params: AssessQualityInput) -> str:
-    """Assess documentation quality against 7 criteria: relevance, accuracy, purposefulness, uniqueness, consistency, clarity, structure."""
+    """Assess documentation quality against 7 criteria: relevance, accuracy, purposefulness,
+    uniqueness, consistency, clarity, structure.
+    """
     return await assess_quality(params)
 
 @mcp.tool(
     name="docmgr_map_changes",
-    annotations={
-        "title": "Map Code Changes to Documentation",
-        "readOnlyHint": False,  # T047: Writes to memory baseline
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Map Code Changes to Documentation",
+        readOnlyHint=False,  # T047: Writes to memory baseline
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_map_changes(params: MapChangesInput) -> str:
     """Map code changes to affected documentation using checksum comparison or git diff."""
@@ -130,13 +133,13 @@ async def docmgr_map_changes(params: MapChangesInput) -> str:
 
 @mcp.tool(
     name="docmgr_track_dependencies",
-    annotations={
-        "title": "Track Code-to-Documentation Dependencies",
-        "readOnlyHint": False,  # T048: Writes dependencies.json file
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Track Code-to-Documentation Dependencies",
+        readOnlyHint=False,  # T048: Writes dependencies.json file
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_track_dependencies(params: TrackDependenciesInput) -> str:
     """Build dependency graph showing which docs reference which source files."""
@@ -144,13 +147,13 @@ async def docmgr_track_dependencies(params: TrackDependenciesInput) -> str:
 
 @mcp.tool(
     name="docmgr_bootstrap",
-    annotations={
-        "title": "Bootstrap Fresh Documentation",
-        "readOnlyHint": False,
-        "destructiveHint": False,
-        "idempotentHint": False,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Bootstrap Fresh Documentation",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False
+    )
 )
 async def docmgr_bootstrap(params: BootstrapInput) -> str:
     """Bootstrap fresh documentation structure with templates and configuration."""
@@ -158,13 +161,13 @@ async def docmgr_bootstrap(params: BootstrapInput) -> str:
 
 @mcp.tool(
     name="docmgr_migrate",
-    annotations={
-        "title": "Migrate Documentation Structure",
-        "readOnlyHint": False,
-        "destructiveHint": False,
-        "idempotentHint": False,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Migrate Documentation Structure",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+        openWorldHint=False
+    )
 )
 async def docmgr_migrate(params: MigrateInput) -> str:
     """Migrate existing documentation to new structure with optional git history preservation."""
@@ -172,13 +175,13 @@ async def docmgr_migrate(params: MigrateInput) -> str:
 
 @mcp.tool(
     name="docmgr_sync",
-    annotations={
-        "title": "Sync Documentation with Code Changes",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False
-    }
+    annotations=ToolAnnotations(
+        title="Sync Documentation with Code Changes",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
 )
 async def docmgr_sync(params: SyncInput) -> str:
     """Sync documentation with code changes, identifying what needs updates."""
