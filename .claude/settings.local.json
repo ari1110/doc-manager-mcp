@@ -14,7 +14,9 @@
       "Bash(python -m pytest:*)",
       "Bash(python:*)",
       "mcp__zen__clink",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(uv run ruff:*)"
     ],
     "deny": [],
     "ask": []
