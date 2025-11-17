@@ -12,8 +12,17 @@ An MCP server for comprehensive documentation lifecycle management including:
 - Testing change detection
 """
 
+from typing import Any
+
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
+
+# Import constants for enum conversions
+from src.constants import (
+    ChangeDetectionMode,
+    DocumentationPlatform,
+    QualityCriterion,
+)
 
 # Import models
 from src.models import (
@@ -28,15 +37,6 @@ from src.models import (
     TrackDependenciesInput,
     ValidateDocsInput,
 )
-
-# Import constants for enum conversions
-from src.constants import (
-    ChangeDetectionMode,
-    DocumentationPlatform,
-    QualityCriterion,
-    ResponseFormat,
-)
-
 from src.tools.changes import map_changes
 
 # Import tool implementations
@@ -70,17 +70,18 @@ async def docmgr_initialize_config(
     platform: str | None = None,
     exclude_patterns: list[str] | None = None,
     docs_path: str | None = None,
-    sources: list[str] | None = None,
-    response_format: str = "markdown"
-) -> str:
+    sources: list[str] | None = None
+) -> str | dict[str, Any]:
     """Initialize .doc-manager.yml configuration file for the project."""
+    default_excludes = [
+        "**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"
+    ]
     params = InitializeConfigInput(
         project_path=project_path,
         platform=DocumentationPlatform(platform) if platform else None,
-        exclude_patterns=exclude_patterns if exclude_patterns is not None else ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"],
+        exclude_patterns=exclude_patterns if exclude_patterns is not None else default_excludes,
         docs_path=docs_path,
-        sources=sources,
-        response_format=ResponseFormat(response_format)
+        sources=sources
     )
     return await initialize_config(params)
 
@@ -95,13 +96,11 @@ async def docmgr_initialize_config(
     )
 )
 async def docmgr_initialize_memory(
-    project_path: str,
-    response_format: str = "markdown"
-) -> str:
+    project_path: str
+) -> str | dict[str, Any]:
     """Initialize the documentation memory system for tracking project state."""
     params = InitializeMemoryInput(
-        project_path=project_path,
-        response_format=ResponseFormat(response_format)
+        project_path=project_path
     )
     return await initialize_memory(params)
 
@@ -116,13 +115,11 @@ async def docmgr_initialize_memory(
     )
 )
 async def docmgr_detect_platform(
-    project_path: str,
-    response_format: str = "markdown"
-) -> str:
+    project_path: str
+) -> str | dict[str, Any]:
     """Detect and recommend documentation platform for the project."""
     params = DetectPlatformInput(
-        project_path=project_path,
-        response_format=ResponseFormat(response_format)
+        project_path=project_path
     )
     return await detect_platform(params)
 
@@ -141,17 +138,15 @@ async def docmgr_validate_docs(
     docs_path: str | None = None,
     check_links: bool = True,
     check_assets: bool = True,
-    check_snippets: bool = True,
-    response_format: str = "markdown"
-) -> str:
+    check_snippets: bool = True
+) -> str | dict[str, Any]:
     """Validate documentation for broken links, missing assets, and code snippet issues."""
     params = ValidateDocsInput(
         project_path=project_path,
         docs_path=docs_path,
         check_links=check_links,
         check_assets=check_assets,
-        check_snippets=check_snippets,
-        response_format=ResponseFormat(response_format)
+        check_snippets=check_snippets
     )
     return await validate_docs(params)
 
@@ -168,17 +163,15 @@ async def docmgr_validate_docs(
 async def docmgr_assess_quality(
     project_path: str,
     docs_path: str | None = None,
-    criteria: list[str] | None = None,
-    response_format: str = "markdown"
-) -> str:
+    criteria: list[str] | None = None
+) -> str | dict[str, Any]:
     """Assess documentation quality against 7 criteria: relevance, accuracy, purposefulness,
     uniqueness, consistency, clarity, structure.
     """
     params = AssessQualityInput(
         project_path=project_path,
         docs_path=docs_path,
-        criteria=[QualityCriterion(c) for c in criteria] if criteria else None,
-        response_format=ResponseFormat(response_format)
+        criteria=[QualityCriterion(c) for c in criteria] if criteria else None
     )
     return await assess_quality(params)
 
@@ -195,15 +188,13 @@ async def docmgr_assess_quality(
 async def docmgr_map_changes(
     project_path: str,
     since_commit: str | None = None,
-    mode: str = "checksum",
-    response_format: str = "markdown"
-) -> str:
+    mode: str = "checksum"
+) -> str | dict[str, Any]:
     """Map code changes to affected documentation using checksum comparison or git diff."""
     params = MapChangesInput(
         project_path=project_path,
         since_commit=since_commit,
-        mode=ChangeDetectionMode(mode),
-        response_format=ResponseFormat(response_format)
+        mode=ChangeDetectionMode(mode)
     )
     return await map_changes(params)
 
@@ -219,14 +210,12 @@ async def docmgr_map_changes(
 )
 async def docmgr_track_dependencies(
     project_path: str,
-    docs_path: str | None = None,
-    response_format: str = "markdown"
-) -> str:
+    docs_path: str | None = None
+) -> str | dict[str, Any]:
     """Build dependency graph showing which docs reference which source files."""
     params = TrackDependenciesInput(
         project_path=project_path,
-        docs_path=docs_path,
-        response_format=ResponseFormat(response_format)
+        docs_path=docs_path
     )
     return await track_dependencies(params)
 
@@ -243,15 +232,13 @@ async def docmgr_track_dependencies(
 async def docmgr_bootstrap(
     project_path: str,
     platform: str | None = None,
-    docs_path: str = "docs",
-    response_format: str = "markdown"
-) -> str:
+    docs_path: str = "docs"
+) -> str | dict[str, Any]:
     """Bootstrap fresh documentation structure with templates and configuration."""
     params = BootstrapInput(
         project_path=project_path,
         platform=DocumentationPlatform(platform) if platform else None,
-        docs_path=docs_path,
-        response_format=ResponseFormat(response_format)
+        docs_path=docs_path
     )
     return await bootstrap(params)
 
@@ -270,17 +257,15 @@ async def docmgr_migrate(
     source_path: str,
     target_path: str = "docs",
     target_platform: str | None = None,
-    preserve_history: bool = True,
-    response_format: str = "markdown"
-) -> str:
+    preserve_history: bool = True
+) -> str | dict[str, Any]:
     """Migrate existing documentation to new structure with optional git history preservation."""
     params = MigrateInput(
         project_path=project_path,
         source_path=source_path,
         target_path=target_path,
         target_platform=DocumentationPlatform(target_platform) if target_platform else None,
-        preserve_history=preserve_history,
-        response_format=ResponseFormat(response_format)
+        preserve_history=preserve_history
     )
     return await migrate(params)
 
@@ -297,15 +282,13 @@ async def docmgr_migrate(
 async def docmgr_sync(
     project_path: str,
     mode: str = "reactive",
-    docs_path: str | None = None,
-    response_format: str = "markdown"
-) -> str:
+    docs_path: str | None = None
+) -> str | dict[str, Any]:
     """Sync documentation with code changes, identifying what needs updates."""
     params = SyncInput(
         project_path=project_path,
         mode=mode,
-        docs_path=docs_path,
-        response_format=ResponseFormat(response_format)
+        docs_path=docs_path
     )
     return await sync(params)
 

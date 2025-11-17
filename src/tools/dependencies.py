@@ -1,22 +1,17 @@
 """Dependency tracking tools for doc-manager."""
 
-import asyncio
 import json
 import re
 import sys
 from datetime import datetime
-from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT, ResponseFormat
+from ..constants import MAX_FILES
 from ..models import TrackDependenciesInput
 from ..utils import (
-    enforce_response_limit,
     file_lock,
     find_docs_directory,
-    handle_error,
-    safe_json_dumps,
     validate_path_boundary,
 )
 
@@ -365,189 +360,39 @@ def _save_dependencies_to_memory(project_path: Path, dependencies: dict[str, lis
 
 
 def _format_dependency_report(dependencies: dict[str, list[str]], reverse_index: dict[str, list[str]],
-                              total_references: int, all_references: list[dict[str, Any]],
-                              response_format: ResponseFormat) -> str:
+                              total_references: int, all_references: list[dict[str, Any]]) -> dict[str, Any]:
     """Format dependency tracking report."""
-    if response_format == ResponseFormat.JSON:
-        return enforce_response_limit({
-            "generated_at": datetime.now().isoformat(),
-            "total_references": total_references,
-            "total_doc_files": len(dependencies),
-            "total_source_files": len(reverse_index),
-            "doc_to_code": dependencies,
-            "code_to_doc": reverse_index
-        }})
-    else:
-        lines = ["# Code-to-Documentation Dependency Graph", ""]
-        lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        if total_references == 0:
-            lines.append("**Total References:** 0 (no references found)")
-        else:
-            lines.append(f"**Total References:** {total_references}")
-        lines.append(f"**Documentation Files:** {len(dependencies)}")
-        lines.append(f"**Source Files Referenced:** {len(reverse_index)}")
-        lines.append("")
-
-        # Documentation → Code Dependencies
-        lines.append("## Documentation → Code Dependencies")
-        lines.append("")
-        lines.append("Shows which source files each documentation file depends on.")
-        lines.append("")
-
-        if not dependencies:
-            lines.append("No dependencies detected.")
-        else:
-            for doc_file in sorted(dependencies.keys()):
-                source_files = dependencies[doc_file]
-                if source_files:
-                    lines.append(f"### {doc_file}")
-                    lines.append(f"**Depends on {len(source_files)} source file(s):**")
-                    for source_file in source_files:
-                        lines.append(f"- `{source_file}`")
-                    lines.append("")
-
-        # Code → Documentation Reverse Index
-        lines.append("## Code → Documentation Reverse Index")
-        lines.append("")
-        lines.append("Shows which documentation files reference each source file.")
-        lines.append("")
-
-        if not reverse_index:
-            lines.append("No reverse dependencies detected.")
-        else:
-            # Show most-referenced files first
-            sorted_sources = sorted(reverse_index.items(), key=lambda x: len(x[1]), reverse=True)
-
-            for source_file, doc_files in sorted_sources[:20]:  # Top 20
-                lines.append(f"### {source_file}")
-                lines.append(f"**Referenced by {len(doc_files)} doc file(s):**")
-                for doc_file in doc_files:
-                    lines.append(f"- `{doc_file}`")
-                lines.append("")
-
-            if len(sorted_sources) > 20:
-                lines.append(f"*... and {len(sorted_sources) - 20} more source files*")
-                lines.append("")
-
-        # Show all extracted references grouped by type
-        if total_references > 0:
-            lines.append("## Extracted References by Type")
-            lines.append("")
-            lines.append("All code references found in documentation:")
-            lines.append("")
-
-            # Group references by type
-            refs_by_type = {}
-            for ref in all_references:
-                ref_type = ref["type"]
-                if ref_type not in refs_by_type:
-                    refs_by_type[ref_type] = set()
-                refs_by_type[ref_type].add(ref["reference"])
-
-            for ref_type in sorted(refs_by_type.keys()):
-                refs = sorted(refs_by_type[ref_type])
-                lines.append(f"**{ref_type.replace('_', ' ').title()}s ({len(refs)}):**")
-                for ref in refs[:20]:  # Limit to 20 per type
-                    lines.append(f"- `{ref}`")
-                if len(refs) > 20:
-                    lines.append(f"  *... and {len(refs) - 20} more*")
-                lines.append("")
-
-        lines.append("## Impact Analysis")
-        lines.append("")
-        lines.append("Use this dependency graph to:")
-        lines.append("- Identify which docs need updates when code changes")
-        lines.append("- Find orphaned documentation (no code references)")
-        lines.append("- Detect missing documentation for important source files")
-        lines.append("")
-
-        # Find docs with no dependencies
-        orphaned_docs = [doc for doc, sources in dependencies.items() if not sources]
-        if orphaned_docs:
-            lines.append(f"**Orphaned Documentation ({len(orphaned_docs)} files):**")
-            lines.append("These docs have no detected code references:")
-            for doc in orphaned_docs[:10]:
-                lines.append(f"- {doc}")
-            if len(orphaned_docs) > 10:
-                lines.append(f"  ... and {len(orphaned_docs) - 10} more")
-
-        return enforce_response_limit("\n".join(lines))
+    return {
+        "generated_at": datetime.now().isoformat(),
+        "total_references": total_references,
+        "total_doc_files": len(dependencies),
+        "total_source_files": len(reverse_index),
+        "doc_to_code": dependencies,
+        "code_to_doc": reverse_index
+    }
 
 
-def with_timeout(timeout_seconds):
-    """Decorator to add timeout enforcement to async functions.
+async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
+    """Track dependencies between documentation and source code.
 
-    Args:
-        timeout_seconds (int): Maximum execution time in seconds
-
-    Raises:
-        TimeoutError: If operation exceeds timeout limit
-    """
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            try:
-                # Use asyncio.wait_for for async timeout enforcement
-                return await asyncio.wait_for(
-                    func(*args, **kwargs),
-                    timeout=timeout_seconds
-                )
-            except asyncio.TimeoutError as err:
-                raise TimeoutError(
-                    f"Operation exceeded timeout ({timeout_seconds}s)\n"
-                    f"→ Consider processing fewer files or increasing timeout limit."
-                ) from err
-        return wrapper
-    return decorator
-
-
-@with_timeout(OPERATION_TIMEOUT)
-async def track_dependencies(params: TrackDependenciesInput) -> str | dict[str, any]:
-    """Track code-to-docs dependencies by analyzing references in documentation.
-
-    Builds a bidirectional dependency graph:
-    - Doc → Code: Which source files each doc depends on
-    - Code → Doc: Which docs reference each source file
-
-    Extracts references for:
-    - File paths (e.g., `src/main.go`)
-    - Functions/methods (e.g., `initialize()`, `User.save()`)
-    - Classes/types (e.g., `Customer`, `HttpClient`)
-    - Commands (e.g., `pass add`, `git commit`)
-    - Configuration keys (e.g., `server.port`)
-
-    Args:
-        params (TrackDependenciesInput): Validated input parameters containing:
-            - project_path (str): Absolute path to project root
-            - response_format (ResponseFormat): Output format (markdown or json)
-
-    Returns:
-        str: Dependency graph report
-
-    Examples:
-        - Use when: Analyzing documentation coverage
-        - Use when: Planning code refactoring (see impact on docs)
-        - Use when: Finding orphaned documentation
-
-    Error Handling:
-        - Returns error if project_path doesn't exist
-        - Returns error if docs_path not found
+    Analyzes documentation files to find references to source code,
+    building a bidirectional dependency graph.
     """
     try:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
+            return {"error": f"Project path does not exist: {project_path}"}
 
         # Find docs directory (use provided path or auto-detect)
         if params.docs_path:
             docs_path = project_path / params.docs_path
             if not docs_path.exists():
-                return enforce_response_limit(f"Error: Documentation directory not found at {docs_path}")
+                return {"error": f"Documentation directory not found at {docs_path}"}
         else:
             docs_path = find_docs_directory(project_path)
             if not docs_path:
-                return enforce_response_limit("Error: Could not find documentation directory. Specify docs_path parameter.")
+                return {"error": "Could not find documentation directory. Specify docs_path parameter."}
 
         # Find all markdown files
         markdown_files = _find_markdown_files(docs_path, project_path)
@@ -582,7 +427,7 @@ async def track_dependencies(params: TrackDependenciesInput) -> str | dict[str, 
         # Save to memory
         _save_dependencies_to_memory(project_path, dependencies, reverse_index, all_references, reference_index)
 
-        return enforce_response_limit(_format_dependency_report(dependencies, reverse_index, len(all_references), all_references, params.response_format))
+        return _format_dependency_report(dependencies, reverse_index, len(all_references), all_references)
 
     except Exception as e:
-        return enforce_response_limit(handle_error(e, "track_dependencies"))
+        return {"error": str(e), "tool": "track_dependencies"}

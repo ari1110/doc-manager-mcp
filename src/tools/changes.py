@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode, ResponseFormat
+from ..constants import MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
 from ..models import MapChangesInput
 from ..utils import (
     calculate_checksum,
@@ -16,7 +16,6 @@ from ..utils import (
     load_config,
     matches_exclude_pattern,
     run_git_command,
-    safe_json_dumps,
     validate_path_boundary,
 )
 
@@ -321,120 +320,20 @@ def _add_affected_doc(affected_docs: dict, doc_path: str, reason: str, priority:
 
 
 def _format_changes_report(changed_files: list[dict[str, str]], affected_docs: list[dict[str, Any]],
-                           response_format: ResponseFormat, baseline_info: dict | None = None) -> str:
+                           baseline_info: dict | None = None) -> dict[str, Any]:
     """Format change mapping report."""
-    if response_format == ResponseFormat.JSON:
-        return enforce_response_limit({
-            "analyzed_at": datetime.now().isoformat(),
-            "baseline_commit": baseline_info.get("git_commit") if baseline_info else None,
-            "baseline_created": baseline_info.get("timestamp") if baseline_info else None,
-            "changes_detected": len(changed_files) > 0,
-            "total_changes": len(changed_files),
-            "changed_files": changed_files,
-            "affected_documentation": affected_docs
-        }})
-    else:
-        lines = ["# Code Change → Documentation Mapping Report", ""]
-        lines.append(f"**Analyzed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-        if baseline_info:
-            git_commit = baseline_info.get('git_commit', 'N/A')
-            if git_commit and git_commit != 'N/A':
-                lines.append(f"**Baseline Commit:** {git_commit[:8]}")
-            lines.append(f"**Baseline Created:** {baseline_info.get('timestamp', 'N/A')}")
-
-        lines.append("")
-
-        if not changed_files:
-            lines.append("✓ No changes detected since baseline.")
-            return enforce_response_limit("\n".join(lines))
-
-        # Summary
-        lines.append(f"**Total Changes:** {len(changed_files)}")
-
-        # Categorize changes
-        by_category = {}
-        by_type = {}
-        for change in changed_files:
-            category = _categorize_change(change["file"])
-            by_category[category] = by_category.get(category, 0) + 1
-
-            change_type = change["change_type"]
-            by_type[change_type] = by_type.get(change_type, 0) + 1
-
-        lines.append("")
-        lines.append("## Change Summary")
-        lines.append("")
-        lines.append("**By Category:**")
-        for category, count in sorted(by_category.items(), key=lambda x: x[1], reverse=True):
-            lines.append(f"- {category.capitalize()}: {count}")
-
-        lines.append("")
-        lines.append("**By Type:**")
-        for change_type, count in sorted(by_type.items()):
-            lines.append(f"- {change_type.capitalize()}: {count}")
-
-        # Affected documentation
-        lines.append("")
-        lines.append("## Affected Documentation")
-        lines.append("")
-
-        if not affected_docs:
-            lines.append("No documentation impacts detected (only doc/test/infrastructure changes).")
-        else:
-            # Group by priority
-            high_priority = [d for d in affected_docs if d["priority"] == "high"]
-            medium_priority = [d for d in affected_docs if d["priority"] == "medium"]
-            low_priority = [d for d in affected_docs if d["priority"] == "low"]
-
-            if high_priority:
-                lines.append("### High Priority")
-                lines.append("")
-                for doc in high_priority:
-                    status = "✓ Exists" if doc["exists"] else "⚠️ Not found"
-                    lines.append(f"#### {doc['file']} ({status})")
-                    lines.append(f"**Priority:** {doc['priority']}")
-                    lines.append(f"**Reason:** {doc['reason']}")
-                    lines.append(f"**Affected by:** {', '.join(doc['affected_by'][:3])}")
-                    if len(doc['affected_by']) > 3:
-                        lines.append(f"  ... and {len(doc['affected_by']) - 3} more files")
-                    lines.append("")
-
-            if medium_priority:
-                lines.append("### Medium Priority")
-                lines.append("")
-                for doc in medium_priority:
-                    status = "✓" if doc["exists"] else "⚠️"
-                    lines.append(f"- {status} **{doc['file']}** (Priority: {doc['priority']}) - {doc['reason']}")
-                lines.append("")
-
-            if low_priority:
-                lines.append("### Low Priority")
-                lines.append("")
-                for doc in low_priority:
-                    status = "✓" if doc["exists"] else "⚠️"
-                    lines.append(f"- {status} **{doc['file']}** (Priority: {doc['priority']})")
-                lines.append("")
-
-        # Changed files detail
-        lines.append("## Changed Files Detail")
-        lines.append("")
-
-        # Group by category
-        for category in sorted(by_category.keys()):
-            files_in_category = [c for c in changed_files if _categorize_change(c["file"]) == category]
-            if files_in_category:
-                lines.append(f"### {category.capitalize()}")
-                for change in files_in_category[:10]:  # Limit to first 10 per category
-                    lines.append(f"- [{change['change_type']}] {change['file']}")
-                if len(files_in_category) > 10:
-                    lines.append(f"  ... and {len(files_in_category) - 10} more")
-                lines.append("")
-
-        return enforce_response_limit("\n".join(lines))
+    return {
+        "analyzed_at": datetime.now().isoformat(),
+        "baseline_commit": baseline_info.get("git_commit") if baseline_info else None,
+        "baseline_created": baseline_info.get("timestamp") if baseline_info else None,
+        "changes_detected": len(changed_files) > 0,
+        "total_changes": len(changed_files),
+        "changed_files": changed_files,
+        "affected_documentation": affected_docs
+    }
 
 
-async def _map_changes_impl(params: MapChangesInput) -> str:
+async def _map_changes_impl(params: MapChangesInput) -> str | dict[str, Any]:
     """Implementation of map_changes without timeout."""
     try:
         project_path = Path(params.project_path).resolve()
@@ -462,13 +361,13 @@ async def _map_changes_impl(params: MapChangesInput) -> str:
         # Map changes to affected docs
         affected_docs = _map_to_affected_docs(changed_files, project_path)
 
-        return enforce_response_limit(_format_changes_report(changed_files, affected_docs, params.response_format, baseline_info))
+        return _format_changes_report(changed_files, affected_docs, baseline_info)
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "map_changes"))
 
 
-async def map_changes(params: MapChangesInput) -> str | dict[str, any]:
+async def map_changes(params: MapChangesInput) -> str | dict[str, Any]:
     """Map code changes to affected documentation.
 
     Compares current codebase state against baseline (from memory or git commit)

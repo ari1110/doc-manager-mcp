@@ -2,20 +2,20 @@
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
-from ..constants import DocumentationPlatform, ResponseFormat
+from ..constants import DocumentationPlatform
 from ..models import InitializeConfigInput
 from ..utils import (
     detect_project_language,
     enforce_response_limit,
     find_docs_directory,
     handle_error,
-    safe_json_dumps,
     save_config,
 )
 
 
-async def initialize_config(params: InitializeConfigInput) -> str | dict[str, any]:
+async def initialize_config(params: InitializeConfigInput) -> str | dict[str, Any]:
     """Initialize .doc-manager.yml configuration file for the project.
 
     This tool creates a new configuration file that defines how the documentation
@@ -104,33 +104,17 @@ async def initialize_config(params: InitializeConfigInput) -> str | dict[str, an
         if not save_config(project_path, config):
             return enforce_response_limit("Error: Failed to write configuration file")
 
-        # Return JSON or Markdown based on response_format
-        if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit({
-                "status": "success",
-                "message": "Configuration created successfully",
-                "config_path": str(config_path),
-                "platform": platform.value,
-                "docs_path": docs_path,
-                "language": language,
-                "exclude_patterns": len(params.exclude_patterns or []),
-                "sources": len(sources)
-            }})
-        else:
-            return enforce_response_limit(f"""✓ Configuration created successfully
-
-**Configuration Summary:**
-- Platform: {platform.value}
-- Documentation Path: {docs_path}
-- Primary Language: {language}
-- Exclude Patterns: {len(params.exclude_patterns or [])} patterns
-- Source Patterns: {len(sources)} patterns
-
-Next steps:
-1. Run `docmgr_initialize_memory` to set up the memory system
-2. Run `docmgr_bootstrap` to generate documentation (if starting fresh)
-3. Run `docmgr_migrate` to restructure existing documentation (if docs exist)
-""")
+        # Return structured data
+        return {
+            "status": "success",
+            "message": "Configuration created successfully",
+            "config_path": str(config_path),
+            "platform": platform.value,
+            "docs_path": docs_path,
+            "language": language,
+            "exclude_patterns": len(params.exclude_patterns or []),
+            "sources": len(sources)
+        }
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "initialize_config"))

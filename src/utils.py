@@ -465,7 +465,7 @@ def operation_timeout(seconds: int = 60):
 # T008: Response Size Enforcement (FR-010)
 # ============================================================================
 
-def enforce_response_limit(response: str | dict, limit: int = 25000) -> str | dict:
+def enforce_response_limit(response: str | dict, limit: int = 25000) -> str | dict[str, Any]:
     """Truncate response if exceeds CHARACTER_LIMIT.
 
     Args:
@@ -501,7 +501,7 @@ def enforce_response_limit(response: str | dict, limit: int = 25000) -> str | di
     return truncated
 
 
-def safe_json_dumps(obj: any, **kwargs) -> str:
+def safe_json_dumps(obj: Any, **kwargs) -> str:
     """Safely serialize object to JSON with error handling (T050 - FR-012).
 
     Args:
