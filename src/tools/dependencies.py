@@ -304,7 +304,8 @@ def _match_references_to_sources(references: list[dict[str, Any]], source_files:
 def _build_reverse_index(dependencies: dict[str, list[str]], all_references: list[dict[str, Any]] | None = None) -> dict[str, list[str]]:
     """Build reverse index: source_file/reference -> [doc_files].
 
-    Includes both matched source files and unmatched references (functions, classes, etc.)
+    For matched references (semantic commands, functions, etc.), they are consolidated
+    under their source file path. Only unmatched references appear as separate entries.
     """
     reverse_index = {}
 
@@ -315,27 +316,56 @@ def _build_reverse_index(dependencies: dict[str, list[str]], all_references: lis
                 reverse_index[source_file] = []
             reverse_index[source_file].append(doc_file)
 
-    # Add unmatched references (functions, classes, commands, config keys)
-    # These won't have matched source files but should still be trackable
+    # Add only unmatched references as separate entries
+    # Matched semantic commands should only appear under their source file
     if all_references:
-        # Find which references were NOT matched to source files
-        matched_refs = set()
-        for _doc_file, source_files in dependencies.items():
-            for source_file in source_files:
-                matched_refs.add(source_file)
+        # Build set of (doc, reference) pairs that resulted in matches
+        matched_ref_pairs = set()
 
-        # Add unmatched references with a type prefix
+        # Check each reference to see if it matched any source files
         for ref in all_references:
             ref_type = ref["type"]
             reference = ref["reference"]
             doc_file = ref["doc_file"]
 
-            # For non-file references (functions, classes, commands, etc.), add them to the index
+            # Skip file_path references - they're always explicit matches
+            if ref_type == "file_path":
+                matched_ref_pairs.add((doc_file, reference))
+                continue
+
+            # For semantic commands and commands, check if any dependency matches this reference
+            if ref_type in ["semantic_command", "command"]:
+                command_name = reference.split()[0] if ref_type == "command" else reference
+                if doc_file in dependencies:
+                    for source_file in dependencies[doc_file]:
+                        # Check if this source file path matches the command pattern
+                        if re.search(rf'\b(cmd|cli|commands?)/{re.escape(command_name)}(/|\.)', source_file):
+                            matched_ref_pairs.add((doc_file, reference))
+                            break
+
+            # For functions and classes, check if any dependency contains this identifier
+            elif ref_type in ["function", "class"]:
+                identifier = reference.replace('()', '').split('.')[-1]
+                if doc_file in dependencies:
+                    for source_file in dependencies[doc_file]:
+                        # Simple heuristic: if the identifier appears in the source file path or name
+                        if identifier.lower() in source_file.lower():
+                            matched_ref_pairs.add((doc_file, reference))
+                            break
+
+        # Add unmatched references as separate entries
+        for ref in all_references:
+            ref_type = ref["type"]
+            reference = ref["reference"]
+            doc_file = ref["doc_file"]
+
+            # For non-file references that weren't matched, add as separate entries
             if ref_type in ["function", "class", "command", "semantic_command", "config_key"]:
-                if reference not in reverse_index:
-                    reverse_index[reference] = []
-                if doc_file not in reverse_index[reference]:
-                    reverse_index[reference].append(doc_file)
+                if (doc_file, reference) not in matched_ref_pairs:
+                    if reference not in reverse_index:
+                        reverse_index[reference] = []
+                    if doc_file not in reverse_index[reference]:
+                        reverse_index[reference].append(doc_file)
 
     return reverse_index
 
