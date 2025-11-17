@@ -386,3 +386,227 @@ H2: Commands
 **Outcome**: User now has both:
 - Hugo render hook (Hugo-specific validation)
 - doc-manager (cross-platform insights, quality metrics)
+
+---
+
+## 9. Phase 2 Architecture: Production-Ready Dependency Tracking
+
+**Context**: Current regex-based dependency tracking works for pass-cli but lacks robustness for general-purpose use across different projects, languages, and conventions.
+
+**Goal**: Build a solid foundation that works with ANY project and genuinely helps with documentation creation and maintenance.
+
+### 9.1 Architecture Decision
+
+Based on analysis and consultation with Gemini, implementing a **three-layer architecture**:
+
+1. **Code Indexing (TreeSitter)** - Accurate symbol extraction via AST parsing
+2. **Doc Parsing (Enhanced Regex)** - Fast reference extraction from markdown
+3. **Linking (Configurable Mappings)** - User-defined semantic mappings
+
+### 9.2 Layer 1: Code Indexing with TreeSitter
+
+**Purpose**: Build accurate "ground truth" of what code symbols exist
+
+**Implementation**:
+- Use `py-tree-sitter` with language-specific parsers
+- Parse source files to extract AST definitions
+- Build in-memory symbol index
+
+**Example symbol index**:
+```python
+{
+  "SaveVault": {
+    "file": "internal/vault/vault.go",
+    "line": 42,
+    "type": "function",
+    "signature": "func SaveVault(vault *Vault, path string) error"
+  },
+  "Config": {
+    "file": "internal/config/config.go",
+    "line": 15,
+    "type": "struct",
+    "fields": ["VaultPath", "KeychainEnabled"]
+  }
+}
+```
+
+**Languages to support**:
+- Go (priority 1 - pass-cli)
+- Python (priority 1 - common)
+- JavaScript/TypeScript (priority 1 - common)
+- Rust (priority 2)
+- Java (priority 2)
+
+**Benefits**:
+- ✓ 100% accurate symbol detection
+- ✓ No false positives from text search
+- ✓ Deterministic and fast (C-based parser)
+- ✓ Language-aware (understands imports, namespaces)
+
+**Tradeoffs**:
+- Initial setup: language parser dependencies
+- Maintenance: keep parsers updated
+
+---
+
+### 9.3 Layer 2: Enhanced Doc Parsing
+
+**Purpose**: Extract references from markdown documentation
+
+**Current patterns** (keep and enhance):
+- Literal file paths: `` `cmd/add.go` ``
+- Function references: `` `SaveVault()` ``
+- Semantic commands: "add command", "the generate subcommand"
+- Config keys: `` `vault_path` ``
+
+**Enhancements**:
+- Better phrase extraction patterns
+- Multi-word command detection
+- Nested namespace handling (e.g., `vault.Config.Load()`)
+
+**Keep regex because**:
+- ✓ Blazing fast for text scanning
+- ✓ Perfect for literal/structured patterns
+- ✓ No external dependencies for core logic
+- ✓ Handles 80% of common cases
+
+---
+
+### 9.4 Layer 3: Configurable Mappings
+
+**Purpose**: Bridge semantic phrases to code paths using project conventions
+
+**Configuration file**: `.doc-manager.yml`
+
+**Example mappings**:
+```yaml
+# Project-specific semantic mappings
+semantic_mappings:
+  # CLI commands (Go/Cobra pattern)
+  - pattern: 'the (.*) command'
+    template: 'cmd/{name}.go'
+    language: go
+
+  - pattern: '`(.*)` subcommand'
+    template: 'cmd/{name}.go'
+    language: go
+
+  # Django views (Python pattern)
+  - pattern: 'the (.*) view'
+    template: 'views/{name}.py'
+    language: python
+
+  # Express routes (Node.js pattern)
+  - pattern: '(.*) endpoint'
+    template: 'routes/{name}.js'
+    language: javascript
+
+  # API handlers
+  - pattern: '(.*) handler'
+    template: 'handlers/{name}.go'
+    language: go
+
+# Symbols to ignore during analysis
+ignore_symbols:
+  - 'main'
+  - 'init'
+  - 'test'
+
+# Custom file path patterns
+file_patterns:
+  - 'internal/**/*.go'
+  - 'pkg/**/*.go'
+  - 'src/**/*.{py,js,ts}'
+```
+
+**Validation**:
+- Extracted references → Match against mappings → Validate against TreeSitter index
+- Only report matches that exist in the codebase
+- Flag references that don't match any known symbols
+
+**Benefits**:
+- ✓ Adapts to any project structure
+- ✓ User-controlled without code changes
+- ✓ Explicit and deterministic
+- ✓ Can handle project-specific conventions
+
+---
+
+### 9.5 Implementation Phases
+
+**Phase 2.1: TreeSitter Integration**
+- [ ] Add `py-tree-sitter` dependency
+- [ ] Create `src/indexing/tree_sitter.py` module
+- [ ] Implement Go parser integration
+- [ ] Implement Python parser integration
+- [ ] Implement JavaScript/TypeScript parser integration
+- [ ] Build symbol index data structure
+- [ ] Add caching for performance
+- [ ] Unit tests for each language
+
+**Phase 2.2: Configurable Mappings**
+- [ ] Extend `.doc-manager.yml` schema
+- [ ] Add `semantic_mappings` configuration
+- [ ] Parse and validate mapping rules
+- [ ] Apply mappings during dependency linking
+- [ ] Add validation against symbol index
+- [ ] Documentation and examples
+- [ ] Integration tests
+
+**Phase 2.3: Enhanced Dependency Tracking**
+- [ ] Update `track_dependencies` to use symbol index
+- [ ] Match extracted references against index
+- [ ] Apply configurable mappings
+- [ ] Improve reverse index accuracy
+- [ ] Add confidence scores to matches
+- [ ] Performance optimization
+
+**Phase 2.4: Multi-Project Testing**
+- [ ] Test on pass-cli (Go/Cobra)
+- [ ] Test on Python project (Django/Flask)
+- [ ] Test on Node.js project (Express)
+- [ ] Document best practices per framework
+- [ ] Create example `.doc-manager.yml` files
+
+---
+
+### 9.6 Success Criteria
+
+**Accuracy**:
+- ✓ Zero false positives from text search
+- ✓ Matches only actual code symbols that exist
+- ✓ Handles multi-language projects
+
+**Usability**:
+- ✓ Works out-of-box for common frameworks
+- ✓ Easy to configure for custom projects
+- ✓ Clear error messages when references don't match
+
+**Performance**:
+- ✓ Indexing completes in <5s for medium projects (10K LOC)
+- ✓ Dependency tracking in <10s for 100+ doc files
+- ✓ Incremental updates for file changes
+
+**Maintainability**:
+- ✓ Adding new language support is straightforward
+- ✓ Users can extend without modifying code
+- ✓ Clear separation of concerns (indexing/parsing/linking)
+
+---
+
+### 9.7 Why Not spaCy or Vector Databases?
+
+**spaCy verdict**: NOT recommended
+- 100MB model overhead not justified
+- Slower than regex for simple phrase extraction
+- Regex + configurable mappings handle this well enough
+- Could add later as "v2 feature" if needed
+
+**Vector DB verdict**: Strongly NOT recommended
+- Too heavy (hundreds of MBs)
+- Non-deterministic results
+- Slow (embedding generation + search)
+- Wrong tool for structured code references
+- Better suited for fuzzy semantic search, not dependency tracking
+
+**Chosen approach**: Start with deterministic, lightweight solution (TreeSitter + regex + config). Add advanced NLP only if proven insufficient.
