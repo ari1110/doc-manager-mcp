@@ -6,9 +6,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..constants import QualityCriterion, ResponseFormat
+from ..constants import QualityCriterion
 from ..models import AssessQualityInput
-from ..utils import enforce_response_limit, find_docs_directory, handle_error, safe_json_dumps
+from ..utils import enforce_response_limit, find_docs_directory, handle_error
 
 
 def _find_markdown_files(docs_path: Path) -> list[Path]:
@@ -474,66 +474,13 @@ def _assess_structure(docs_path: Path, markdown_files: list[Path]) -> dict[str, 
     }
 
 
-def _format_quality_report(results: list[dict[str, Any]], response_format: ResponseFormat) -> str:
+def _format_quality_report(results: list[dict[str, Any]]) -> dict[str, Any]:
     """Format quality assessment report."""
-    if response_format == ResponseFormat.JSON:
-        return enforce_response_limit({
-            "assessed_at": datetime.now().isoformat(),
-            "overall_score": _calculate_overall_score(results),
-            "criteria": results
-        }})
-    else:
-        lines = ["# Documentation Quality Assessment Report", ""]
-        lines.append(f"**Assessed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        lines.append(f"**Overall Score:** {_calculate_overall_score(results)}")
-        lines.append("")
-
-        # Summary by score
-        scores = {}
-        for result in results:
-            score = result.get('score', '')
-            if not score:
-                criterion = result.get('criterion', 'unknown')
-                print(f"Warning: Missing quality score for {criterion}, skipping in summary", file=sys.stderr)
-                continue
-            scores[score] = scores.get(score, 0) + 1
-
-        lines.append("## Score Summary")
-        for score in ['excellent', 'good', 'fair', 'poor']:
-            if score in scores:
-                lines.append(f"- **{score.capitalize()}**: {scores[score]} criteria")
-        lines.append("")
-
-        # Detailed results per criterion
-        for result in results:
-            criterion = result.get('criterion', 'unknown')
-            score = result.get('score', 'N/A')
-            if score == 'N/A':
-                print(f"Warning: Missing quality score for {criterion}, displaying as N/A", file=sys.stderr)
-
-            lines.append(f"## {criterion.capitalize()}")
-            lines.append(f"**Score:** {score.upper()}")
-            lines.append("")
-
-            if result.get('findings'):
-                lines.append("**Findings:**")
-                for finding in result['findings']:
-                    lines.append(f"- {finding}")
-                lines.append("")
-
-            if result.get('issues'):
-                lines.append("**Issues:**")
-                for issue in result['issues']:
-                    severity_emoji = "⚠️" if issue['severity'] == 'warning' else "ℹ️"  # noqa: RUF001
-                    lines.append(f"- {severity_emoji} {issue['message']}")
-                lines.append("")
-
-            if result.get('note'):
-                lines.append(f"*Note: {result['note']}*")
-                lines.append("")
-
-        return enforce_response_limit("\n".join(lines))
-
+    return {
+        "assessed_at": datetime.now().isoformat(),
+        "overall_score": _calculate_overall_score(results),
+        "criteria": results
+    }
 
 def _calculate_overall_score(results: list[dict[str, Any]]) -> str:
     """Calculate overall quality score from individual criteria."""
@@ -562,7 +509,7 @@ def _calculate_overall_score(results: list[dict[str, Any]]) -> str:
         return "poor"
 
 
-async def assess_quality(params: AssessQualityInput) -> str | dict[str, any]:
+async def assess_quality(params: AssessQualityInput) -> str | dict[str, Any]:
     """Assess documentation quality against 7 criteria.
 
     Evaluates documentation against:
@@ -647,7 +594,7 @@ async def assess_quality(params: AssessQualityInput) -> str | dict[str, any]:
             elif criterion == QualityCriterion.STRUCTURE:
                 results.append(_assess_structure(docs_path, markdown_files))
 
-        return enforce_response_limit(_format_quality_report(results, params.response_format))
+        return enforce_response_limit(_format_quality_report(results))
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "assess_quality"))

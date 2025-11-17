@@ -6,13 +6,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT, ResponseFormat
+from ..constants import MAX_FILES, OPERATION_TIMEOUT
 from ..models import ValidateDocsInput
 from ..utils import (
     enforce_response_limit,
     find_docs_directory,
     handle_error,
-    safe_json_dumps,
     safe_resolve,
 )
 
@@ -327,51 +326,14 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
     return issues
 
 
-def _format_validation_report(issues: list[dict[str, Any]], response_format: ResponseFormat) -> str:
-    """Format validation report as JSON or Markdown."""
-    if response_format == ResponseFormat.JSON:
-        return enforce_response_limit({
-            "total_issues": len(issues),
-            "errors": len([i for i in issues if i['severity'] == 'error']),
-            "warnings": len([i for i in issues if i['severity'] == 'warning']),
-            "issues": issues
-        }})
-    else:
-        lines = ["# Documentation Validation Report", ""]
-
-        errors = [i for i in issues if i['severity'] == 'error']
-        warnings = [i for i in issues if i['severity'] == 'warning']
-
-        lines.append(f"**Total Issues:** {len(issues)}")
-        lines.append(f"- Errors: {len(errors)}")
-        lines.append(f"- Warnings: {len(warnings)}")
-        lines.append("")
-
-        if not issues:
-            lines.append("✓ No issues found! Documentation is valid.")
-            lines.append("")
-            lines.append("**Status:** Validation complete.")
-            return enforce_response_limit("\n".join(lines))
-
-        if errors:
-            lines.append("## Errors")
-            lines.append("")
-            for issue in errors:
-                lines.append(f"### {issue['file']}:{issue['line']}")
-                lines.append(f"**Type:** {issue['type']}")
-                lines.append(f"**Message:** {issue['message']}")
-                lines.append("")
-
-        if warnings:
-            lines.append("## Warnings")
-            lines.append("")
-            for issue in warnings:
-                lines.append(f"### {issue['file']}:{issue['line']}")
-                lines.append(f"**Type:** {issue['type']}")
-                lines.append(f"**Message:** {issue['message']}")
-                lines.append("")
-
-        return enforce_response_limit("\n".join(lines))
+def _format_validation_report(issues: list[dict[str, Any]]) -> dict[str, Any]:
+    """Format validation report as structured data."""
+    return {
+        "total_issues": len(issues),
+        "errors": len([i for i in issues if i['severity'] == 'error']),
+        "warnings": len([i for i in issues if i['severity'] == 'warning']),
+        "issues": issues
+    }
 
 
 def with_timeout(timeout_seconds):
@@ -397,7 +359,7 @@ def with_timeout(timeout_seconds):
 
 
 @with_timeout(OPERATION_TIMEOUT)
-async def validate_docs(params: ValidateDocsInput) -> str | dict[str, any]:
+async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
     """Validate documentation for broken links, missing assets, and code snippet issues.
 
     This tool performs comprehensive validation:
@@ -461,7 +423,7 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, any]:
             snippet_issues = _validate_code_snippets(docs_path)
             all_issues.extend(snippet_issues)
 
-        return enforce_response_limit(_format_validation_report(all_issues, params.response_format))
+        return enforce_response_limit(_format_validation_report(all_issues))
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "validate_docs"))

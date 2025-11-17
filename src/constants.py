@@ -14,12 +14,10 @@ OPERATION_TIMEOUT = 60  # Operation timeout in seconds
 SUPPORTED_PLATFORMS = ["hugo", "docusaurus", "mkdocs", "sphinx", "vitepress", "jekyll", "gitbook"]
 
 # Quality assessment criteria
-QUALITY_CRITERIA = ["relevance", "accuracy", "purposefulness", "uniqueness", "consistency", "clarity", "structure"]
-
-class ResponseFormat(str, Enum):
-    """Output format for tool responses."""
-    MARKDOWN = "markdown"
-    JSON = "json"
+QUALITY_CRITERIA = [
+    "relevance", "accuracy", "purposefulness", "uniqueness",
+    "consistency", "clarity", "structure"
+]
 
 class DocumentationPlatform(str, Enum):
     """Supported documentation platforms."""

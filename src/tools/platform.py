@@ -5,9 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..constants import ResponseFormat
 from ..models import DetectPlatformInput
-from ..utils import detect_project_language, enforce_response_limit, handle_error, safe_json_dumps
+from ..utils import detect_project_language, enforce_response_limit, handle_error
 
 
 def _check_root_configs(project_path: Path) -> list[dict[str, Any]]:
@@ -207,7 +206,7 @@ def _check_dependencies(project_path: Path) -> list[dict[str, Any]]:
     return detected
 
 
-async def detect_platform(params: DetectPlatformInput) -> str | dict[str, any]:
+async def detect_platform(params: DetectPlatformInput) -> str | dict[str, Any]:
     """Detect and recommend documentation platform for the project.
 
     This tool uses a multi-stage detection approach:
@@ -279,37 +278,13 @@ async def detect_platform(params: DetectPlatformInput) -> str | dict[str, any]:
                 recommendation = "hugo"
                 rationale.append("Hugo is fast, language-agnostic, and widely adopted")
 
-        # Format response
-        if params.response_format == ResponseFormat.JSON:
-            result = {
-                "detected_platforms": detected_platforms,
-                "recommendation": recommendation,
-                "rationale": rationale,
-                "project_language": language
-            }
-            return enforce_response_limit(result)
-        else:
-            lines = ["# Documentation Platform Detection", ""]
-
-            if detected_platforms:
-                lines.append("## Detected Platforms")
-                for platform in detected_platforms:
-                    lines.append(f"- **{platform['platform'].upper()}** ({platform['confidence']} confidence)")
-                    for evidence in platform['evidence']:
-                        lines.append(f"  - {evidence}")
-                lines.append("")
-
-            lines.append("## Recommendation")
-            lines.append(f"**{recommendation.upper()}**")
-            lines.append("")
-            lines.append("### Rationale:")
-            for reason in rationale:
-                lines.append(f"- {reason}")
-            lines.append("")
-            lines.append("### Project Context:")
-            lines.append(f"- Primary Language: {language}")
-
-            return enforce_response_limit("\n".join(lines))
+        # Return structured data
+        return {
+            "detected_platforms": detected_platforms,
+            "recommendation": recommendation,
+            "rationale": rationale,
+            "project_language": language
+        }
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "detect_platform"))

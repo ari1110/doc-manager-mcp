@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .constants import ChangeDetectionMode, DocumentationPlatform, QualityCriterion, ResponseFormat
+from .constants import ChangeDetectionMode, DocumentationPlatform, QualityCriterion
 
 
 def _validate_project_path(v: str) -> str:
@@ -195,10 +195,6 @@ class InitializeConfigInput(BaseModel):
         description="Source file patterns to track for documentation (e.g., 'src/**/*.py')",
         max_length=50
     )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
-    )
 
     @field_validator('project_path')
     @classmethod
@@ -237,10 +233,6 @@ class InitializeMemoryInput(BaseModel):
         description="Absolute path to project root directory",
         min_length=1
     )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
-    )
 
     @field_validator('project_path')
     @classmethod
@@ -260,10 +252,6 @@ class DetectPlatformInput(BaseModel):
         ...,
         description="Absolute path to project root directory",
         min_length=1
-    )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
     )
 
 class AssessQualityInput(BaseModel):
@@ -286,10 +274,6 @@ class AssessQualityInput(BaseModel):
     criteria: list[QualityCriterion] | None = Field(
         default=None,
         description="Specific criteria to assess. If not specified, all 7 criteria will be assessed"
-    )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format"
     )
 
 class ValidateDocsInput(BaseModel):
@@ -321,10 +305,6 @@ class ValidateDocsInput(BaseModel):
         default=True,
         description="Extract and validate code snippets"
     )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format"
-    )
 
 class MapChangesInput(BaseModel):
     """Input for mapping code changes to documentation."""
@@ -346,10 +326,6 @@ class MapChangesInput(BaseModel):
     mode: ChangeDetectionMode = Field(
         default=ChangeDetectionMode.CHECKSUM,
         description="Change detection mode: 'checksum' for file hash comparison or 'git_diff' for git-based diff"
-    )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format"
     )
 
     @field_validator('since_commit')
@@ -402,10 +378,6 @@ class TrackDependenciesInput(BaseModel):
         description="Path to documentation directory (relative to project root). If not specified, will be auto-detected",
         min_length=1
     )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format"
-    )
 
 class BootstrapInput(BaseModel):
     """Input for bootstrapping fresh documentation."""
@@ -428,10 +400,6 @@ class BootstrapInput(BaseModel):
         default="docs",
         description="Path where documentation should be created (relative to project root)",
         min_length=1
-    )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
     )
 
 class MigrateInput(BaseModel):
@@ -465,10 +433,6 @@ class MigrateInput(BaseModel):
         default=True,
         description="Use git mv to preserve file history during migration"
     )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format: 'markdown' for human-readable or 'json' for machine-readable"
-    )
 
 class SyncInput(BaseModel):
     """Input for synchronizing documentation."""
@@ -492,8 +456,4 @@ class SyncInput(BaseModel):
         default=None,
         description="Path to documentation directory (relative to project root). If not specified, will be auto-detected",
         min_length=1
-    )
-    response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format"
     )

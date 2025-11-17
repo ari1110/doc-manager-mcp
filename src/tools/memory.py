@@ -5,8 +5,9 @@ import json
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
+from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT, ResponseFormat
+from ..constants import MAX_FILES, OPERATION_TIMEOUT
 from ..models import InitializeMemoryInput
 from ..utils import (
     calculate_checksum,
@@ -18,7 +19,6 @@ from ..utils import (
     load_config,
     matches_exclude_pattern,
     run_git_command,
-    safe_json_dumps,
     validate_path_boundary,
 )
 
@@ -50,7 +50,7 @@ def with_timeout(timeout_seconds):
     return decorator
 
 @with_timeout(OPERATION_TIMEOUT)
-async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, any]:
+async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, Any]:
     """Initialize the documentation memory system for tracking project state.
 
     This tool creates the `.doc-manager/` directory structure with memory files
@@ -214,42 +214,21 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, an
         with open(asset_path, 'w', encoding='utf-8') as f:
             json.dump(asset_manifest, f, indent=2)
 
-        # Return JSON or Markdown based on response_format
-        if params.response_format == ResponseFormat.JSON:
-            return enforce_response_limit({
-                "status": "success",
-                "message": "Memory system initialized successfully",
-                "baseline_path": str(baseline_path),
-                "conventions_path": str(conventions_path),
-                "repository": repo_name,
-                "language": language,
-                "docs_exist": docs_exist,
-                "metadata": {
-                    "git_commit": git_commit[:8] if git_commit else None,
-                    "git_branch": git_branch
-                },
-                "files_tracked": file_count
-            }})
-        else:
-            return enforce_response_limit(f"""✓ Memory system initialized successfully
-
-**Memory System Summary:**
-- Repository: {repo_name}
-- Language: {language}
-- Documentation: {'Found' if docs_exist else 'Not found'}
-- Git Commit: {git_commit[:8] if git_commit else 'N/A'}
-- Files Tracked: {file_count}
-
-**Created Files:**
-- {memory_dir}/memory/repo-baseline.json
-- {memory_dir}/memory/doc-conventions.md
-- {memory_dir}/asset-manifest.json
-
-Next steps:
-1. Customize `doc-conventions.md` to match your project's standards
-2. Run `docmgr_bootstrap` or `docmgr_migrate` to set up documentation
-3. Run `docmgr_sync` to keep docs in sync with code changes
-""")
+        # Return structured data
+        return {
+            "status": "success",
+            "message": "Memory system initialized successfully",
+            "baseline_path": str(baseline_path),
+            "conventions_path": str(conventions_path),
+            "repository": repo_name,
+            "language": language,
+            "docs_exist": docs_exist,
+            "metadata": {
+                "git_commit": git_commit[:8] if git_commit else None,
+                "git_branch": git_branch
+            },
+            "files_tracked": file_count
+        }
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "initialize_memory"))
