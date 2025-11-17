@@ -31,10 +31,22 @@ HEADING_FUNCTION_PATTERN = re.compile(r'^#+\s+([a-z_][a-zA-Z0-9_]*)\s*\([^)]*\)'
 # Extract class/type references
 CLASS_PATTERN = re.compile(r'`([A-Z][a-zA-Z0-9]+)(?!\()`')
 
-# Extract command references
+# Extract command references (literal and code)
 COMMAND_PATTERNS = [
     re.compile(r'`([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)`'),
     re.compile(r'\$\s+([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)')
+]
+
+# Extract semantic command references (phrases like "add command", "the generate subcommand")
+SEMANTIC_COMMAND_PATTERNS = [
+    # Matches: "add command", "generate command", "list command"
+    re.compile(r'\b([a-z][a-z0-9\-]+)\s+(?:command|subcommand|cmd)\b', re.IGNORECASE),
+    # Matches: "the add command", "the generate subcommand"
+    re.compile(r'\bthe\s+([a-z][a-z0-9\-]+)\s+(?:command|subcommand|cmd)\b', re.IGNORECASE),
+    # Matches: "`add` command", "`generate` subcommand"
+    re.compile(r'`([a-z][a-z0-9\-]+)`\s+(?:command|subcommand|cmd)\b', re.IGNORECASE),
+    # Matches markdown headers: "## add Command", "### The generate Command"
+    re.compile(r'^#+\s+(?:the\s+)?([a-z][a-z0-9\-]+)\s+(?:command|subcommand|cmd)', re.IGNORECASE | re.MULTILINE),
 ]
 
 
@@ -120,6 +132,24 @@ def _extract_code_references(content: str, doc_file: Path) -> list[dict[str, Any
                 references.append({
                     "type": "command",
                     "reference": command,
+                    "doc_file": str(doc_file)
+                })
+
+    # Extract semantic command references (phrases like "add command", "generate subcommand")
+    # Stopwords: generic commands that are too common to be useful
+    command_stopwords = {'run', 'help', 'version', 'test', 'build', 'install', 'start', 'stop', 'restart'}
+    seen_commands = set()  # Track to avoid duplicates
+
+    for pattern in SEMANTIC_COMMAND_PATTERNS:
+        for match in pattern.finditer(content):
+            command_name = match.group(1).lower()
+
+            # Skip stopwords and duplicates
+            if command_name not in command_stopwords and command_name not in seen_commands:
+                seen_commands.add(command_name)
+                references.append({
+                    "type": "semantic_command",
+                    "reference": command_name,
                     "doc_file": str(doc_file)
                 })
 
@@ -253,6 +283,20 @@ def _match_references_to_sources(references: list[dict[str, Any]], source_files:
                 if re.search(rf'\b(cmd|cli)/{re.escape(command_name)}(/|\.)', relative_path):
                     dependencies[doc_file].add(relative_path)
 
+        # Match semantic command references (e.g., "add command" → cmd/add.go)
+        elif ref_type == "semantic_command":
+            command_name = reference  # Already normalized to lowercase in extraction
+            for source_file in source_files:
+                relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
+                # T091: Use precise path matching with path separators
+                # Convention-based matching:
+                # - cmd/{command}.go (Go CLI pattern)
+                # - cmd/{command}.py (Python CLI pattern)
+                # - cli/{command}.js (Node.js pattern)
+                # Use word boundaries to prevent "add" matching "add_user.go"
+                if re.search(rf'\b(cmd|cli|commands?)/{re.escape(command_name)}(/|\.)', relative_path):
+                    dependencies[doc_file].add(relative_path)
+
     # Convert sets to sorted lists
     return {k: sorted(v) for k, v in dependencies.items()}
 
@@ -286,8 +330,8 @@ def _build_reverse_index(dependencies: dict[str, list[str]], all_references: lis
             reference = ref["reference"]
             doc_file = ref["doc_file"]
 
-            # For non-file references (functions, classes, etc.), add them to the index
-            if ref_type in ["function", "class", "command", "config_key"]:
+            # For non-file references (functions, classes, commands, etc.), add them to the index
+            if ref_type in ["function", "class", "command", "semantic_command", "config_key"]:
                 if reference not in reverse_index:
                     reverse_index[reference] = []
                 if doc_file not in reverse_index[reference]:
@@ -377,6 +421,23 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
 
     Analyzes documentation files to find references to source code,
     building a bidirectional dependency graph.
+
+    Reference Types Detected:
+    1. File paths (literal): `cmd/add.go`, `internal/vault/vault.go`
+    2. Functions/methods: `SaveVault()`, `LoadConfig()`
+    3. Classes/types: `VaultService`, `Config`
+    4. Commands (literal): `pass-cli add`, `generate --length 20`
+    5. Commands (semantic): "add command", "the generate subcommand"
+    6. Config keys: `vault_path`, `platform: hugo`
+
+    Semantic Detection:
+    - Detects command phrases like "add command", "generate subcommand"
+    - Maps to implementation files using project conventions
+    - Supports patterns: cmd/{name}.go, cli/{name}.py, commands/{name}.js
+    - Example: "add command" in docs → matches cmd/add.go
+
+    Returns:
+        Dependency graph with doc_to_code and code_to_doc mappings
     """
     try:
         project_path = Path(params.project_path).resolve()
