@@ -14,7 +14,7 @@ An MCP server for comprehensive documentation lifecycle management including:
 
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 
 # Import constants for enum conversions
@@ -96,7 +96,7 @@ async def docmgr_initialize_config(
 )
 async def docmgr_initialize_memory(
     project_path: str,
-    ctx: mcp.Context
+    ctx: Context
 ) -> str | dict[str, Any]:
     """Initialize the documentation memory system for tracking project state."""
     params = InitializeMemoryInput(
