@@ -101,7 +101,7 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: dict[str, An
     return changed_files
 
 
-def _get_changed_files_from_git(project_path: Path, since_commit: str) -> list[dict[str, str]]:
+async def _get_changed_files_from_git(project_path: Path, since_commit: str) -> list[dict[str, str]]:
     """Get changed files from git diff."""
     changed_files = []
 
@@ -112,7 +112,7 @@ def _get_changed_files_from_git(project_path: Path, since_commit: str) -> list[d
     exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
 
     # Get list of changed files
-    output = run_git_command(project_path, "diff", "--name-status", since_commit, "HEAD")
+    output = await run_git_command(project_path, "diff", "--name-status", since_commit, "HEAD")
 
     if not output:
         return changed_files
@@ -345,7 +345,7 @@ async def _map_changes_impl(params: MapChangesInput) -> str | dict[str, Any]:
         if params.mode == ChangeDetectionMode.GIT_DIFF:
             # Use git diff
             since_commit = params.since_commit or "HEAD~1"
-            changed_files = _get_changed_files_from_git(project_path, since_commit)
+            changed_files = await _get_changed_files_from_git(project_path, since_commit)
             baseline_info = {"git_commit": since_commit}
         else:
             # Use checksum comparison from memory (default: CHECKSUM mode)
