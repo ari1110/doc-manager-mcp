@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
+from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
 from ..models import MapChangesInput
 from ..utils import (
     calculate_checksum,
@@ -41,10 +41,9 @@ def _get_changed_files_from_checksums(project_path: Path, baseline: dict[str, An
 
     # Load config to get exclude patterns (FR-027)
     config = load_config(project_path)
-    exclude_patterns = config.get("exclude", []) if config else []
-    # Add default excludes if not in config
-    if not exclude_patterns:
-        exclude_patterns = ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"]
+    user_excludes = config.get("exclude", []) if config else []
+    # Merge default excludes with user excludes (defaults always applied)
+    exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
 
     # Check existing files for changes
     file_count = 0
@@ -108,10 +107,9 @@ def _get_changed_files_from_git(project_path: Path, since_commit: str) -> list[d
 
     # Load config to get exclude patterns (FR-027)
     config = load_config(project_path)
-    exclude_patterns = config.get("exclude", []) if config else []
-    # Add default excludes if not in config
-    if not exclude_patterns:
-        exclude_patterns = ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"]
+    user_excludes = config.get("exclude", []) if config else []
+    # Merge default excludes with user excludes (defaults always applied)
+    exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
 
     # Get list of changed files
     output = run_git_command(project_path, "diff", "--name-status", since_commit, "HEAD")

@@ -2,12 +2,13 @@
 
 import asyncio
 import json
+import os
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT
+from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT
 from ..models import InitializeMemoryInput
 from ..utils import (
     calculate_checksum,
@@ -95,24 +96,43 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
         git_commit = run_git_command(project_path, "rev-parse", "HEAD")
         git_branch = run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD")
 
-        # Load config to get exclude patterns
+        # Load config to get user-defined exclude patterns
         config = load_config(project_path)
-        exclude_patterns = config.get("exclude", []) if config else []
-        # Add default excludes if not in config
-        if not exclude_patterns:
-            exclude_patterns = ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"]
+        user_excludes = config.get("exclude", []) if config else []
+
+        # Merge default excludes with user excludes (defaults always applied)
+        # This ensures we skip .git, node_modules, __pycache__, etc. automatically
+        exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
 
         # Calculate checksums for all files in project
+        # Use os.walk with directory filtering to skip excluded dirs efficiently
         checksums = {}
         file_count = 0
-        for file_path in project_path.rglob("*"):
-            if file_count >= MAX_FILES:
-                raise ValueError(
-                    f"File count limit exceeded (maximum: {MAX_FILES:,} files)\n"
-                    f"→ Consider processing a smaller directory or increasing the limit."
-                )
 
-            if file_path.is_file() and not any(part.startswith('.') for part in file_path.parts):
+        for root, dirs, files in os.walk(project_path):
+            root_path = Path(root)
+
+            # Filter directories IN-PLACE to prevent os.walk from entering them
+            # This prevents scanning .git, node_modules, __pycache__, etc. entirely
+            # Much faster than scanning everything then filtering
+            dirs[:] = [
+                d for d in dirs
+                if not matches_exclude_pattern(
+                    str((root_path / d).relative_to(project_path)).replace('\\', '/'),
+                    exclude_patterns
+                )
+            ]
+
+            # Process files in this directory
+            for file_name in files:
+                if file_count >= MAX_FILES:
+                    raise ValueError(
+                        f"File count limit exceeded (maximum: {MAX_FILES:,} files)\n"
+                        f"→ Consider processing a smaller directory or increasing the limit."
+                    )
+
+                file_path = root_path / file_name
+
                 # Validate path boundary and check for malicious symlinks (T028 - FR-028)
                 try:
                     _ = validate_path_boundary(file_path, project_path)
@@ -120,10 +140,9 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
                     # Skip files that escape project boundary or malicious symlinks
                     continue
 
-                relative_path = file_path.relative_to(project_path)
-                relative_path_str = str(relative_path).replace('\\', '/')
+                relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
 
-                # Skip if matches exclude patterns
+                # Skip if file matches exclude patterns
                 if matches_exclude_pattern(relative_path_str, exclude_patterns):
                     continue
 

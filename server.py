@@ -20,6 +20,7 @@ from mcp.types import ToolAnnotations
 # Import constants for enum conversions
 from src.constants import (
     ChangeDetectionMode,
+    DEFAULT_EXCLUDE_PATTERNS,
     DocumentationPlatform,
     QualityCriterion,
 )
@@ -73,13 +74,11 @@ async def docmgr_initialize_config(
     sources: list[str] | None = None
 ) -> str | dict[str, Any]:
     """Initialize .doc-manager.yml configuration file for the project."""
-    default_excludes = [
-        "**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"
-    ]
+    # Use comprehensive default exclude patterns if user doesn't provide any
     params = InitializeConfigInput(
         project_path=project_path,
         platform=DocumentationPlatform(platform) if platform else None,
-        exclude_patterns=exclude_patterns if exclude_patterns is not None else default_excludes,
+        exclude_patterns=exclude_patterns if exclude_patterns is not None else list(DEFAULT_EXCLUDE_PATTERNS),
         docs_path=docs_path,
         sources=sources
     )

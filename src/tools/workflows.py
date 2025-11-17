@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..constants import DocumentationPlatform
+from ..constants import DEFAULT_EXCLUDE_PATTERNS, DocumentationPlatform
 from ..models import BootstrapInput, MigrateInput, SyncInput
 from ..utils import detect_project_language, enforce_response_limit, handle_error
 from .changes import map_changes
@@ -85,7 +85,7 @@ async def bootstrap(params: BootstrapInput) -> str | dict[str, Any]:
         config_result = await initialize_config(InitializeConfigInput(
             project_path=str(project_path),
             platform=recommended_platform,
-            exclude_patterns=["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/venv", "**/.git"]
+            exclude_patterns=list(DEFAULT_EXCLUDE_PATTERNS)
         ))
 
         if "Error" in config_result:
