@@ -9,18 +9,20 @@ from typing import Any
 # TreeSitter imports (will be available after pip install)
 try:
     from tree_sitter import Language, Parser
-    from tree_sitter_go import language as go_language
-    from tree_sitter_javascript import language as js_language
-    from tree_sitter_python import language as py_language
-    from tree_sitter_typescript import language_tsx as tsx_language
-    from tree_sitter_typescript import language_typescript as ts_language
+    from tree_sitter_language_pack import get_language
+
+    # Load languages from the language pack
+    go_language = get_language("go")
+    py_language = get_language("python")
+    js_language = get_language("javascript")
+    ts_language = get_language("typescript")
+    tsx_language = get_language("tsx")
 
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
     print(
-        "Warning: TreeSitter not available. Run: pip install tree-sitter tree-sitter-go "
-        "tree-sitter-python tree-sitter-javascript tree-sitter-typescript",
+        "Warning: TreeSitter not available. Run: pip install tree-sitter tree-sitter-language-pack",
         file=sys.stderr,
     )
 
@@ -67,17 +69,17 @@ class SymbolIndexer:
         if not TREE_SITTER_AVAILABLE:
             raise ImportError(
                 "TreeSitter dependencies not installed. "
-                "Run: pip install tree-sitter tree-sitter-go tree-sitter-python "
-                "tree-sitter-javascript tree-sitter-typescript"
+                "Run: pip install tree-sitter tree-sitter-language-pack"
             )
 
         # Initialize parsers for each supported language
+        # Language pack returns Language objects directly (no call needed)
         self.parsers = {
-            "go": self._create_parser(go_language()),
-            "python": self._create_parser(py_language()),
-            "javascript": self._create_parser(js_language()),
-            "typescript": self._create_parser(ts_language()),
-            "tsx": self._create_parser(tsx_language()),
+            "go": self._create_parser(go_language),
+            "python": self._create_parser(py_language),
+            "javascript": self._create_parser(js_language),
+            "typescript": self._create_parser(ts_language),
+            "tsx": self._create_parser(tsx_language),
         }
 
         # Symbol index: symbol_name -> list of Symbol objects
