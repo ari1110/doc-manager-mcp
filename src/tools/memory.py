@@ -8,6 +8,15 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
+async def scandir_async(path: Path):
+    """Asynchronously scan a directory."""
+    try:
+        for entry in os.scandir(path):
+            yield entry
+    except (FileNotFoundError, PermissionError):
+        # Skip directories that can't be accessed
+        pass
+
 from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT
 from ..models import InitializeMemoryInput
 from ..utils import (
@@ -80,75 +89,56 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
             return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         memory_dir = project_path / ".doc-manager"
-
-        # Create memory directory structure (overwrite if exists)
         memory_dir.mkdir(parents=True, exist_ok=True)
         (memory_dir / "memory").mkdir(exist_ok=True)
 
-        # Get project metadata
         repo_name = project_path.name
         language = detect_project_language(project_path)
         docs_dir = find_docs_directory(project_path)
         docs_exist = docs_dir is not None
 
-        # Get git info
-        git_commit = run_git_command(project_path, "rev-parse", "HEAD")
-        git_branch = run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD")
+        git_commit_task = asyncio.create_task(run_git_command(project_path, "rev-parse", "HEAD"))
+        git_branch_task = asyncio.create_task(run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD"))
 
-        # Load config to get user-defined exclude patterns
         config = load_config(project_path)
         user_excludes = config.get("exclude", []) if config else []
-
-        # Merge default excludes with user excludes (defaults always applied)
-        # This ensures we skip .git, node_modules, __pycache__, etc. automatically
         exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
 
-        # Calculate checksums for all files in project
-        # Use os.walk with directory filtering to skip excluded dirs efficiently
         checksums = {}
         file_count = 0
-
-        for root, dirs, files in os.walk(project_path):
-            root_path = Path(root)
-
-            # Filter directories IN-PLACE to prevent os.walk from entering them
-            # This prevents scanning .git, node_modules, __pycache__, etc. entirely
-            # Much faster than scanning everything then filtering
-            dirs[:] = [
-                d for d in dirs
-                if not matches_exclude_pattern(
-                    str((root_path / d).relative_to(project_path)).replace('\\', '/'),
-                    exclude_patterns
-                )
-            ]
-
-            # Process files in this directory
-            for file_name in files:
+        
+        async def process_directory(current_path: Path):
+            nonlocal file_count
+            async for entry in scandir_async(current_path):
                 if file_count >= MAX_FILES:
-                    raise ValueError(
-                        f"File count limit exceeded (maximum: {MAX_FILES:,} files)\n"
-                        f"→ Consider processing a smaller directory or increasing the limit."
-                    )
+                    break
 
-                file_path = root_path / file_name
+                entry_path = Path(entry.path)
+                relative_path_str = str(entry_path.relative_to(project_path)).replace('\\', '/')
 
-                # Validate path boundary and check for malicious symlinks (T028 - FR-028)
-                try:
-                    _ = validate_path_boundary(file_path, project_path)
-                except ValueError:
-                    # Skip files that escape project boundary or malicious symlinks
-                    continue
-
-                relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
-
-                # Skip if file matches exclude patterns
                 if matches_exclude_pattern(relative_path_str, exclude_patterns):
                     continue
 
-                checksums[relative_path_str] = calculate_checksum(file_path)
-                file_count += 1
+                if entry.is_dir():
+                    await process_directory(entry_path)
+                elif entry.is_file():
+                    try:
+                        validate_path_boundary(entry_path, project_path)
+                        checksums[relative_path_str] = calculate_checksum(entry_path)
+                        file_count += 1
+                    except ValueError:
+                        continue
+        
+        await process_directory(project_path)
 
-        # Create repo baseline
+        if file_count >= MAX_FILES:
+            raise ValueError(
+                f"File count limit exceeded (maximum: {MAX_FILES:,} files)\n"
+                f"→ Consider processing a smaller directory or increasing the limit."
+            )
+
+        git_commit, git_branch = await asyncio.gather(git_commit_task, git_branch_task)
+
         baseline = {
             "repo_name": repo_name,
             "description": f"Repository for {repo_name}",
@@ -166,12 +156,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
         }
 
         baseline_path = memory_dir / "memory" / "repo-baseline.json"
-        # T065: Use file locking to prevent concurrent modification (FR-018)
         with file_lock(baseline_path):
             with open(baseline_path, 'w', encoding='utf-8') as f:
                 json.dump(baseline, f, indent=2)
 
-        # Create doc conventions template
         conventions = """# Documentation Conventions
 
 ## Style Guide
@@ -216,12 +204,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
 """
 
         conventions_path = memory_dir / "memory" / "doc-conventions.md"
-        # Only create conventions file if it doesn't already exist
         if not conventions_path.exists():
             with open(conventions_path, 'w', encoding='utf-8') as f:
                 f.write(conventions)
 
-        # Create asset manifest (empty initially)
         asset_manifest = {
             "assets": [],
             "created_at": datetime.now().isoformat(),
@@ -232,7 +218,6 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
         with open(asset_path, 'w', encoding='utf-8') as f:
             json.dump(asset_manifest, f, indent=2)
 
-        # Return structured data
         return {
             "status": "success",
             "message": "Memory system initialized successfully",
