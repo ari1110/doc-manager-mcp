@@ -24,7 +24,7 @@ def calculate_checksum(file_path: Path) -> str:
     except Exception:
         return ""
 
-def run_git_command(cwd: Path, *args, check_git_available: bool = True) -> str | None:
+async def run_git_command(cwd: Path, *args, check_git_available: bool = True) -> str | None:
     """Run a git command and return output.
 
     Args:
@@ -43,6 +43,7 @@ def run_git_command(cwd: Path, *args, check_git_available: bool = True) -> str |
         - 30-second timeout to prevent hangs
         - Git availability check with clear error message
     """
+    import asyncio
     import shutil
 
     # Check if git is available in PATH (T018)
@@ -56,18 +57,25 @@ def run_git_command(cwd: Path, *args, check_git_available: bool = True) -> str |
     try:
         # Security: Using array form with hardcoded "git" binary and validated args
         # to prevent command injection. All args are from trusted internal sources.
-        result = subprocess.run(  # noqa: S603
-            ["git", *args],  # Array form prevents command injection (T017)  # noqa: S607
+        proc = await asyncio.create_subprocess_exec(
+            "git",
+            *args,
             cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=30  # 30-second timeout (T019)
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
-        return result.stdout.strip() if result.returncode == 0 else None
+
+        # 30-second timeout (T019)
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
+
+        if proc.returncode == 0:
+            return stdout.decode().strip()
+        else:
+            return None
     except FileNotFoundError as err:
         # Git binary not found even after check
         raise RuntimeError("Git is required but not found. Please install git.") from err
-    except subprocess.TimeoutExpired:
+    except asyncio.TimeoutError:
         # Command exceeded timeout
         return None
     except Exception:
