@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..constants import MAX_FILES, OPERATION_TIMEOUT
+from ..constants import MAX_FILES
 from ..models import ValidateDocsInput
 from ..utils import (
     enforce_response_limit,

@@ -344,6 +344,7 @@ async def _map_changes_impl(params: MapChangesInput) -> str | dict[str, Any]:
 
         if params.mode == ChangeDetectionMode.GIT_DIFF:
             # Use git diff (since_commit is validated as required by model_validator)
+            assert params.since_commit is not None, "since_commit required for git_diff mode"
             changed_files = await _get_changed_files_from_git(project_path, params.since_commit)
             baseline_info = {"git_commit": params.since_commit}
         else:

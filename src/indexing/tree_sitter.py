@@ -4,9 +4,12 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # TreeSitter imports (will be available after pip install)
+if TYPE_CHECKING:
+    from tree_sitter import Language, Parser
+
 try:
     from tree_sitter import Language, Parser
     from tree_sitter_language_pack import get_language
@@ -21,6 +24,11 @@ try:
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
+    go_language = None
+    py_language = None
+    js_language = None
+    ts_language = None
+    tsx_language = None
     print(
         "Warning: TreeSitter not available. Run: pip install tree-sitter tree-sitter-language-pack",
         file=sys.stderr,
@@ -74,6 +82,13 @@ class SymbolIndexer:
 
         # Initialize parsers for each supported language
         # Language pack returns Language objects directly (no call needed)
+        # Languages are guaranteed to be available here due to TREE_SITTER_AVAILABLE check
+        assert go_language is not None
+        assert py_language is not None
+        assert js_language is not None
+        assert ts_language is not None
+        assert tsx_language is not None
+
         self.parsers = {
             "go": self._create_parser(go_language),
             "python": self._create_parser(py_language),

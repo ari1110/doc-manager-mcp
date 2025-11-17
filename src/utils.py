@@ -4,7 +4,6 @@ import fnmatch
 import hashlib
 import os
 import platform
-import subprocess
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -253,8 +252,8 @@ def file_lock(file_path: Path, timeout: int = 5, retries: int = 3):
                     import msvcrt
                     msvcrt.locking(lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
                 else:
-                    import fcntl
-                    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    import fcntl  # type: ignore[attr-defined]
+                    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)  # type: ignore[attr-defined]
 
                 acquired = True
                 break  # Lock acquired successfully
@@ -277,8 +276,8 @@ def file_lock(file_path: Path, timeout: int = 5, retries: int = 3):
                     import msvcrt
                     msvcrt.locking(lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
                 else:
-                    import fcntl
-                    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+                    import fcntl  # type: ignore[attr-defined]
+                    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)  # type: ignore[attr-defined]
             except Exception:  # noqa: S110
                 # Best effort release - failures during cleanup are non-critical
                 pass
@@ -451,13 +450,13 @@ def operation_timeout(seconds: int = 60):
 
     # Unix-like systems support SIGALRM
     if hasattr(signal, 'SIGALRM'):
-        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(seconds)
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)  # type: ignore[attr-defined]
+        signal.alarm(seconds)  # type: ignore[attr-defined]
         try:
             yield
         finally:
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, old_handler)
+            signal.alarm(0)  # type: ignore[attr-defined]
+            signal.signal(signal.SIGALRM, old_handler)  # type: ignore[attr-defined]
     else:
         # Windows doesn't support SIGALRM - use threading.Timer as fallback
         import threading

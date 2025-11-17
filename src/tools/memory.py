@@ -8,6 +8,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
+
 async def scandir_async(path: Path):
     """Asynchronously scan a directory."""
     try:
@@ -17,7 +18,7 @@ async def scandir_async(path: Path):
         # Skip directories that can't be accessed
         pass
 
-from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT
+from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
 from ..models import InitializeMemoryInput
 from ..utils import (
     calculate_checksum,
@@ -114,7 +115,7 @@ async def initialize_memory(params: InitializeMemoryInput, ctx=None) -> str | di
 
         checksums = {}
         file_count = 0
-        
+
         async def process_directory(current_path: Path):
             nonlocal file_count
             async for entry in scandir_async(current_path):
@@ -141,7 +142,7 @@ async def initialize_memory(params: InitializeMemoryInput, ctx=None) -> str | di
                             await ctx.report_progress(progress=int(progress), total=100)
                     except ValueError:
                         continue
-        
+
         await process_directory(project_path)
 
         if file_count >= MAX_FILES:
