@@ -59,7 +59,7 @@ def with_timeout(timeout_seconds):
         return wrapper
     return decorator
 
-async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, Any]:
+async def initialize_memory(params: InitializeMemoryInput, ctx=None) -> str | dict[str, Any]:
     """Initialize the documentation memory system for tracking project state.
 
     This tool creates the `.doc-manager/` directory structure with memory files
@@ -100,9 +100,17 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
         git_commit_task = asyncio.create_task(run_git_command(project_path, "rev-parse", "HEAD"))
         git_branch_task = asyncio.create_task(run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD"))
 
+        if ctx:
+            await ctx.report_progress(progress=10, total=100)
+            await ctx.info("Initializing memory system...")
+
         config = load_config(project_path)
         user_excludes = config.get("exclude", []) if config else []
         exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
+
+        if ctx:
+            await ctx.report_progress(progress=20, total=100)
+            await ctx.info("Scanning project files...")
 
         checksums = {}
         file_count = 0
@@ -126,6 +134,11 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
                         validate_path_boundary(entry_path, project_path)
                         checksums[relative_path_str] = calculate_checksum(entry_path)
                         file_count += 1
+
+                        # Report progress every 10 files (20-80% range)
+                        if ctx and file_count % 10 == 0:
+                            progress = 20 + min(60, (file_count / MAX_FILES) * 60)
+                            await ctx.report_progress(progress=int(progress), total=100)
                     except ValueError:
                         continue
         
@@ -136,6 +149,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
                 f"File count limit exceeded (maximum: {MAX_FILES:,} files)\n"
                 f"→ Consider processing a smaller directory or increasing the limit."
             )
+
+        if ctx:
+            await ctx.report_progress(progress=80, total=100)
+            await ctx.info(f"Scanned {file_count} files, creating baseline...")
 
         git_commit, git_branch = await asyncio.gather(git_commit_task, git_branch_task)
 
@@ -217,6 +234,10 @@ async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, An
         asset_path = memory_dir / "asset-manifest.json"
         with open(asset_path, 'w', encoding='utf-8') as f:
             json.dump(asset_manifest, f, indent=2)
+
+        if ctx:
+            await ctx.report_progress(progress=100, total=100)
+            await ctx.info(f"Memory system initialized! Tracked {file_count} files.")
 
         return {
             "status": "success",

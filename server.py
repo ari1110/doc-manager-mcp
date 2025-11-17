@@ -95,13 +95,14 @@ async def docmgr_initialize_config(
     )
 )
 async def docmgr_initialize_memory(
-    project_path: str
+    project_path: str,
+    ctx: mcp.Context
 ) -> str | dict[str, Any]:
     """Initialize the documentation memory system for tracking project state."""
     params = InitializeMemoryInput(
         project_path=project_path
     )
-    return await initialize_memory(params)
+    return await initialize_memory(params, ctx)
 
 @mcp.tool(
     name="docmgr_detect_platform",
