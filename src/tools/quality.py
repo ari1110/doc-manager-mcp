@@ -31,6 +31,13 @@ def _assess_relevance(docs_path: Path, markdown_files: list[Path]) -> dict[str, 
         r'\b(removed in|deprecated in)\b'
     ]
 
+    # Context indicators that suggest documentation ABOUT deprecations (not deprecated docs)
+    migration_context_patterns = [
+        r'\b(migration|migrating|upgrade|upgrading)\b',
+        r'\b(how to|guide to|documentation for)\b',
+        r'\b(breaking changes?|changelog|release notes)\b'
+    ]
+
     deprecated_count = 0
     files_with_deprecated = []
 
@@ -39,11 +46,26 @@ def _assess_relevance(docs_path: Path, markdown_files: list[Path]) -> dict[str, 
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
+            # Remove code blocks to avoid counting code comments
+            content_without_code = _remove_code_blocks(content)
+
+            # Check if this is migration/changelog documentation
+            is_migration_doc = any(
+                re.search(pattern, content_without_code, re.IGNORECASE)
+                for pattern in migration_context_patterns
+            ) or 'migration' in md_file.name.lower() or 'changelog' in md_file.name.lower()
+
             # Check for deprecated markers
             for pattern in deprecated_patterns:
-                matches = list(re.finditer(pattern, content, re.IGNORECASE))
+                matches = list(re.finditer(pattern, content_without_code, re.IGNORECASE))
                 if matches:
-                    deprecated_count += len(matches)
+                    # If this is migration/changelog docs, reduce the weight
+                    if is_migration_doc:
+                        # Only count 10% of matches in migration docs
+                        deprecated_count += len(matches) * 0.1
+                    else:
+                        deprecated_count += len(matches)
+
                     if str(md_file) not in files_with_deprecated:
                         files_with_deprecated.append(str(md_file.relative_to(docs_path)))
 
@@ -207,6 +229,13 @@ def _assess_purposefulness(docs_path: Path, markdown_files: list[Path]) -> dict[
     }
 
 
+def _remove_code_blocks(content: str) -> str:
+    """Remove fenced code blocks from content to avoid false positives."""
+    # Replace code blocks with empty lines to preserve line numbers
+    code_block_pattern = r'^```.*?^```'
+    return re.sub(code_block_pattern, '', content, flags=re.MULTILINE | re.DOTALL)
+
+
 def _assess_uniqueness(docs_path: Path, markdown_files: list[Path]) -> dict[str, Any]:
     """Assess if there's redundant or duplicate information."""
     issues = []
@@ -220,17 +249,20 @@ def _assess_uniqueness(docs_path: Path, markdown_files: list[Path]) -> dict[str,
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
+            # Remove code blocks to avoid counting comments as headers
+            content_without_code = _remove_code_blocks(content)
+
             # Find H1 and H2 headers
             h1_pattern = r'^# (.+)$'
             h2_pattern = r'^## (.+)$'
 
-            for match in re.finditer(h1_pattern, content, re.MULTILINE):
+            for match in re.finditer(h1_pattern, content_without_code, re.MULTILINE):
                 header_text = match.group(1).strip().lower()
                 if header_text not in headers:
                     headers[header_text] = []
                 headers[header_text].append(str(md_file.relative_to(docs_path)))
 
-            for match in re.finditer(h2_pattern, content, re.MULTILINE):
+            for match in re.finditer(h2_pattern, content_without_code, re.MULTILINE):
                 header_text = match.group(1).strip().lower()
                 if header_text not in headers:
                     headers[header_text] = []
@@ -284,9 +316,10 @@ def _assess_consistency(docs_path: Path, markdown_files: list[Path]) -> dict[str
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            # Check code block language tags
-            code_block_pattern = r'```(\w+)?'
-            for match in re.finditer(code_block_pattern, content):
+            # Check code block language tags (only opening fences)
+            # Pattern matches opening fence at line start, not closing fences
+            code_block_pattern = r'^```(\w+)?(?:\n|$)'
+            for match in re.finditer(code_block_pattern, content, re.MULTILINE):
                 lang = match.group(1)
                 if lang:
                     code_langs_with_backticks.add(lang)

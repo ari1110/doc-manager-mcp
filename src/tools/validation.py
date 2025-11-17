@@ -72,6 +72,11 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path) -> str
     if link_url.startswith(('http://', 'https://', 'mailto:', 'ftp://')):
         return None
 
+    # Skip Hugo shortcodes - these are processed at build time
+    # Common patterns: {{< relref "..." >}}, {{< ref "..." >}}, {{< ... >}}
+    if link_url.startswith('{{<') or link_url.startswith('{{%'):
+        return None
+
     # Handle anchor-only links (valid if they reference content in same file)
     if link_url.startswith('#'):
         return None
@@ -101,6 +106,12 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path) -> str
 
     # Check if target exists
     if not target.exists():
+        # Try with .md extension (Hugo/static site generators often use extensionless links)
+        if not target.suffix:
+            target_with_md = target.with_suffix('.md')
+            if target_with_md.exists():
+                return None  # Valid Hugo-style extensionless link
+
         return f"Broken link: {link_url} (target not found)"
 
     return None
