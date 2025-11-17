@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..constants import MAX_FILES
+from ..indexing import SymbolIndexer
 from ..models import TrackDependenciesInput
 from ..utils import (
     file_lock,
@@ -219,9 +220,23 @@ def _find_source_files(project_path: Path, docs_path: Path) -> list[Path]:
     return source_files
 
 
-def _match_references_to_sources(references: list[dict[str, Any]], source_files: list[Path],
-                                 project_path: Path) -> dict[str, list[str]]:
-    """Match documentation references to actual source files."""
+def _match_references_to_sources(
+    references: list[dict[str, Any]],
+    source_files: list[Path],
+    project_path: Path,
+    symbol_index: Any | None = None
+) -> dict[str, list[str]]:
+    """Match documentation references to actual source files.
+
+    Args:
+        references: List of extracted references from documentation
+        source_files: List of source file paths
+        project_path: Project root path
+        symbol_index: Optional SymbolIndexer for validating function/class matches
+
+    Returns:
+        Dictionary mapping doc files to matched source files
+    """
     dependencies = {}  # doc_file -> [source_files]
 
     for ref in references:
@@ -248,6 +263,16 @@ def _match_references_to_sources(references: list[dict[str, Any]], source_files:
             # Extract the identifier (without parentheses or namespace)
             identifier = reference.replace('()', '').split('.')[-1]
 
+            # Try TreeSitter symbol index first (much more accurate)
+            if symbol_index:
+                symbols = symbol_index.lookup(identifier)
+                if symbols:
+                    for symbol in symbols:
+                        # Normalize file path
+                        dependencies[doc_file].add(symbol.file)
+                    continue  # Skip regex fallback if symbol index found matches
+
+            # Fallback to regex-based text search if symbol index unavailable or no matches
             for source_file in source_files:
                 try:
                     with open(source_file, encoding='utf-8') as f:
@@ -295,7 +320,14 @@ def _match_references_to_sources(references: list[dict[str, Any]], source_files:
                 # - cli/{command}.js (Node.js pattern)
                 # Use word boundaries to prevent "add" matching "add_user.go"
                 if re.search(rf'\b(cmd|cli|commands?)/{re.escape(command_name)}(/|\.)', relative_path):
-                    dependencies[doc_file].add(relative_path)
+                    # If symbol index available, verify the file has symbols (not empty)
+                    if symbol_index:
+                        file_symbols = symbol_index.get_symbols_in_file(relative_path)
+                        if file_symbols:  # Only add if file has actual code
+                            dependencies[doc_file].add(relative_path)
+                    else:
+                        # No symbol index, trust the file path match
+                        dependencies[doc_file].add(relative_path)
 
     # Convert sets to sorted lists
     return {k: sorted(v) for k, v in dependencies.items()}
@@ -505,8 +537,18 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
         # Find source files
         source_files = _find_source_files(project_path, docs_path)
 
-        # Match references to actual source files
-        dependencies = _match_references_to_sources(all_references, source_files, project_path)
+        # Build symbol index with TreeSitter for accurate validation
+        symbol_index = None
+        try:
+            indexer = SymbolIndexer()
+            indexer.index_project(project_path)
+            symbol_index = indexer
+            print(f"Indexed {indexer.get_index_stats()['total_symbols']} symbols from {indexer.get_index_stats()['files_indexed']} files", file=sys.stderr)
+        except Exception as e:
+            print(f"Warning: TreeSitter indexing failed: {e}. Falling back to file-based matching.", file=sys.stderr)
+
+        # Match references to actual source files (with symbol index validation)
+        dependencies = _match_references_to_sources(all_references, source_files, project_path, symbol_index)
 
         # Build reverse index (source file/reference -> docs)
         # Includes both matched files and unmatched references
