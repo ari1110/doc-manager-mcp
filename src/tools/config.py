@@ -90,7 +90,7 @@ async def initialize_config(params: InitializeConfigInput) -> str | dict[str, An
         # Create configuration
         config = {
             "platform": platform.value,
-            "exclude": params.exclude_patterns,
+            "exclude": params.exclude_patterns or [],  # Ensure list, not None
             "sources": sources,
             "docs_path": docs_path,
             "metadata": {

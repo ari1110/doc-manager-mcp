@@ -181,7 +181,7 @@ class InitializeConfigInput(BaseModel):
         description="Documentation platform to use. If not specified, will be auto-detected. Options: hugo, docusaurus, mkdocs, sphinx, vitepress, jekyll, gitbook"
     )
     exclude_patterns: list[str] | None = Field(
-        default_factory=lambda: ["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/.git"],
+        default_factory=list,  # Empty list - tools will merge with DEFAULT_EXCLUDE_PATTERNS
         description="Glob patterns to exclude from documentation analysis",
         max_length=50
     )
