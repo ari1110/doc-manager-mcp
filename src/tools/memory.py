@@ -50,7 +50,6 @@ def with_timeout(timeout_seconds):
         return wrapper
     return decorator
 
-@with_timeout(OPERATION_TIMEOUT)
 async def initialize_memory(params: InitializeMemoryInput) -> str | dict[str, Any]:
     """Initialize the documentation memory system for tracking project state.
 
