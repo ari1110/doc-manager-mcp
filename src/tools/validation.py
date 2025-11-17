@@ -358,7 +358,6 @@ def with_timeout(timeout_seconds):
     return decorator
 
 
-@with_timeout(OPERATION_TIMEOUT)
 async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
     """Validate documentation for broken links, missing assets, and code snippet issues.
 
