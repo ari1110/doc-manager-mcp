@@ -546,6 +546,18 @@ class MigrateInput(BaseModel):
         default=True,
         description="Use git mv to preserve file history during migration"
     )
+    rewrite_links: bool = Field(
+        default=False,
+        description="Automatically rewrite internal links when migrating documentation to new structure"
+    )
+    regenerate_toc: bool = Field(
+        default=False,
+        description="Regenerate table of contents for each migrated file using <!-- TOC --> markers"
+    )
+    dry_run: bool = Field(
+        default=False,
+        description="Preview migration changes without modifying files. Shows what would be changed."
+    )
 
 class SyncInput(BaseModel):
     """Input for synchronizing documentation."""

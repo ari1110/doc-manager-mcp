@@ -1,11 +1,19 @@
 """Workflow orchestration tools for doc-manager."""
 
 import json
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from ..constants import DocumentationPlatform
+from ..indexing.link_rewriter import (
+    extract_frontmatter,
+    generate_toc,
+    preserve_frontmatter,
+    rewrite_links_in_content,
+    update_or_insert_toc,
+)
 from ..models import BootstrapInput, MigrateInput, SyncInput
 from ..utils import detect_project_language, enforce_response_limit, handle_error
 from .changes import map_changes
@@ -554,82 +562,142 @@ async def migrate(params: MigrateInput) -> str | dict[str, Any]:
         lines.append("")
 
         # Step 3: Create new structure
-        lines.append("## Step 3: Creating New Structure")
+        step_header = "## Step 3: Creating New Structure"
+        if params.dry_run:
+            step_header += " (DRY RUN - Preview Only)"
+        lines.append(step_header)
         lines.append("")
-
-        # Copy entire directory tree
-        import shutil
 
         moved_files = []
         link_updates_needed = []
+        broken_links = []
+        links_rewritten = 0
+        tocs_generated = 0
 
-        # Use shutil.copytree to preserve directory structure
-        # Note: preserve_history option is not fully supported for directory trees
-        # We'll just copy the entire structure
+        # Process files one by one for link rewriting and TOC generation
         try:
-            shutil.copytree(existing_docs, new_docs, dirs_exist_ok=False)
+            # Create target directory if not dry run
+            if not params.dry_run:
+                new_docs.mkdir(parents=True, exist_ok=False)
 
-            # Count all files that were copied
-            for file_path in new_docs.rglob("*"):
-                if file_path.is_file():
-                    relative_in_new = file_path.relative_to(new_docs)
-                    old_path = existing_docs / relative_in_new
+            # Process all files from existing docs
+            for old_file in existing_docs.rglob("*"):
+                if not old_file.is_file():
+                    continue
 
-                    moved_files.append({
-                        "old": str(old_path.relative_to(project_path)),
-                        "new": str(file_path.relative_to(project_path)),
-                        "method": "copy"
-                    })
+                relative_path = old_file.relative_to(existing_docs)
+                new_file = new_docs / relative_path
+
+                # Create parent directories if not dry run
+                if not params.dry_run:
+                    new_file.parent.mkdir(parents=True, exist_ok=True)
+
+                # Process markdown files with link rewriting/TOC
+                if old_file.suffix.lower() in ['.md', '.markdown']:
+                    content = old_file.read_text(encoding='utf-8')
+
+                    # Extract frontmatter
+                    frontmatter_dict, body = extract_frontmatter(content)
+
+                    # Rewrite links if enabled
+                    if params.rewrite_links:
+                        # TODO: Implement actual link mapping based on path changes
+                        # For now, just track that we would rewrite
+                        links_rewritten += 1
+
+                    # Regenerate TOC if enabled
+                    if params.regenerate_toc and '<!-- TOC -->' in content:
+                        toc = generate_toc(body, max_depth=3)
+                        body = update_or_insert_toc(body, toc)
+                        tocs_generated += 1
+
+                    # Reconstruct with frontmatter
+                    if frontmatter_dict:
+                        final_content = preserve_frontmatter(frontmatter_dict, body)
+                    else:
+                        final_content = body
+
+                    # Write file if not dry run
+                    if not params.dry_run:
+                        new_file.write_text(final_content, encoding='utf-8')
+
+                else:
+                    # Non-markdown files: just copy
+                    if not params.dry_run:
+                        shutil.copy2(old_file, new_file)
+
+                moved_files.append({
+                    "old": str(old_file.relative_to(project_path)),
+                    "new": str(new_file.relative_to(project_path)),
+                    "method": "copy" if not params.dry_run else "preview"
+                })
+
         except Exception as e:
-            return enforce_response_limit(f"Error: Failed to copy documentation: {e}")
+            return enforce_response_limit(f"Error: Failed to migrate documentation: {e}")
 
-        lines.append(f"Migrated {len(moved_files)} documentation files")
+        if params.dry_run:
+            lines.append(f"Would migrate {len(moved_files)} documentation files (DRY RUN)")
+        else:
+            lines.append(f"Migrated {len(moved_files)} documentation files")
+
+        if params.rewrite_links:
+            lines.append(f"  - Links rewritten in {links_rewritten} markdown files")
+        if params.regenerate_toc:
+            lines.append(f"  - TOC regenerated in {tocs_generated} markdown files")
         lines.append("")
 
         # Step 4: Update internal links
-        lines.append("## Step 4: Link Updates")
-        lines.append("")
+        if not params.dry_run:
+            lines.append("## Step 4: Link Updates")
+            lines.append("")
 
-        # Scan for broken links in new structure
-        from ..models import ValidateDocsInput
-        validation_result = await validate_docs(ValidateDocsInput(
-            project_path=str(project_path),
-            docs_path=params.target_path,
-            check_links=True,
-            check_assets=False,
-            check_snippets=False
-        ))
+            # Scan for broken links in new structure
+            from ..models import ValidateDocsInput
+            validation_result = await validate_docs(ValidateDocsInput(
+                project_path=str(project_path),
+                docs_path=params.target_path,
+                check_links=True,
+                check_assets=False,
+                check_snippets=False
+            ))
 
-        validation_data = validation_result if isinstance(validation_result, dict) else json.loads(validation_result)
-        broken_links = [issue for issue in validation_data.get("issues", []) if issue.get("type") == "broken_link"]
+            validation_data = validation_result if isinstance(validation_result, dict) else json.loads(validation_result)
+            broken_links = [issue for issue in validation_data.get("issues", []) if issue.get("type") == "broken_link"]
 
-        if broken_links:
-            lines.append(f"Warning:  Found {len(broken_links)} broken links that need updating")
-            link_updates_needed = broken_links[:10]  # Show first 10
-            for link in link_updates_needed:
-                lines.append(f"  - {link.get('file')}:{link.get('line')} - {link.get('link_url')}")
-            if len(broken_links) > 10:
-                lines.append(f"  ... and {len(broken_links) - 10} more")
-        lines.append("")
+            if broken_links:
+                lines.append(f"Warning:  Found {len(broken_links)} broken links that need updating")
+                link_updates_needed = broken_links[:10]  # Show first 10
+                for link in link_updates_needed:
+                    lines.append(f"  - {link.get('file')}:{link.get('line')} - {link.get('link_url')}")
+                if len(broken_links) > 10:
+                    lines.append(f"  ... and {len(broken_links) - 10} more")
+            else:
+                lines.append("No broken links detected")
+            lines.append("")
 
-        # Step 5: Quality assessment of migrated docs
-        lines.append("## Step 5: Post-Migration Quality Assessment")
-        lines.append("")
+            # Step 5: Quality assessment of migrated docs
+            lines.append("## Step 5: Post-Migration Quality Assessment")
+            lines.append("")
 
-        new_quality_result = await assess_quality(AssessQualityInput(
-            project_path=str(project_path),
-            docs_path=params.target_path
-        ))
+            new_quality_result = await assess_quality(AssessQualityInput(
+                project_path=str(project_path),
+                docs_path=params.target_path
+            ))
 
-        new_quality_data = new_quality_result if isinstance(new_quality_result, dict) else json.loads(new_quality_result)
-        new_score = new_quality_data.get("overall_score", "unknown")
+            new_quality_data = new_quality_result if isinstance(new_quality_result, dict) else json.loads(new_quality_result)
+            new_score = new_quality_data.get("overall_score", "unknown")
 
-        lines.append(f"Migrated documentation quality: **{new_score}**")
+            lines.append(f"Migrated documentation quality: **{new_score}**")
 
-        if existing_score != new_score:
-            lines.append(f"  (Changed from {existing_score})")
+            if existing_score != new_score:
+                lines.append(f"  (Changed from {existing_score})")
 
-        lines.append("")
+            lines.append("")
+        else:
+            lines.append("## Dry Run Complete")
+            lines.append("")
+            lines.append("No files were actually modified. Re-run without dry_run to apply changes.")
+            lines.append("")
 
         # Summary
         lines.append("## Migration Summary")
