@@ -21,6 +21,8 @@ try:
     ts_language = get_language("typescript")
     tsx_language = get_language("tsx")
     md_language = get_language("markdown")
+    bash_language = get_language("bash")
+    yaml_language = get_language("yaml")
 
     TREE_SITTER_AVAILABLE = True
 except ImportError:
@@ -31,6 +33,8 @@ except ImportError:
     ts_language = None
     tsx_language = None
     md_language = None
+    bash_language = None
+    yaml_language = None
     print(
         "Warning: TreeSitter not available. Run: pip install tree-sitter tree-sitter-language-pack",
         file=sys.stderr,
@@ -91,6 +95,8 @@ class SymbolIndexer:
         assert ts_language is not None
         assert tsx_language is not None
         assert md_language is not None
+        assert bash_language is not None
+        assert yaml_language is not None
 
         self.parsers = {
             "go": self._create_parser(go_language),
@@ -99,6 +105,8 @@ class SymbolIndexer:
             "typescript": self._create_parser(ts_language),
             "tsx": self._create_parser(tsx_language),
             "markdown": self._create_parser(md_language),
+            "bash": self._create_parser(bash_language),
+            "yaml": self._create_parser(yaml_language),
         }
 
         # Symbol index: symbol_name -> list of Symbol objects

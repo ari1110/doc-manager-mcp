@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ..constants import QualityCriterion
+from ..indexing.markdown_parser import MarkdownParser
 from ..models import AssessQualityInput
 from ..utils import enforce_response_limit, find_docs_directory, handle_error
 
@@ -111,6 +112,7 @@ def _assess_accuracy(docs_path: Path, markdown_files: list[Path]) -> dict[str, A
     """Assess if documentation reflects actual codebase and system behavior."""
     issues = []
     findings = []
+    parser = MarkdownParser()
 
     # Extract code blocks and check for common issues
     total_code_blocks = 0
@@ -122,16 +124,15 @@ def _assess_accuracy(docs_path: Path, markdown_files: list[Path]) -> dict[str, A
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            # Find code blocks
-            code_block_pattern = r'```(\w+)?\n(.*?)\n```'
-            matches = list(re.finditer(code_block_pattern, content, re.DOTALL))
+            # Find code blocks using MarkdownParser
+            code_blocks = parser.extract_code_blocks(content)
 
-            if matches:
+            if code_blocks:
                 files_with_code += 1
-                total_code_blocks += len(matches)
+                total_code_blocks += len(code_blocks)
 
-                for match in matches:
-                    lang = match.group(1) or "plaintext"
+                for block in code_blocks:
+                    lang = block["language"] or "plaintext"
                     code_blocks_by_lang[lang] = code_blocks_by_lang.get(lang, 0) + 1
 
         except Exception as e:
@@ -231,7 +232,7 @@ def _assess_purposefulness(docs_path: Path, markdown_files: list[Path]) -> dict[
 
 def _remove_code_blocks(content: str) -> str:
     """Remove fenced code blocks from content to avoid false positives."""
-    # Replace code blocks with empty lines to preserve line numbers
+    # Simple regex removal is fine for this use case (no need for line numbers)
     code_block_pattern = r'^```.*?^```'
     return re.sub(code_block_pattern, '', content, flags=re.MULTILINE | re.DOTALL)
 
@@ -240,6 +241,7 @@ def _assess_uniqueness(docs_path: Path, markdown_files: list[Path]) -> dict[str,
     """Assess if there's redundant or duplicate information."""
     issues = []
     findings = []
+    parser = MarkdownParser()
 
     # Extract all H1 and H2 headers to check for duplicates
     headers = {}
@@ -249,24 +251,16 @@ def _assess_uniqueness(docs_path: Path, markdown_files: list[Path]) -> dict[str,
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            # Remove code blocks to avoid counting comments as headers
-            content_without_code = _remove_code_blocks(content)
+            # Extract headers using MarkdownParser
+            all_headers = parser.extract_headers(content)
 
-            # Find H1 and H2 headers
-            h1_pattern = r'^# (.+)$'
-            h2_pattern = r'^## (.+)$'
-
-            for match in re.finditer(h1_pattern, content_without_code, re.MULTILINE):
-                header_text = match.group(1).strip().lower()
-                if header_text not in headers:
-                    headers[header_text] = []
-                headers[header_text].append(str(md_file.relative_to(docs_path)))
-
-            for match in re.finditer(h2_pattern, content_without_code, re.MULTILINE):
-                header_text = match.group(1).strip().lower()
-                if header_text not in headers:
-                    headers[header_text] = []
-                headers[header_text].append(str(md_file.relative_to(docs_path)))
+            # Filter for H1 and H2 only
+            for header in all_headers:
+                if header["level"] in [1, 2]:
+                    header_text = header["text"].strip().lower()
+                    if header_text not in headers:
+                        headers[header_text] = []
+                    headers[header_text].append(str(md_file.relative_to(docs_path)))
 
         except Exception as e:
             print(f"Warning: Failed to read file {md_file}: {e}", file=sys.stderr)
@@ -368,6 +362,7 @@ def _assess_clarity(docs_path: Path, markdown_files: list[Path]) -> dict[str, An
     """Assess language precision, examples, and navigation."""
     issues = []
     findings = []
+    parser = MarkdownParser()
 
     # Check for navigation aids
     files_with_toc = 0
@@ -391,16 +386,16 @@ def _assess_clarity(docs_path: Path, markdown_files: list[Path]) -> dict[str, An
             if re.search(r'(table of contents|## contents)', content, re.IGNORECASE):
                 files_with_toc += 1
 
-            # Check for internal links
-            link_pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
-            links = re.findall(link_pattern, content)
-            internal_links = [link for link in links if not link[1].startswith(('http://', 'https://'))]
+            # Check for internal links using MarkdownParser
+            links = parser.extract_links(content)
+            internal_links = [link for link in links if not link["url"].startswith(('http://', 'https://'))]
             if internal_links:
                 files_with_links += 1
                 total_internal_links += len(internal_links)
 
             # Check for examples (code blocks or "example" keyword)
-            has_example = '```' in content or re.search(r'\bexample[s]?\b', content, re.IGNORECASE)
+            code_blocks = parser.extract_code_blocks(content)
+            has_example = len(code_blocks) > 0 or re.search(r'\bexample[s]?\b', content, re.IGNORECASE)
             if has_example:
                 files_with_examples += 1
 
@@ -446,6 +441,7 @@ def _assess_structure(docs_path: Path, markdown_files: list[Path]) -> dict[str, 
     """Assess logical organization and hierarchy."""
     issues = []
     findings = []
+    parser = MarkdownParser()
 
     # Check directory structure
     subdirs = [d for d in docs_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
@@ -460,17 +456,16 @@ def _assess_structure(docs_path: Path, markdown_files: list[Path]) -> dict[str, 
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            # Extract all headings with their levels
-            heading_pattern = r'^(#{1,6}) (.+)$'
-            headings = []
-            for match in re.finditer(heading_pattern, content, re.MULTILINE):
-                level = len(match.group(1))
-                headings.append(level)
+            # Extract all headings using MarkdownParser
+            headers = parser.extract_headers(content)
+            heading_levels = [h["level"] for h in headers]
+
+            for level in heading_levels:
                 max_heading_depth = max(max_heading_depth, level)
 
             # Check for heading hierarchy issues (skipping levels)
-            for i in range(len(headings) - 1):
-                if headings[i+1] > headings[i] + 1:
+            for i in range(len(heading_levels) - 1):
+                if heading_levels[i+1] > heading_levels[i] + 1:
                     heading_issues += 1
                     break  # Count once per file
 

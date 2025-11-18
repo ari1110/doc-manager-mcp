@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from ..constants import MAX_FILES
+from ..indexing.code_validator import CodeValidator
+from ..indexing.markdown_parser import MarkdownParser
 from ..models import ValidateDocsInput
 from ..utils import (
     enforce_response_limit,
@@ -36,22 +38,20 @@ def _find_markdown_files(docs_path: Path) -> list[Path]:
 
 def _extract_links(content: str, file_path: Path) -> list[dict[str, Any]]:
     """Extract all links from markdown content."""
+    parser = MarkdownParser()
     links = []
 
-    # Markdown links: [text](url)
-    markdown_link_pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
-    for match in re.finditer(markdown_link_pattern, content):
-        link_text = match.group(1)
-        link_url = match.group(2)
-        line_num = content[:match.start()].count('\n') + 1
+    # Extract markdown links using MarkdownParser
+    md_links = parser.extract_links(content)
+    for link in md_links:
         links.append({
-            "text": link_text,
-            "url": link_url,
-            "line": line_num,
+            "text": link["text"],
+            "url": link["url"],
+            "line": link["line"],
             "file": str(file_path)
         })
 
-    # HTML links: <a href="url">
+    # HTML links: <a href="url"> (fallback for raw HTML)
     html_link_pattern = r'<a\s+[^>]*href=["\']([^"\']+)["\']'
     for match in re.finditer(html_link_pattern, content):
         link_url = match.group(1)
@@ -157,22 +157,20 @@ def _check_broken_links(docs_path: Path) -> list[dict[str, Any]]:
 
 def _extract_images(content: str, file_path: Path) -> list[dict[str, Any]]:
     """Extract all images from markdown content."""
+    parser = MarkdownParser()
     images = []
 
-    # Markdown images: ![alt](src)
-    md_image_pattern = r'!\[([^\]]*)\]\(([^\)]+)\)'
-    for match in re.finditer(md_image_pattern, content):
-        alt_text = match.group(1)
-        image_src = match.group(2)
-        line_num = content[:match.start()].count('\n') + 1
+    # Extract markdown images using MarkdownParser
+    md_images = parser.extract_images(content)
+    for img in md_images:
         images.append({
-            "alt": alt_text,
-            "src": image_src,
-            "line": line_num,
+            "alt": img["alt"],
+            "src": img["src"],
+            "line": img["line"],
             "file": str(file_path)
         })
 
-    # HTML images: <img src="..." alt="...">
+    # HTML images: <img src="..." alt="..."> (fallback for raw HTML)
     html_image_pattern = r'<img\s+[^>]*src=["\']([^"\']+)["\'](?:[^>]*alt=["\']([^"\']*)["\'])?'
     for match in re.finditer(html_image_pattern, content):
         image_src = match.group(1)
@@ -258,18 +256,16 @@ def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
 
 def _extract_code_blocks(content: str, file_path: Path) -> list[dict[str, Any]]:
     """Extract code blocks from markdown content."""
+    parser = MarkdownParser()
     code_blocks = []
 
-    # Fenced code blocks: ```lang\ncode\n```
-    code_block_pattern = r'```(\w+)?\n(.*?)\n```'
-    for match in re.finditer(code_block_pattern, content, re.DOTALL):
-        language = match.group(1) or "plaintext"
-        code = match.group(2)
-        line_num = content[:match.start()].count('\n') + 1
+    # Extract fenced code blocks using MarkdownParser
+    blocks = parser.extract_code_blocks(content)
+    for block in blocks:
         code_blocks.append({
-            "language": language,
-            "code": code,
-            "line": line_num,
+            "language": block["language"] or "plaintext",
+            "code": block["code"],
+            "line": block["line"],
             "file": str(file_path)
         })
 
@@ -277,8 +273,9 @@ def _extract_code_blocks(content: str, file_path: Path) -> list[dict[str, Any]]:
 
 
 def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
-    """Extract and validate code snippets."""
+    """Extract and validate code snippets using TreeSitter."""
     issues = []
+    validator = CodeValidator()
     markdown_files = _find_markdown_files(docs_path)
 
     for md_file in markdown_files:
@@ -289,39 +286,26 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
             code_blocks = _extract_code_blocks(content, md_file)
 
             for block in code_blocks:
-                # Basic validation: check for common syntax errors
-                if block['language'] in ['python', 'py']:
-                    # Check for obvious Python syntax issues
-                    code = block['code']
+                # Normalize language names for TreeSitter
+                language = block['language'].lower()
+                if language == 'py':
+                    language = 'python'
+                elif language == 'js':
+                    language = 'javascript'
+                elif language == 'ts':
+                    language = 'typescript'
 
-                    # Check for unmatched parentheses/brackets
-                    if code.count('(') != code.count(')'):
+                # Validate syntax using TreeSitter
+                result = validator.validate_syntax(language, block['code'])
+
+                if not result['valid'] and result['errors']:
+                    for error in result['errors']:
                         issues.append({
                             "type": "syntax_error",
                             "severity": "warning",
                             "file": str(md_file.relative_to(docs_path)),
-                            "line": block['line'],
-                            "message": "Unmatched parentheses in Python code block",
-                            "language": block['language']
-                        })
-
-                    if code.count('[') != code.count(']'):
-                        issues.append({
-                            "type": "syntax_error",
-                            "severity": "warning",
-                            "file": str(md_file.relative_to(docs_path)),
-                            "line": block['line'],
-                            "message": "Unmatched brackets in Python code block",
-                            "language": block['language']
-                        })
-
-                    if code.count('{') != code.count('}'):
-                        issues.append({
-                            "type": "syntax_error",
-                            "severity": "warning",
-                            "file": str(md_file.relative_to(docs_path)),
-                            "line": block['line'],
-                            "message": "Unmatched braces in Python code block",
+                            "line": block['line'] + error['line'] - 1,  # Adjust line number
+                            "message": f"{error['message']} at line {error['line']}, column {error['column']}",
                             "language": block['language']
                         })
 
