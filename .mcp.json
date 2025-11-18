@@ -14,9 +14,8 @@
       }
     },
     "doc-manager": {
-      "command": "uv",
-      "args": ["run", "python", "R:\\mcp-servers\\doc-manager\\server.py"],
-      "cwd": "R:\\mcp-servers\\doc-manager"
+      "command": "uvx",
+      "args": ["--from", "R:\\mcp-servers\\doc-manager", "doc-manager"]
     }
   }
 }

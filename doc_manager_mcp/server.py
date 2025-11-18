@@ -18,14 +18,14 @@ from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 
 # Import constants for enum conversions
-from src.constants import (
+from .constants import (
     ChangeDetectionMode,
     DocumentationPlatform,
     QualityCriterion,
 )
 
 # Import models
-from src.models import (
+from .models import (
     AssessQualityInput,
     BootstrapInput,
     DetectPlatformInput,
@@ -37,16 +37,16 @@ from src.models import (
     TrackDependenciesInput,
     ValidateDocsInput,
 )
-from src.tools.changes import map_changes
+from .tools.changes import map_changes
 
 # Import tool implementations
-from src.tools.config import initialize_config
-from src.tools.dependencies import track_dependencies
-from src.tools.memory import initialize_memory
-from src.tools.platform import detect_platform
-from src.tools.quality import assess_quality
-from src.tools.validation import validate_docs
-from src.tools.workflows import bootstrap, migrate, sync
+from .tools.config import initialize_config
+from .tools.dependencies import track_dependencies
+from .tools.memory import initialize_memory
+from .tools.platform import detect_platform
+from .tools.quality import assess_quality
+from .tools.validation import validate_docs
+from .tools.workflows import bootstrap, migrate, sync
 
 # Initialize the MCP server
 mcp = FastMCP("doc_manager_mcp")
@@ -292,5 +292,9 @@ async def docmgr_sync(
     )
     return await sync(params)
 
-if __name__ == "__main__":
+def main():
+    """Entry point for the MCP server."""
     mcp.run()
+
+if __name__ == "__main__":
+    main()

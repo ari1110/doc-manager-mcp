@@ -1,6 +1,6 @@
 [project]
 name = "doc-manager-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for comprehensive documentation lifecycle management"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,10 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-doc-manager = "server:main"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
+doc-manager = "doc_manager_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]
