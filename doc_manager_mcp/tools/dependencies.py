@@ -9,6 +9,7 @@ from typing import Any
 
 from ..constants import MAX_FILES
 from ..indexing import SymbolIndexer
+from ..indexing.markdown_parser import MarkdownParser
 from ..models import TrackDependenciesInput
 from ..utils import (
     file_lock,
@@ -18,25 +19,27 @@ from ..utils import (
 
 # ============================================================================
 # T082: Compiled regex patterns for performance (FR-023)
+# REFACTORED: Patterns now match content WITHOUT backticks (for use with MarkdownParser)
 # ============================================================================
 
-# Extract file path references (common patterns)
-FILE_PATH_PATTERN = re.compile(r'`([a-zA-Z0-9_\-/.]+\.(go|py|js|ts|tsx|jsx|java|rs|rb|php|c|cpp|h|hpp|cs|swift|kt|yaml|yml|json|cfg))`')
+# Extract file path references - matches content only (no backticks)
+FILE_PATH_PATTERN = re.compile(r'^([a-zA-Z0-9_\-/.]+\.(go|py|js|ts|tsx|jsx|java|rs|rb|php|c|cpp|h|hpp|cs|swift|kt|yaml|yml|json|cfg))$')
 
-# Extract function/method references
-FUNCTION_PATTERN = re.compile(r'`([A-Z][a-zA-Z0-9]*\.)?([a-z_][a-zA-Z0-9_]*)\(\)`')
+# Extract function/method references - matches content only
+FUNCTION_PATTERN = re.compile(r'^(([A-Z][a-zA-Z0-9]*\.)?([a-z_][a-zA-Z0-9_]*)\(\))$')
 
-# Match markdown headings with function signatures
+# Match markdown headings with function signatures (unchanged - doesn't use inline code)
 HEADING_FUNCTION_PATTERN = re.compile(r'^#+\s+([a-z_][a-zA-Z0-9_]*)\s*\([^)]*\)', re.MULTILINE)
 
-# Extract class/type references
-CLASS_PATTERN = re.compile(r'`([A-Z][a-zA-Z0-9]+)(?!\()`')
+# Extract class/type references - matches content only
+CLASS_PATTERN = re.compile(r'^([A-Z][a-zA-Z0-9]+)$')
 
-# Extract command references (literal and code)
-COMMAND_PATTERNS = [
-    re.compile(r'`([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)`'),
-    re.compile(r'\$\s+([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)')
-]
+# Extract command references - matches content only (no backticks)
+# NOTE: Inline code commands will be extracted via MarkdownParser, this pattern validates them
+COMMAND_PATTERN = re.compile(r'^([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)$')
+
+# Extract commands from terminal prompts in raw content (still needed for non-inline-code cases)
+TERMINAL_COMMAND_PATTERN = re.compile(r'\$\s+([a-z][a-z0-9\-]+(?:\s+[a-z][a-z0-9\-]+)*(?:\s+--?[a-z][a-z0-9\-]*)*)')
 
 # Extract semantic command references (phrases like "add command", "the generate subcommand")
 SEMANTIC_COMMAND_PATTERNS = [
@@ -192,97 +195,138 @@ def _find_markdown_files(docs_path: Path, project_path: Path) -> list[Path]:
 
 
 def _extract_code_references(content: str, doc_file: Path) -> list[dict[str, Any]]:
-    """Extract code references from documentation content (T082 - FR-023)."""
+    """Extract code references from documentation content (REFACTORED - uses MarkdownParser)."""
+    parser = MarkdownParser()
     references = []
 
-    # Extract file path references using compiled pattern
-    for match in FILE_PATH_PATTERN.finditer(content):
-        file_path = match.group(1)
-        references.append({
-            "type": "file_path",
-            "reference": file_path,
-            "doc_file": str(doc_file)
-        })
+    # Extract all inline code spans using MarkdownParser
+    inline_codes = parser.extract_inline_code(content)
 
-    # Extract function/method references using compiled pattern
-    for match in FUNCTION_PATTERN.finditer(content):
-        func_name = match.group(0).strip('`')
-        references.append({
-            "type": "function",
-            "reference": func_name,
-            "doc_file": str(doc_file)
-        })
+    # Process each inline code span and classify by type
+    for code_span in inline_codes:
+        code_text = code_span["text"]
+        line = code_span["line"]
 
-    # Match markdown headings with function signatures using compiled pattern
-    for match in HEADING_FUNCTION_PATTERN.finditer(content):
-        func_name = match.group(1) + "()"
-        references.append({
-            "type": "function",
-            "reference": func_name,
-            "doc_file": str(doc_file)
-        })
-
-    # Extract class/type references using compiled pattern
-    for match in CLASS_PATTERN.finditer(content):
-        class_name = match.group(1)
-        # Exclude common words and single letters
-        if len(class_name) > 2 and class_name not in ['API', 'CLI', 'HTTP', 'HTTPS', 'URL', 'JSON', 'XML']:
+        # Check if it's a file path
+        if match := FILE_PATH_PATTERN.match(code_text):
             references.append({
-                "type": "class",
-                "reference": class_name,
-                "doc_file": str(doc_file)
+                "type": "file_path",
+                "reference": match.group(1),
+                "doc_file": str(doc_file),
+                "line": line  # NEW: line number tracking
             })
+            continue
 
-    # Extract command references using compiled patterns
-    for pattern in COMMAND_PATTERNS:
-        for match in pattern.finditer(content):
+        # Check if it's a function reference
+        if match := FUNCTION_PATTERN.match(code_text):
+            references.append({
+                "type": "function",
+                "reference": code_text,
+                "doc_file": str(doc_file),
+                "line": line  # NEW
+            })
+            continue
+
+        # Check if it's a class reference
+        if match := CLASS_PATTERN.match(code_text):
+            class_name = match.group(1)
+            # Exclude common words
+            if len(class_name) > 2 and class_name not in ['API', 'CLI', 'HTTP', 'HTTPS', 'URL', 'JSON', 'XML']:
+                references.append({
+                    "type": "class",
+                    "reference": class_name,
+                    "doc_file": str(doc_file),
+                    "line": line  # NEW
+                })
+            continue
+
+        # Check if it's a command reference
+        if match := COMMAND_PATTERN.match(code_text):
             command = match.group(1)
-            # Filter out common words and single-word commands that are likely prose
             first_word = command.split()[0]
+            # Filter out common prose words
             if first_word not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'a', 'an', 'in', 'on', 'at', 'to', 'of']:
                 references.append({
                     "type": "command",
                     "reference": command,
-                    "doc_file": str(doc_file)
+                    "doc_file": str(doc_file),
+                    "line": line  # NEW
+                })
+            continue
+
+        # Check if it's a config key (dotted path, key:value, or simple key)
+        # Dotted path: server.port
+        if '.' in code_text and re.match(r'^[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+$', code_text):
+            references.append({
+                "type": "config_key",
+                "reference": code_text,
+                "doc_file": str(doc_file),
+                "line": line  # NEW
+            })
+            continue
+
+        # Config key with colon: platform: hugo
+        if ':' in code_text:
+            if match := re.match(r'^([a-z_][a-z0-9_]{2,}):', code_text):
+                config_key = match.group(1)
+                if config_key not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'file', 'path', 'name', 'type']:
+                    references.append({
+                        "type": "config_key",
+                        "reference": config_key,
+                        "doc_file": str(doc_file),
+                        "line": line  # NEW
+                    })
+            continue
+
+        # Simple config key: platform, docs_path (at least 3 chars)
+        if len(code_text) >= 3 and re.match(r'^[a-z_][a-z0-9_]{2,}$', code_text):
+            if code_text not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'file', 'path', 'name', 'type']:
+                references.append({
+                    "type": "config_key",
+                    "reference": code_text,
+                    "doc_file": str(doc_file),
+                    "line": line  # NEW
                 })
 
+    # Extract function signatures from markdown headings (doesn't use inline code)
+    for match in HEADING_FUNCTION_PATTERN.finditer(content):
+        func_name = match.group(1) + "()"
+        line_num = content[:match.start()].count('\n') + 1
+        references.append({
+            "type": "function",
+            "reference": func_name,
+            "doc_file": str(doc_file),
+            "line": line_num  # NEW
+        })
+
+    # Extract commands from terminal prompts in raw content (e.g., "$ command")
+    for match in TERMINAL_COMMAND_PATTERN.finditer(content):
+        command = match.group(1)
+        first_word = command.split()[0]
+        if first_word not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'a', 'an', 'in', 'on', 'at', 'to', 'of']:
+            line_num = content[:match.start()].count('\n') + 1
+            references.append({
+                "type": "command",
+                "reference": command,
+                "doc_file": str(doc_file),
+                "line": line_num  # NEW
+            })
+
     # Extract semantic command references (phrases like "add command", "generate subcommand")
-    # Stopwords: generic commands that are too common to be useful
     command_stopwords = {'run', 'help', 'version', 'test', 'build', 'install', 'start', 'stop', 'restart'}
-    seen_commands = set()  # Track to avoid duplicates
+    seen_commands = set()
 
     for pattern in SEMANTIC_COMMAND_PATTERNS:
         for match in pattern.finditer(content):
             command_name = match.group(1).lower()
-
-            # Skip stopwords and duplicates
             if command_name not in command_stopwords and command_name not in seen_commands:
                 seen_commands.add(command_name)
+                line_num = content[:match.start()].count('\n') + 1
                 references.append({
                     "type": "semantic_command",
                     "reference": command_name,
-                    "doc_file": str(doc_file)
-                })
-
-    # Extract configuration keys
-    # Pattern: config keys like `platform`, `docs_path`, or `server.port` (single words or dotted paths in backticks)
-    # Also match keys followed by a colon like `platform: value` or `docs_path: "value"`
-    # Match lowercase/underscore keys that look like config (avoid matching prose)
-    config_patterns = [
-        r'`([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)+)`',  # Dotted paths: `server.port`
-        r'`([a-z_][a-z0-9_]{2,}):[^`]+`',  # Config keys with colon inside backticks: `platform: hugo`, `docs_path: "docs"`
-        r'`([a-z_][a-z0-9_]{2,})`'  # Single words at least 3 chars: `platform`, `exclude`, `docs_path`
-    ]
-
-    for pattern in config_patterns:
-        for match in re.finditer(pattern, content):
-            config_key = match.group(1)
-            # Exclude common words that aren't config keys
-            if config_key not in ['the', 'and', 'for', 'with', 'from', 'this', 'that', 'your', 'you', 'file', 'path', 'name', 'type']:
-                references.append({
-                    "type": "config_key",
-                    "reference": config_key,
-                    "doc_file": str(doc_file)
+                    "doc_file": str(doc_file),
+                    "line": line_num  # NEW
                 })
 
     return references
