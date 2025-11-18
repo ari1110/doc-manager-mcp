@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
+from ..indexing.semantic_diff import SemanticChange, compare_symbols, load_symbol_baseline, save_symbol_baseline
+from ..indexing.tree_sitter import SymbolIndexer
 from ..models import MapChangesInput
 from ..utils import (
     calculate_checksum,
@@ -317,8 +319,46 @@ def _add_affected_doc(affected_docs: dict, doc_path: str, reason: str, priority:
             affected_docs[doc_path]["affected_by"].append(source_file)
 
 
+def _get_semantic_changes(project_path: Path) -> list[SemanticChange]:
+    """Detect semantic code changes using TreeSitter (lazy loading).
+
+    Compares current codebase symbols against stored baseline to detect:
+    - Added/removed functions, classes, methods
+    - Signature changes (breaking vs non-breaking)
+    - Implementation changes
+
+    Returns empty list if baseline doesn't exist or errors occur.
+    """
+    try:
+        # Load or create symbol baseline (lazy)
+        baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
+        old_symbols = load_symbol_baseline(baseline_path)
+
+        # Index current codebase
+        indexer = SymbolIndexer(project_path)
+        new_symbols = indexer.index_symbols()
+
+        # First run: create baseline and return empty changes
+        if old_symbols is None:
+            print("Creating symbol baseline for first semantic diff...", file=sys.stderr)
+            save_symbol_baseline(baseline_path, new_symbols)
+            return []
+
+        # Compare and detect changes
+        semantic_changes = compare_symbols(old_symbols, new_symbols)
+
+        # Update baseline with current symbols
+        save_symbol_baseline(baseline_path, new_symbols)
+
+        return semantic_changes
+
+    except Exception as e:
+        print(f"Warning: Semantic diff failed: {e}", file=sys.stderr)
+        return []
+
+
 def _format_changes_report(changed_files: list[dict[str, str]], affected_docs: list[dict[str, Any]],
-                           baseline_info: dict | None = None) -> dict[str, Any]:
+                           baseline_info: dict | None = None, semantic_changes: list[SemanticChange] | None = None) -> dict[str, Any]:
     """Format change mapping report."""
     return {
         "analyzed_at": datetime.now().isoformat(),
@@ -327,7 +367,8 @@ def _format_changes_report(changed_files: list[dict[str, str]], affected_docs: l
         "changes_detected": len(changed_files) > 0,
         "total_changes": len(changed_files),
         "changed_files": changed_files,
-        "affected_documentation": affected_docs
+        "affected_documentation": affected_docs,
+        "semantic_changes": semantic_changes or []
     }
 
 
@@ -359,7 +400,12 @@ async def _map_changes_impl(params: MapChangesInput) -> str | dict[str, Any]:
         # Map changes to affected docs
         affected_docs = _map_to_affected_docs(changed_files, project_path)
 
-        return _format_changes_report(changed_files, affected_docs, baseline_info)
+        # Detect semantic changes if enabled (lazy loading)
+        semantic_changes = []
+        if params.include_semantic:
+            semantic_changes = _get_semantic_changes(project_path)
+
+        return _format_changes_report(changed_files, affected_docs, baseline_info, semantic_changes)
 
     except Exception as e:
         return enforce_response_limit(handle_error(e, "map_changes"))

@@ -2,10 +2,12 @@
 
 import re
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .constants import ChangeDetectionMode, DocumentationPlatform, QualityCriterion
+from .indexing.semantic_diff import SemanticChange
 
 
 def _validate_project_path(v: str) -> str:
@@ -327,6 +329,10 @@ class MapChangesInput(BaseModel):
         default=ChangeDetectionMode.CHECKSUM,
         description="Change detection mode: 'checksum' for file hash comparison or 'git_diff' for git-based diff. Note: use underscore, not hyphen (git_diff, not git-diff)"
     )
+    include_semantic: bool = Field(
+        default=False,
+        description="Enable semantic code change detection (TreeSitter-based). Detects function signature changes, new classes, deleted methods, etc. Warning: May increase processing time for large codebases"
+    )
 
     @field_validator('mode', mode='before')
     @classmethod
@@ -420,6 +426,52 @@ class MapChangesInput(BaseModel):
             )
 
         return self
+
+class MapChangesOutput(BaseModel):
+    """Output model for map_changes tool JSON responses.
+
+    This model represents the structured response when map_changes returns
+    a dictionary (JSON format). It includes both file-level changes and
+    optional semantic changes when include_semantic=True.
+    """
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    analyzed_at: str = Field(
+        ...,
+        description="ISO 8601 timestamp when the analysis was performed"
+    )
+    baseline_commit: str | None = Field(
+        default=None,
+        description="Git commit SHA used as baseline (null if using checksum mode)"
+    )
+    baseline_created: str | None = Field(
+        default=None,
+        description="ISO 8601 timestamp when baseline was created (null if git mode)"
+    )
+    changes_detected: bool = Field(
+        ...,
+        description="Whether any changes were detected"
+    )
+    total_changes: int = Field(
+        ...,
+        description="Total number of changed files detected"
+    )
+    changed_files: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="List of files that changed with their paths and change types"
+    )
+    affected_documentation: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of documentation files affected by the code changes"
+    )
+    semantic_changes: list[SemanticChange] = Field(
+        default_factory=list,
+        description="Code-level semantic changes detected (function signatures, classes, methods). Only populated when include_semantic=True in the request"
+    )
 
 class TrackDependenciesInput(BaseModel):
     """Input for tracking code-to-docs dependencies."""
