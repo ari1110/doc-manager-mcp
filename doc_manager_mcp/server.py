@@ -138,7 +138,9 @@ async def docmgr_validate_docs(
     docs_path: str | None = None,
     check_links: bool = True,
     check_assets: bool = True,
-    check_snippets: bool = True
+    check_snippets: bool = True,
+    validate_code_syntax: bool = False,
+    validate_symbols: bool = False
 ) -> str | dict[str, Any]:
     """Validate documentation for broken links, missing assets, and code snippet issues."""
     params = ValidateDocsInput(
@@ -146,7 +148,9 @@ async def docmgr_validate_docs(
         docs_path=docs_path,
         check_links=check_links,
         check_assets=check_assets,
-        check_snippets=check_snippets
+        check_snippets=check_snippets,
+        validate_code_syntax=validate_code_syntax,
+        validate_symbols=validate_symbols
     )
     return await validate_docs(params)
 
@@ -188,13 +192,15 @@ async def docmgr_assess_quality(
 async def docmgr_map_changes(
     project_path: str,
     since_commit: str | None = None,
-    mode: str = "checksum"
+    mode: str = "checksum",
+    include_semantic: bool = False
 ) -> str | dict[str, Any]:
     """Map code changes to affected documentation using checksum comparison or git diff."""
     params = MapChangesInput(
         project_path=project_path,
         since_commit=since_commit,
-        mode=ChangeDetectionMode(mode)
+        mode=ChangeDetectionMode(mode),
+        include_semantic=include_semantic
     )
     return await map_changes(params)
 
@@ -257,7 +263,10 @@ async def docmgr_migrate(
     source_path: str,
     target_path: str = "docs",
     target_platform: str | None = None,
-    preserve_history: bool = True
+    preserve_history: bool = True,
+    rewrite_links: bool = False,
+    regenerate_toc: bool = False,
+    dry_run: bool = False
 ) -> str | dict[str, Any]:
     """Migrate existing documentation to new structure with optional git history preservation."""
     params = MigrateInput(
@@ -265,7 +274,10 @@ async def docmgr_migrate(
         source_path=source_path,
         target_path=target_path,
         target_platform=DocumentationPlatform(target_platform) if target_platform else None,
-        preserve_history=preserve_history
+        preserve_history=preserve_history,
+        rewrite_links=rewrite_links,
+        regenerate_toc=regenerate_toc,
+        dry_run=dry_run
     )
     return await migrate(params)
 

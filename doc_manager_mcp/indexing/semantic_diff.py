@@ -18,6 +18,7 @@ This information can be used for:
 """
 
 import json
+import os
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -190,7 +191,7 @@ def save_symbol_baseline(
     )
 
     try:
-        with open(temp_fd, "w", encoding="utf-8") as f:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
             json.dump(baseline_data, f, indent=2, ensure_ascii=False)
             f.flush()
 
