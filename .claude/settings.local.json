@@ -16,7 +16,9 @@
       "mcp__zen__clink",
       "Bash(git log:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(uv run ruff:*)"
+      "Bash(uv run ruff:*)",
+      "Bash(uv run pyright:*)",
+      "mcp__exa__web_search_exa"
     ],
     "deny": [],
     "ask": []
