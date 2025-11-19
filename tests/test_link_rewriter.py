@@ -742,28 +742,28 @@ title: Guide
         (old_docs / "guide.md").write_text("# Guide")
 
         # Run dry-run migration
-        try:
-            result = await migrate(MigrateInput(
-                project_path=str(project),
-                source_path="old-docs",
-                target_path="docs",
-                dry_run=True
-            ))
+        result = await migrate(MigrateInput(
+            project_path=str(project),
+            source_path="old-docs",
+            target_path="docs",
+            dry_run=True
+        ))
 
-            # Verify result is returned (even if dry-run behavior varies)
+        # Handle both string and dict return types
+        if isinstance(result, dict):
+            # Dict format - check status
+            assert result.get("status") == "success", f"Migration failed: {result.get('message')}"
+            assert "DRY RUN" in result.get("report", ""), "Dry run indicator should be in report"
+            assert result.get("files_migrated") == 1, "Should report 1 file migrated"
+        else:
+            # String format - check for errors
             assert isinstance(result, str)
+            assert "error" not in result.lower(), f"Migration returned error: {result}"
+            assert "DRY RUN" in result or "dry run" in result.lower(), "Dry run indicator should be in result"
 
-            # Check if error occurred
-            if "error" in result.lower():
-                pytest.skip(f"Migrate workflow has issues: {result}")
-
-            # Verify target directory NOT created (if dry-run is implemented)
-            new_docs = project / "docs"
-            if new_docs.exists():
-                # Dry-run may still create directories
-                pass
-        except Exception as e:
-            pytest.skip(f"Migration not fully implemented: {e}")
+        # Verify target directory NOT created (dry-run shouldn't create files)
+        new_docs = project / "docs"
+        assert not new_docs.exists(), "Dry run should not create target directory"
 
     @pytest.mark.asyncio
     async def test_migrate_frontmatter_preserved(self, tmp_path):
