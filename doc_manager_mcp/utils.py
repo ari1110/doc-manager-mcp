@@ -65,7 +65,7 @@ async def run_git_command(cwd: Path, *args, check_git_available: bool = True) ->
         )
 
         # 30-second timeout (T019)
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
+        stdout, _stderr = await asyncio.wait_for(proc.communicate(), timeout=30)
 
         if proc.returncode == 0:
             return stdout.decode().strip()

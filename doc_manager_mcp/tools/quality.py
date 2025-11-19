@@ -11,9 +11,9 @@ from ..indexing.markdown_parser import MarkdownParser
 from ..models import AssessQualityInput
 from ..utils import enforce_response_limit, find_docs_directory, handle_error
 from .quality_helpers import (
+    calculate_documentation_coverage,
     check_heading_case_consistency,
     check_list_formatting_consistency,
-    calculate_documentation_coverage,
     detect_multiple_h1s,
     detect_undocumented_apis,
 )

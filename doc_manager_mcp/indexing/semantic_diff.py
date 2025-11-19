@@ -77,7 +77,7 @@ def load_symbol_baseline(baseline_path: Path) -> dict[str, list[Symbol]] | None:
         return None
 
     try:
-        with open(baseline_path, "r", encoding="utf-8") as f:
+        with open(baseline_path, encoding="utf-8") as f:
             data = json.load(f)
 
         # Validate basic structure
@@ -146,7 +146,7 @@ def save_symbol_baseline(
     created_at = None
     if baseline_path.exists():
         try:
-            with open(baseline_path, "r", encoding="utf-8") as f:
+            with open(baseline_path, encoding="utf-8") as f:
                 existing = json.load(f)
                 created_at = existing.get("created_at")
         except (json.JSONDecodeError, OSError):

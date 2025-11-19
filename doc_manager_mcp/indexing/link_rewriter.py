@@ -106,7 +106,9 @@ def preserve_frontmatter(
     if format == "yaml":
         handler = frontmatter.YAMLHandler()
     elif format == "toml":
-        handler = frontmatter.TOMLHandler()
+        # TOML handler may not be available
+        toml_handler = getattr(frontmatter, 'TOMLHandler', None)
+        handler = toml_handler() if toml_handler else frontmatter.YAMLHandler()
     elif format == "json":
         handler = frontmatter.JSONHandler()
     else:
@@ -252,56 +254,101 @@ def update_or_insert_toc(content: str, toc: str, marker: str = "<!-- TOC -->") -
 
 
 def compute_link_mappings(
+    content: str,
     file_path: Path,
     old_root: Path,
-    new_root: Path
+    new_root: Path,
+    project_path: Path
 ) -> dict[str, str]:
     """Compute link URL transformations when file moves from old_root to new_root.
 
-    Calculates how relative links should be rewritten when a file is moved
-    between documentation roots. Handles both relative and absolute links,
-    but does not modify external links (http://, https://).
+    Scans markdown content for links and computes how they should be rewritten
+    when the file is moved between documentation roots.
 
     Args:
-        file_path: Current file being processed (in new location)
+        content: Markdown content to scan for links
+        file_path: Path to file in NEW location
         old_root: Original documentation root
         new_root: New documentation root
+        project_path: Project root (for resolving absolute paths)
 
     Returns:
         Dict mapping old URLs to new URLs
 
     Example:
-        >>> old_root = Path("/docs/old")
-        >>> new_root = Path("/docs/new")
-        >>> file_path = Path("/docs/new/guide/setup.md")
-        >>> mappings = compute_link_mappings(file_path, old_root, new_root)
-        >>> # Returns mappings for links that need to be rewritten
+        >>> content = "[Guide](../guide.md)"
+        >>> old_root = Path("/project/docs")
+        >>> new_root = Path("/project/documentation")
+        >>> file_path = Path("/project/documentation/api/reference.md")
+        >>> mappings = compute_link_mappings(
+        ...     content, file_path, old_root, new_root, Path("/project")
+        ... )
+        >>> # Returns: {"../guide.md": "../guide.md"} (depth unchanged)
     """
+    from ..indexing.markdown_parser import MarkdownParser
+
     mappings = {}
 
-    # Calculate relative paths
+    # Extract all links from content
+    parser = MarkdownParser()
+    links = parser.extract_links(content)
+
+    # Calculate file's position in old vs new structure
     try:
-        # Get the file's directory relative to new root
-        file_dir = file_path.parent
-        rel_to_new_root = file_dir.relative_to(new_root)
+        # Get file's relative path within new root
+        rel_path_in_new = file_path.relative_to(new_root)
+        # Construct where file was in old structure (same relative path)
+        old_file_path = old_root / rel_path_in_new
+        old_file_dir = old_file_path.parent
+        new_file_dir = file_path.parent
     except ValueError:
-        # File is not under new_root, cannot compute mappings
+        # File not under new_root, can't compute mappings
         return mappings
 
-    # Calculate the equivalent directory in old root
-    old_file_dir = old_root / rel_to_new_root
+    for link in links:
+        url = link.get("url", "")
 
-    # Compute depth difference (how many ../ to add/remove)
-    # Count directory levels from file location to respective roots
-    new_depth = len(rel_to_new_root.parts)
+        # Skip external links
+        if url.startswith(("http://", "https://", "ftp://", "mailto:", "#")):
+            continue
 
-    # For links that were relative to old root, compute new relative path
-    # This handles the case where directory structure depth changes
-    # between old and new roots
+        # Skip empty or anchor-only links
+        if not url or url.startswith("#"):
+            continue
 
-    # Note: This is a simplified implementation that establishes the framework
-    # The actual mappings would typically be computed by scanning the content
-    # and comparing link targets between old and new locations
+        try:
+            # Resolve the link target from old location
+            if url.startswith("/"):
+                # Absolute path from project root
+                old_target = project_path / url.lstrip("/")
+            else:
+                # Relative path from old file location
+                old_target = (old_file_dir / url).resolve()
+
+            # Check if target exists or will exist in new structure
+            # Try to find it relative to new root
+            try:
+                target_rel_to_old_root = old_target.relative_to(old_root)
+                new_target = new_root / target_rel_to_old_root
+            except ValueError:
+                # Target is outside old_root, try relative to project
+                try:
+                    target_rel_to_project = old_target.relative_to(project_path)
+                    new_target = project_path / target_rel_to_project
+                except ValueError:
+                    # Can't resolve, skip this link
+                    continue
+
+            # Compute new relative path from new file location to new target
+            new_url = compute_relative_link(new_file_dir, new_target, new_root)
+
+            # Only add mapping if URL changed
+            if new_url != url:
+                mappings[url] = new_url
+
+        except (ValueError, OSError):
+            # Link resolution failed, skip
+            continue
 
     return mappings
 

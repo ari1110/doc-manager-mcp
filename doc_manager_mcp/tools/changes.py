@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
-from ..indexing.semantic_diff import SemanticChange, compare_symbols, load_symbol_baseline, save_symbol_baseline
+from ..indexing.semantic_diff import (
+    SemanticChange,
+    compare_symbols,
+    load_symbol_baseline,
+    save_symbol_baseline,
+)
 from ..indexing.tree_sitter import SymbolIndexer
 from ..models import MapChangesInput
 from ..utils import (
@@ -335,8 +340,8 @@ def _get_semantic_changes(project_path: Path) -> list[SemanticChange]:
         old_symbols = load_symbol_baseline(baseline_path)
 
         # Index current codebase
-        indexer = SymbolIndexer(project_path)
-        new_symbols = indexer.index_symbols()
+        indexer = SymbolIndexer()
+        new_symbols = indexer.index_project(project_path)
 
         # First run: create baseline and return empty changes
         if old_symbols is None:

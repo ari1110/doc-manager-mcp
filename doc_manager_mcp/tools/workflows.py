@@ -11,7 +11,6 @@ from ..indexing.link_rewriter import (
     extract_frontmatter,
     generate_toc,
     preserve_frontmatter,
-    rewrite_links_in_content,
     update_or_insert_toc,
 )
 from ..models import BootstrapInput, MigrateInput, SyncInput
@@ -601,9 +600,22 @@ async def migrate(params: MigrateInput) -> str | dict[str, Any]:
 
                     # Rewrite links if enabled
                     if params.rewrite_links:
-                        # TODO: Implement actual link mapping based on path changes
-                        # For now, just track that we would rewrite
-                        links_rewritten += 1
+                        from ..indexing.link_rewriter import (
+                            compute_link_mappings,
+                            rewrite_links_in_content,
+                        )
+
+                        link_mappings = compute_link_mappings(
+                            body,
+                            new_file,
+                            existing_docs,
+                            new_docs,
+                            project_path
+                        )
+
+                        if link_mappings:
+                            body = rewrite_links_in_content(body, link_mappings)
+                            links_rewritten += 1
 
                     # Regenerate TOC if enabled
                     if params.regenerate_toc and '<!-- TOC -->' in content:

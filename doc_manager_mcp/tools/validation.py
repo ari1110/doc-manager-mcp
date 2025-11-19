@@ -323,32 +323,6 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
     return issues
 
 
-def _validate_code_syntax(docs_path: Path) -> list[dict[str, Any]]:
-    """Validate code example syntax using TreeSitter (semantic validation)."""
-    issues = []
-    markdown_files = _find_markdown_files(docs_path)
-
-    for md_file in markdown_files:
-        try:
-            with open(md_file, encoding='utf-8') as f:
-                content = f.read()
-
-            # Use validation_helpers function for code example validation
-            file_issues = validate_code_examples(content, md_file, docs_path)
-            issues.extend(file_issues)
-
-        except Exception as e:
-            issues.append({
-                "type": "read_error",
-                "severity": "error",
-                "file": str(md_file.relative_to(docs_path)),
-                "line": 1,
-                "message": f"Failed to read file: {e!s}"
-            })
-
-    return issues
-
-
 def _validate_code_syntax(docs_path: Path, project_path: Path) -> list[dict[str, Any]]:
     """Validate code example syntax using TreeSitter (semantic validation)."""
     issues = []

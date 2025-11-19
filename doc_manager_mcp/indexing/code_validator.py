@@ -100,7 +100,7 @@ class CodeValidator:
             if node.is_missing:
                 message = f"Missing {node.type}"
             else:
-                message = f"Syntax error"
+                message = "Syntax error"
 
             errors.append({
                 "type": "syntax_error",

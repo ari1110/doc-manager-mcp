@@ -84,7 +84,7 @@ def _detect_project_name(project_path: Path) -> str | None:
     if config_path.exists():
         try:
             import yaml
-            with open(config_path, 'r', encoding='utf-8') as f:
+            with open(config_path, encoding='utf-8') as f:
                 config = yaml.safe_load(f)
                 if config and 'project_name' in config:
                     return config['project_name']
@@ -98,7 +98,7 @@ def _detect_project_name(project_path: Path) -> str | None:
             # Get remote URL
             config_file = git_dir / 'config'
             if config_file.exists():
-                with open(config_file, 'r', encoding='utf-8') as f:
+                with open(config_file, encoding='utf-8') as f:
                     content = f.read()
                     # Extract repo name from URL
                     match = re.search(r'url = .*/([^/]+?)(?:\.git)?$', content, re.MULTILINE)

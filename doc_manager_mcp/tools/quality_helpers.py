@@ -64,7 +64,7 @@ def check_list_formatting_consistency(
             continue
 
     # Determine majority marker
-    majority_marker = max(marker_counts, key=marker_counts.get)
+    majority_marker = max(marker_counts, key=lambda k: marker_counts[k])
     total_markers = sum(marker_counts.values())
 
     if total_markers == 0:
@@ -158,7 +158,7 @@ def check_heading_case_consistency(
 
             # Record predominant style for this file
             if sum(file_style_counts.values()) > 0:
-                predominant_style = max(file_style_counts, key=file_style_counts.get)
+                predominant_style = max(file_style_counts, key=lambda k: file_style_counts[k])
                 file_styles[str(md_file.relative_to(docs_path))] = {
                     "style": predominant_style,
                     "counts": file_style_counts
@@ -179,7 +179,7 @@ def check_heading_case_consistency(
             "style_counts": style_counts
         }
 
-    majority_style = max(style_counts, key=style_counts.get)
+    majority_style = max(style_counts, key=lambda k: style_counts[k])
 
     # Find files using different style
     inconsistent_files = []
@@ -298,7 +298,7 @@ def detect_multiple_h1s(
                     "h1_texts": [h["text"] for h in h1_headers]
                 })
 
-        except Exception as e:
+        except Exception:
             # Skip files that can't be read
             continue
 
@@ -320,9 +320,10 @@ def detect_undocumented_apis(
     Returns:
         List of undocumented symbols (name, type, file, line)
     """
-    from ..indexing import SymbolIndexer, SymbolType
-    from ..indexing.markdown_parser import MarkdownParser
     import re
+
+    from ..indexing import SymbolIndexer
+    from ..indexing.markdown_parser import MarkdownParser
 
     # Step 1: Get all public symbols from codebase
     try:
@@ -423,10 +424,11 @@ def calculate_documentation_coverage(
     Returns:
         Dict with total_symbols, documented_symbols, coverage_percentage, breakdown_by_type
     """
-    from ..indexing import SymbolIndexer, SymbolType
-    from ..indexing.markdown_parser import MarkdownParser
     import re
     import sys
+
+    from ..indexing import SymbolIndexer
+    from ..indexing.markdown_parser import MarkdownParser
 
     # Index all symbols in the project
     try:
