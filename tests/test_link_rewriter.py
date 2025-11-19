@@ -937,3 +937,190 @@ Text here.
 
         # Indentation should be preserved
         assert '  [ref]: ../new/guide.md "Title"' in result
+
+
+class TestRegexPatterns:
+    r"""Direct unit tests for regex patterns used in link rewriting.
+
+    Tests edge cases for:
+    - inline_link_pattern: r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)'
+    - ref_def_pattern: r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?'
+    """
+
+    def test_inline_link_pattern_basic(self):
+        """Test inline link pattern matches basic markdown links."""
+        import re
+        pattern = re.compile(r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)')
+
+        text = "[Guide](../guide.md)"
+        match = pattern.search(text)
+
+        assert match is not None, "Pattern should match basic link"
+        assert match.group(1) == "Guide", "Group 1 should be link text"
+        assert match.group(2) == "../guide.md", "Group 2 should be URL"
+
+    def test_inline_link_pattern_escaped(self):
+        """Test that escaped links are NOT matched."""
+        import re
+        pattern = re.compile(r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)')
+
+        # Escaped link should not match due to negative lookbehind
+        text = r"\[Escaped](../guide.md)"
+        match = pattern.search(text)
+
+        assert match is None, "Escaped links should not be matched"
+
+    def test_inline_link_pattern_multiple_on_line(self):
+        """Test matching multiple links on same line."""
+        import re
+        pattern = re.compile(r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)')
+
+        text = "See [Guide](../guide.md) and [API](../api.md) docs"
+        matches = list(pattern.finditer(text))
+
+        assert len(matches) == 2, "Should find both links"
+        assert matches[0].group(1) == "Guide"
+        assert matches[0].group(2) == "../guide.md"
+        assert matches[1].group(1) == "API"
+        assert matches[1].group(2) == "../api.md"
+
+    def test_inline_link_pattern_special_chars_in_text(self):
+        """Test links with special characters in link text."""
+        import re
+        pattern = re.compile(r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)')
+
+        # Link text with spaces, hyphens, numbers
+        text = "[Hello World - Part 2](../guide.md)"
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(1) == "Hello World - Part 2"
+        assert match.group(2) == "../guide.md"
+
+    def test_inline_link_pattern_url_with_anchor(self):
+        """Test links with anchors and query params."""
+        import re
+        pattern = re.compile(r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)')
+
+        text = "[API](../api.md#section-1)"
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(2) == "../api.md#section-1", "Should capture anchor"
+
+    def test_inline_link_pattern_external_url(self):
+        """Test that external URLs are matched (filtering happens elsewhere)."""
+        import re
+        pattern = re.compile(r'(?<!\\)\[([^\]]+)\]\(([^)]+)\)')
+
+        text = "[Example](https://example.com/page)"
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(2) == "https://example.com/page"
+
+    def test_ref_def_pattern_basic(self):
+        """Test reference definition pattern matches basic syntax."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        text = "[guide]: ../guide.md"
+        match = pattern.search(text)
+
+        assert match is not None, "Should match basic ref definition"
+        assert match.group(1) == "guide", "Group 1 should be ref ID"
+        assert match.group(2) == "../guide.md", "Group 2 should be URL"
+        assert match.group(3) is None, "Group 3 should be None (no title)"
+
+    def test_ref_def_pattern_with_title(self):
+        """Test reference definition with title."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        text = '[guide]: ../guide.md "User Guide"'
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(1) == "guide"
+        assert match.group(2) == "../guide.md"
+        assert match.group(3) == "User Guide", "Group 3 should be title"
+
+    def test_ref_def_pattern_with_indentation(self):
+        """Test that indented reference definitions are matched."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        # Two spaces of indentation
+        text = '  [guide]: ../guide.md'
+        match = pattern.search(text)
+
+        assert match is not None, "Should match indented ref definition"
+        assert match.group(1) == "guide"
+        assert match.group(2) == "../guide.md"
+
+    def test_ref_def_pattern_multiline(self):
+        """Test matching multiple reference definitions in multiline text."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        text = """# Documentation
+
+[guide]: ../guide.md "Guide"
+[api]: ../api.md
+[ref]: ../ref.md "Reference"
+"""
+        matches = list(pattern.finditer(text))
+
+        assert len(matches) == 3, "Should find all 3 reference definitions"
+        assert matches[0].group(1) == "guide"
+        assert matches[0].group(3) == "Guide"
+        assert matches[1].group(1) == "api"
+        assert matches[1].group(3) is None
+        assert matches[2].group(1) == "ref"
+        assert matches[2].group(3) == "Reference"
+
+    def test_ref_def_pattern_not_midline(self):
+        """Test that reference definitions must be at start of line."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        # This looks like a ref def but is mid-line
+        text = "Text [guide]: ../guide.md here"
+        match = pattern.search(text)
+
+        assert match is None, "Should NOT match ref def in middle of line"
+
+    def test_ref_def_pattern_empty_title(self):
+        """Test reference definition with empty title."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        text = '[guide]: ../guide.md ""'
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(1) == "guide"
+        assert match.group(2) == "../guide.md"
+        assert match.group(3) == "", "Empty title should be captured as empty string"
+
+    def test_ref_def_pattern_url_with_anchor(self):
+        """Test reference definition with URL containing anchor."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        text = "[api]: ../api.md#overview"
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(2) == "../api.md#overview", "Should capture anchor"
+
+    def test_ref_def_pattern_external_url(self):
+        """Test reference definition with external URL."""
+        import re
+        pattern = re.compile(r'(?m)^\s*\[([^\]]+)\]:\s*([^\s]+)(?:\s+"([^"]*)")?')
+
+        text = "[example]: https://example.com/page"
+        match = pattern.search(text)
+
+        assert match is not None
+        assert match.group(2) == "https://example.com/page"
