@@ -106,7 +106,11 @@ def preserve_frontmatter(
     if format == "yaml":
         handler = frontmatter.YAMLHandler()
     elif format == "toml":
-        handler = frontmatter.TOMLHandler()
+        # TOMLHandler requires toml package (required dependency)
+        toml_handler = getattr(frontmatter, 'TOMLHandler', None)
+        if toml_handler is None:
+            raise ImportError("TOML support requires 'toml' package. Run: uv add toml")
+        handler = toml_handler()
     elif format == "json":
         handler = frontmatter.JSONHandler()
     else:
