@@ -55,7 +55,7 @@ Quick reference for test registry commands and metadata tags. For comprehensive 
 ### Required
 
 ```python
-# Python
+# Python (zero-padded 001-999)
 """
 @spec 001
 """
@@ -142,4 +142,4 @@ Tests are auto-classified by path if no `@testType` tag:
 **See also**:
 - Full guide: `../speckit.testing.md`
 - Tag schema: `metadata-schema.md`
-- Skill overview: `skill.md`
+- Skill overview: `../../SKILL.md`
