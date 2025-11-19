@@ -1,0 +1,160 @@
+"""Helper functions for validation.py to prevent file bloat."""
+
+import re
+from pathlib import Path
+from typing import Any
+
+from ..indexing.code_validator import CodeValidator
+from ..indexing.markdown_parser import MarkdownParser
+from ..indexing.tree_sitter import Symbol, SymbolIndexer
+
+# Patterns for identifying symbol references in markdown
+FUNCTION_PATTERN = re.compile(r'^(([A-Z][a-zA-Z0-9]*\.)?([a-z_][a-zA-Z0-9_]*)\(\))$')
+CLASS_PATTERN = re.compile(r'^([A-Z][a-zA-Z0-9]+)$')
+
+# Common words to exclude from class matching (acronyms, not actual classes)
+CLASS_EXCLUDES = {
+    'API', 'CLI', 'HTTP', 'HTTPS', 'URL', 'JSON', 'XML', 'HTML', 'CSS',
+    'SQL', 'REST', 'YAML', 'TOML', 'UUID', 'UTF', 'ASCII', 'ISO'
+}
+
+
+def validate_code_examples(
+    content: str,
+    file_path: Path,
+    project_path: Path
+) -> list[dict[str, Any]]:
+    """Validate code examples for semantic correctness.
+
+    Uses TreeSitter to check if code examples are syntactically valid.
+
+    Args:
+        content: Markdown content
+        file_path: Path to markdown file
+        project_path: Project root
+
+    Returns:
+        List of issues found in code examples
+    """
+    issues = []
+    parser = MarkdownParser()
+    validator = CodeValidator()
+
+    # Extract code blocks from markdown
+    code_blocks = parser.extract_code_blocks(content)
+
+    for block in code_blocks:
+        # Skip code blocks without language tags
+        if not block["language"]:
+            continue
+
+        # Normalize language names for TreeSitter
+        language = block["language"].lower()
+        if language == "py":
+            language = "python"
+        elif language == "js":
+            language = "javascript"
+        elif language == "ts":
+            language = "typescript"
+
+        # Validate syntax using TreeSitter
+        result = validator.validate_syntax(language, block["code"])
+
+        # Report syntax errors
+        if not result["valid"] and result["errors"]:
+            for error in result["errors"]:
+                issues.append({
+                    "type": "code_syntax_error",
+                    "severity": "warning",
+                    "file": str(file_path.relative_to(project_path)),
+                    "line": block["line"] + error["line"] - 1,  # Adjust line number
+                    "message": f"{language}: {error['message']} at line {error['line']}, column {error['column']}",
+                    "language": block["language"],
+                    "error_text": error.get("text", "")
+                })
+
+    return issues
+
+
+def validate_documented_symbols(
+    content: str,
+    file_path: Path,
+    project_path: Path,
+    symbol_index: dict[str, list[Symbol]] | None = None
+) -> list[dict[str, Any]]:
+    """Validate that documented symbols exist in codebase.
+
+    Extracts symbol references from markdown and checks against TreeSitter index.
+
+    Args:
+        content: Markdown content
+        file_path: Path to markdown file
+        project_path: Project root
+        symbol_index: Pre-built symbol index (from SymbolIndexer) or None to build
+
+    Returns:
+        List of issues for documented symbols that don't exist
+    """
+    issues = []
+
+    # Build symbol index if not provided
+    indexer = None
+    if symbol_index is None:
+        try:
+            indexer = SymbolIndexer()
+            indexer.index_project(project_path)
+            symbol_index = indexer.index
+        except Exception:
+            # TreeSitter not available or indexing failed
+            return []
+
+    # Extract inline code references using MarkdownParser
+    parser = MarkdownParser()
+    inline_codes = parser.extract_inline_code(content)
+
+    for code_span in inline_codes:
+        code_text = code_span["text"]
+        line = code_span["line"]
+
+        # Check if it's a function reference
+        if match := FUNCTION_PATTERN.match(code_text):
+            # Extract function name (without parentheses and namespace)
+            func_name = code_text.replace('()', '').split('.')[-1]
+
+            # Look up in symbol index
+            symbols = symbol_index.get(func_name, [])
+
+            if not symbols:
+                issues.append({
+                    "type": "missing_symbol",
+                    "severity": "warning",
+                    "file": str(file_path.relative_to(project_path)),
+                    "line": line,
+                    "message": f"Function '{code_text}' not found in codebase",
+                    "symbol": code_text,
+                    "symbol_type": "function"
+                })
+
+        # Check if it's a class reference
+        elif match := CLASS_PATTERN.match(code_text):
+            class_name = match.group(1)
+
+            # Exclude common acronyms and short words
+            if len(class_name) <= 2 or class_name in CLASS_EXCLUDES:
+                continue
+
+            # Look up in symbol index
+            symbols = symbol_index.get(class_name, [])
+
+            if not symbols:
+                issues.append({
+                    "type": "missing_symbol",
+                    "severity": "warning",
+                    "file": str(file_path.relative_to(project_path)),
+                    "line": line,
+                    "message": f"Class '{class_name}' not found in codebase",
+                    "symbol": class_name,
+                    "symbol_type": "class"
+                })
+
+    return issues

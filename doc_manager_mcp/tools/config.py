@@ -1,14 +1,21 @@
 """Configuration management tools for doc-manager."""
 
-import json
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
+from ..constants import DocumentationPlatform
 from ..models import InitializeConfigInput
-from ..constants import DocumentationPlatform, ResponseFormat
-from ..utils import detect_project_language, find_docs_directory, save_config, handle_error
+from ..utils import (
+    detect_project_language,
+    enforce_response_limit,
+    find_docs_directory,
+    handle_error,
+    save_config,
+)
 
-async def initialize_config(params: InitializeConfigInput) -> str:
+
+async def initialize_config(params: InitializeConfigInput) -> str | dict[str, Any]:
     """Initialize .doc-manager.yml configuration file for the project.
 
     This tool creates a new configuration file that defines how the documentation
@@ -38,10 +45,16 @@ async def initialize_config(params: InitializeConfigInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(
+                f"Error: Project path does not exist: {project_path}\n"
+                f"→ Please verify the path and try again with an existing directory."
+            )
 
         if not project_path.is_dir():
-            return f"Error: Project path is not a directory: {project_path}"
+            return enforce_response_limit(
+                f"Error: Project path is not a directory: {project_path}\n"
+                f"→ Please provide a path to a directory, not a file."
+            )
 
         # Check if config already exists (allow overwrite)
         config_path = project_path / ".doc-manager.yml"
@@ -77,7 +90,7 @@ async def initialize_config(params: InitializeConfigInput) -> str:
         # Create configuration
         config = {
             "platform": platform.value,
-            "exclude": params.exclude_patterns,
+            "exclude": params.exclude_patterns or [],  # Ensure list, not None
             "sources": sources,
             "docs_path": docs_path,
             "metadata": {
@@ -89,35 +102,19 @@ async def initialize_config(params: InitializeConfigInput) -> str:
 
         # Save configuration
         if not save_config(project_path, config):
-            return "Error: Failed to write configuration file"
+            return enforce_response_limit("Error: Failed to write configuration file")
 
-        # Return JSON or Markdown based on response_format
-        if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
-                "status": "success",
-                "message": "Configuration created successfully",
-                "config_path": str(config_path),
-                "platform": platform.value,
-                "docs_path": docs_path,
-                "language": language,
-                "exclude_patterns": len(params.exclude_patterns),
-                "sources": len(sources)
-            }, indent=2)
-        else:
-            return f"""✓ Configuration created successfully
-
-**Configuration Summary:**
-- Platform: {platform.value}
-- Documentation Path: {docs_path}
-- Primary Language: {language}
-- Exclude Patterns: {len(params.exclude_patterns)} patterns
-- Source Patterns: {len(sources)} patterns
-
-Next steps:
-1. Run `docmgr_initialize_memory` to set up the memory system
-2. Run `docmgr_bootstrap` to generate documentation (if starting fresh)
-3. Run `docmgr_migrate` to restructure existing documentation (if docs exist)
-"""
+        # Return structured data
+        return {
+            "status": "success",
+            "message": "Configuration created successfully",
+            "config_path": str(config_path),
+            "platform": platform.value,
+            "docs_path": docs_path,
+            "language": language,
+            "exclude_patterns": len(params.exclude_patterns or []),
+            "sources": len(sources)
+        }
 
     except Exception as e:
-        return handle_error(e, "initialize_config")
+        return enforce_response_limit(handle_error(e, "initialize_config"))

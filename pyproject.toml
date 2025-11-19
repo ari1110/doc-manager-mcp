@@ -1,6 +1,6 @@
 [project]
 name = "doc-manager-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for comprehensive documentation lifecycle management"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -8,14 +8,60 @@ dependencies = [
     "mcp>=1.0.0",
     "pydantic>=2.0.0",
     "pyyaml>=6.0.0",
+    "tree-sitter>=0.21.0",
+    "tree-sitter-language-pack>=0.1.0",
+    "markdown-it-py>=4.0.0",
+    "python-frontmatter>=1.1.0",
+    "pyright>=1.1.407",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.5",
+    "pytest>=9.0.1",
+    "pytest-asyncio>=1.3.0",
+    "toml>=0.10.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
 ]
 
 [project.scripts]
-doc-manager = "server:main"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
+doc-manager = "doc_manager_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+# Enable recommended rules + common issue detection
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort (import sorting)
+    "N",   # pep8-naming
+    "UP",  # pyupgrade (modern Python syntax)
+    "B",   # flake8-bugbear (common bugs)
+    "S",   # flake8-bandit (security issues)
+    "C4",  # flake8-comprehensions
+    "PIE", # flake8-pie (misc lints)
+    "RUF", # ruff-specific rules
+]
+
+# Ignore rules that are too strict for this project
+ignore = [
+    "S101",  # Allow assert statements (used in tests)
+    "E501",  # Line length handled by Black
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can have additional flexibility
+"tests/**/*.py" = [
+    "S101",  # assert allowed
+    "S105",  # hardcoded passwords ok in tests
+    "S106",  # hardcoded passwords ok in tests
+]

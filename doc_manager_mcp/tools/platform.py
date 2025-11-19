@@ -1,15 +1,15 @@
 """Platform detection tools for doc-manager."""
 
-from pathlib import Path
 import json
-from typing import List, Dict, Any
+import sys
+from pathlib import Path
+from typing import Any
 
 from ..models import DetectPlatformInput
-from ..constants import ResponseFormat
-from ..utils import detect_project_language, handle_error
+from ..utils import detect_project_language, enforce_response_limit, handle_error
 
 
-def _check_root_configs(project_path: Path) -> List[Dict[str, Any]]:
+def _check_root_configs(project_path: Path) -> list[dict[str, Any]]:
     """Check root-level configuration files (fast path)."""
     detected = []
 
@@ -70,7 +70,7 @@ def _check_root_configs(project_path: Path) -> List[Dict[str, Any]]:
     return detected
 
 
-def _check_doc_directories(project_path: Path) -> List[Dict[str, Any]]:
+def _check_doc_directories(project_path: Path) -> list[dict[str, Any]]:
     """Check common documentation directories (targeted search)."""
     detected = []
     doc_dirs = ["docsite", "docs", "documentation", "website", "site"]
@@ -124,7 +124,7 @@ def _check_doc_directories(project_path: Path) -> List[Dict[str, Any]]:
     return detected
 
 
-def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
+def _check_dependencies(project_path: Path) -> list[dict[str, Any]]:
     """Parse dependency files to detect platforms from dependencies."""
     detected = []
 
@@ -132,7 +132,7 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
     package_json = project_path / "package.json"
     if package_json.exists():
         try:
-            with open(package_json, 'r', encoding='utf-8') as f:
+            with open(package_json, encoding='utf-8') as f:
                 data = json.load(f)
                 deps = {**data.get("dependencies", {}), **data.get("devDependencies", {})}
 
@@ -148,14 +148,14 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "medium",
                         "evidence": ["Found VitePress in package.json dependencies"]
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Failed to parse package.json: {e}", file=sys.stderr)
 
     # Check requirements.txt or setup.py for Python projects
     requirements_txt = project_path / "requirements.txt"
     if requirements_txt.exists():
         try:
-            with open(requirements_txt, 'r', encoding='utf-8') as f:
+            with open(requirements_txt, encoding='utf-8') as f:
                 content = f.read().lower()
                 if "mkdocs" in content:
                     detected.append({
@@ -169,14 +169,14 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "medium",
                         "evidence": ["Found sphinx in requirements.txt"]
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Failed to read requirements.txt: {e}", file=sys.stderr)
 
     # Check setup.py for Sphinx (common in Python projects)
     setup_py = project_path / "setup.py"
     if setup_py.exists() and not detected:  # Only if nothing else detected
         try:
-            with open(setup_py, 'r', encoding='utf-8') as f:
+            with open(setup_py, encoding='utf-8') as f:
                 content = f.read().lower()
                 # Prefer Sphinx for setup.py-based projects (setuptools pattern)
                 if "sphinx" in content or "setuptools" in content:
@@ -185,14 +185,14 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "low",
                         "evidence": ["Found setup.py (Sphinx is common for setuptools-based Python projects)"]
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Failed to read setup.py: {e}", file=sys.stderr)
 
     # Check go.mod for Go projects
     go_mod = project_path / "go.mod"
     if go_mod.exists():
         try:
-            with open(go_mod, 'r', encoding='utf-8') as f:
+            with open(go_mod, encoding='utf-8') as f:
                 content = f.read().lower()
                 if "hugo" in content:
                     detected.append({
@@ -200,13 +200,13 @@ def _check_dependencies(project_path: Path) -> List[Dict[str, Any]]:
                         "confidence": "medium",
                         "evidence": ["Found hugo reference in go.mod"]
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Warning: Failed to read go.mod: {e}", file=sys.stderr)
 
     return detected
 
 
-async def detect_platform(params: DetectPlatformInput) -> str:
+async def detect_platform(params: DetectPlatformInput) -> str | dict[str, Any]:
     """Detect and recommend documentation platform for the project.
 
     This tool uses a multi-stage detection approach:
@@ -235,7 +235,7 @@ async def detect_platform(params: DetectPlatformInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Multi-stage detection approach
         detected_platforms = []
@@ -278,37 +278,13 @@ async def detect_platform(params: DetectPlatformInput) -> str:
                 recommendation = "hugo"
                 rationale.append("Hugo is fast, language-agnostic, and widely adopted")
 
-        # Format response
-        if params.response_format == ResponseFormat.JSON:
-            result = {
-                "detected_platforms": detected_platforms,
-                "recommendation": recommendation,
-                "rationale": rationale,
-                "project_language": language
-            }
-            return json.dumps(result, indent=2)
-        else:
-            lines = ["# Documentation Platform Detection", ""]
-
-            if detected_platforms:
-                lines.append("## Detected Platforms")
-                for platform in detected_platforms:
-                    lines.append(f"- **{platform['platform'].upper()}** ({platform['confidence']} confidence)")
-                    for evidence in platform['evidence']:
-                        lines.append(f"  - {evidence}")
-                lines.append("")
-
-            lines.append("## Recommendation")
-            lines.append(f"**{recommendation.upper()}**")
-            lines.append("")
-            lines.append("### Rationale:")
-            for reason in rationale:
-                lines.append(f"- {reason}")
-            lines.append("")
-            lines.append(f"### Project Context:")
-            lines.append(f"- Primary Language: {language}")
-
-            return "\n".join(lines)
+        # Return structured data
+        return {
+            "detected_platforms": detected_platforms,
+            "recommendation": recommendation,
+            "rationale": rationale,
+            "project_language": language
+        }
 
     except Exception as e:
-        return handle_error(e, "detect_platform")
+        return enforce_response_limit(handle_error(e, "detect_platform"))

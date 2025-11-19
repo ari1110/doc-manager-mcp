@@ -1,22 +1,29 @@
 """Workflow orchestration tools for doc-manager."""
 
-from pathlib import Path
 import json
-from typing import Dict, Any
+import shutil
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
+from ..constants import DocumentationPlatform
+from ..indexing.link_rewriter import (
+    extract_frontmatter,
+    generate_toc,
+    preserve_frontmatter,
+    update_or_insert_toc,
+)
 from ..models import BootstrapInput, MigrateInput, SyncInput
-from ..constants import ResponseFormat, DocumentationPlatform
-from ..utils import handle_error, detect_project_language
-from .platform import detect_platform
+from ..utils import detect_project_language, enforce_response_limit, handle_error
+from .changes import map_changes
 from .config import initialize_config
 from .memory import initialize_memory
+from .platform import detect_platform
 from .quality import assess_quality
-from .changes import map_changes
 from .validation import validate_docs
 
 
-async def bootstrap(params: BootstrapInput) -> str:
+async def bootstrap(params: BootstrapInput) -> str | dict[str, Any]:
     """Bootstrap fresh documentation for a project.
 
     Orchestrates multiple tools to set up documentation from scratch:
@@ -48,12 +55,12 @@ async def bootstrap(params: BootstrapInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Check if docs already exist
         docs_path = project_path / params.docs_path
         if docs_path.exists():
-            return f"Error: Documentation directory already exists at {docs_path}. Use migrate workflow to restructure existing docs."
+            return enforce_response_limit(f"Error: Documentation directory already exists at {docs_path}. Use migrate workflow to restructure existing docs.")
 
         lines = ["# Documentation Bootstrap Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -66,14 +73,13 @@ async def bootstrap(params: BootstrapInput) -> str:
 
         from ..models import DetectPlatformInput
         platform_result = await detect_platform(DetectPlatformInput(
-            project_path=str(project_path),
-            response_format=ResponseFormat.JSON
+            project_path=str(project_path)
         ))
 
-        platform_data = json.loads(platform_result)
+        platform_data = platform_result if isinstance(platform_result, dict) else json.loads(platform_result)
         recommended_platform = params.platform or DocumentationPlatform(platform_data["recommendation"])
 
-        lines.append(f"✓ Platform selected: **{recommended_platform.value}**")
+        lines.append(f"Platform selected: **{recommended_platform.value}**")
         if not params.platform:
             lines.append(f"  (Auto-detected based on: {platform_data['project_language']})")
         lines.append("")
@@ -86,13 +92,13 @@ async def bootstrap(params: BootstrapInput) -> str:
         config_result = await initialize_config(InitializeConfigInput(
             project_path=str(project_path),
             platform=recommended_platform,
-            exclude_patterns=["**/node_modules", "**/dist", "**/vendor", "**/*.log", "**/venv", "**/.git"]
+            exclude_patterns=None  # Let default_factory handle it, tools will merge with DEFAULT_EXCLUDE_PATTERNS
         ))
 
         if "Error" in config_result:
-            return f"Bootstrap failed at configuration step:\n{config_result}"
+            return enforce_response_limit(f"Error: Bootstrap failed at configuration step:\n{config_result}")
 
-        lines.append("✓ Created `.doc-manager.yml` configuration")
+        lines.append("Created `.doc-manager.yml` configuration")
         lines.append("")
 
         # Step 3: Create documentation structure
@@ -102,6 +108,7 @@ async def bootstrap(params: BootstrapInput) -> str:
         docs_path.mkdir(parents=True, exist_ok=True)
 
         # Create platform-specific documentation structure
+        structure: dict[str, str] = {}
         if recommended_platform == DocumentationPlatform.MKDOCS:
             structure = {
                 "README.md": _create_readme_template(project_path),
@@ -129,17 +136,6 @@ async def bootstrap(params: BootstrapInput) -> str:
                 "guides/basic-usage.md": _create_usage_template(project_path),
                 "reference/configuration.md": _create_config_reference_template(project_path),
             }
-        else:
-            # Generic fallback for unknown platforms (Sphinx, VitePress, Jekyll, GitBook, etc.)
-            structure = {
-                "README.md": _create_readme_template(project_path),
-                "_index.md": _create_index_template(project_path),
-                "getting-started/installation.md": _create_installation_template(project_path),
-                "getting-started/quick-start.md": _create_quickstart_template(project_path),
-                "guides/basic-usage.md": _create_usage_template(project_path),
-                "reference/configuration.md": _create_config_reference_template(project_path),
-            }
-
         created_files = []
         for relative_path, content in structure.items():
             file_path = docs_path / relative_path
@@ -150,7 +146,7 @@ async def bootstrap(params: BootstrapInput) -> str:
 
             created_files.append(str(file_path.relative_to(project_path)))
 
-        lines.append(f"✓ Created {len(created_files)} documentation files:")
+        lines.append(f"Created {len(created_files)} documentation files:")
         for file in created_files:
             lines.append(f"  - {file}")
         lines.append("")
@@ -165,9 +161,9 @@ async def bootstrap(params: BootstrapInput) -> str:
         ))
 
         if "Error" in memory_result:
-            return f"Bootstrap failed at memory initialization:\n{memory_result}"
+            return enforce_response_limit(f"Error: Bootstrap failed at memory initialization:\n{memory_result}")
 
-        lines.append("✓ Initialized memory system with baseline checksums")
+        lines.append("Initialized memory system with baseline checksums")
         lines.append("")
 
         # Step 5: Initial quality assessment
@@ -177,26 +173,25 @@ async def bootstrap(params: BootstrapInput) -> str:
         from ..models import AssessQualityInput
         quality_result = await assess_quality(AssessQualityInput(
             project_path=str(project_path),
-            docs_path=params.docs_path,
-            response_format=ResponseFormat.JSON
+            docs_path=params.docs_path
         ))
 
-        quality_data = json.loads(quality_result)
+        quality_data = quality_result if isinstance(quality_result, dict) else json.loads(quality_result)
         overall_score = quality_data.get("overall_score", "unknown")
 
-        lines.append(f"✓ Initial quality score: **{overall_score}**")
+        lines.append(f"Initial quality score: **{overall_score}**")
         lines.append("  (This will improve as you fill in the template content)")
         lines.append("")
 
         # Summary and next steps
         lines.append("## Summary")
         lines.append("")
-        lines.append("✓ Documentation bootstrapped successfully!")
+        lines.append("Documentation bootstrapped successfully!")
         lines.append("")
         lines.append("**What was created:**")
-        lines.append(f"- Configuration: `.doc-manager.yml`")
+        lines.append("- Configuration: `.doc-manager.yml`")
         lines.append(f"- Documentation: `{params.docs_path}/` with {len(created_files)} files")
-        lines.append(f"- Memory system: `.doc-manager/memory/`")
+        lines.append("- Memory system: `.doc-manager/memory/`")
         lines.append("")
 
         lines.append("## Next Steps")
@@ -204,8 +199,8 @@ async def bootstrap(params: BootstrapInput) -> str:
         lines.append("1. **Customize templates**: Fill in project-specific content in the created files")
         lines.append("2. **Add examples**: Include code examples and screenshots")
         lines.append("3. **Configure platform**: Set up your chosen documentation platform")
-        lines.append(f"4. **Run validation**: Use `docmgr_validate_docs` to check for issues")
-        lines.append(f"5. **Assess quality**: Use `docmgr_assess_quality` to measure improvements")
+        lines.append("4. **Run validation**: Use `docmgr_validate_docs` to check for issues")
+        lines.append("5. **Assess quality**: Use `docmgr_assess_quality` to measure improvements")
         lines.append("")
 
         lines.append("**Platform-Specific Setup:**")
@@ -222,30 +217,26 @@ async def bootstrap(params: BootstrapInput) -> str:
             lines.append("- Initialize: `npx create-docusaurus@latest . classic`")
             lines.append("- Move generated docs to match structure")
 
-        # Return JSON or Markdown based on response_format
-        if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
-                "status": "success",
-                "message": "Documentation bootstrapped successfully",
-                "project": project_path.name,
-                "platform": recommended_platform.value,
-                "docs_path": params.docs_path,
-                "files_created": len(created_files),
-                "steps": {
-                    "platform_detection": "completed",
-                    "configuration": "completed",
-                    "structure_creation": "completed",
-                    "memory_initialization": "completed",
-                    "quality_assessment": "completed"
-                },
-                "created_files": created_files,
-                "quality_score": overall_score
-            }, indent=2)
-        else:
-            return "\n".join(lines)
-
+        return {
+            "status": "success",
+            "message": "Documentation bootstrapped successfully",
+            "report": "\n".join(lines),
+            "project": project_path.name,
+            "platform": recommended_platform.value,
+            "docs_path": params.docs_path,
+            "files_created": len(created_files),
+            "steps": {
+                "platform_detection": "completed",
+                "configuration": "completed",
+                "structure_creation": "completed",
+                "memory_initialization": "completed",
+                "quality_assessment": "completed"
+            },
+            "created_files": created_files,
+            "quality_score": overall_score
+        }
     except Exception as e:
-        return handle_error(e, "bootstrap")
+        return enforce_response_limit(handle_error(e, "bootstrap"))
 
 
 def _create_readme_template(project_path: Path) -> str:
@@ -312,10 +303,9 @@ Detailed technical reference documentation.
 
 def _create_installation_template(project_path: Path) -> str:
     """Create installation guide template."""
-    project_name = project_path.name
     language = detect_project_language(project_path)
 
-    content = f"""# Installation
+    content = """# Installation
 
 ## Prerequisites
 
@@ -401,8 +391,7 @@ See [Installation Guide](installation.md) for detailed instructions.
 
 def _create_usage_template(project_path: Path) -> str:
     """Create basic usage guide template."""
-    project_name = project_path.name
-    return f"""# Basic Usage
+    return """# Basic Usage
 
 ## Common Tasks
 
@@ -485,7 +474,7 @@ option1: value
 """
 
 
-async def migrate(params: MigrateInput) -> str:
+async def migrate(params: MigrateInput) -> str | dict[str, Any]:
     """Migrate existing documentation to new structure.
 
     Orchestrates documentation restructuring:
@@ -521,17 +510,17 @@ async def migrate(params: MigrateInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         # Validate existing docs path
         existing_docs = project_path / params.source_path
         if not existing_docs.exists():
-            return f"Error: Existing documentation path does not exist: {existing_docs}"
+            return enforce_response_limit(f"Error: Existing documentation path does not exist: {existing_docs}")
 
         # Validate new docs path
         new_docs = project_path / params.target_path
         if new_docs.exists():
-            return f"Error: New documentation path already exists: {new_docs}. Please choose a different path or remove the existing directory."
+            return enforce_response_limit(f"Error: New documentation path already exists: {new_docs}. Please choose a different path or remove the existing directory.")
 
         lines = ["# Documentation Migration Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -545,14 +534,13 @@ async def migrate(params: MigrateInput) -> str:
         from ..models import AssessQualityInput
         quality_result = await assess_quality(AssessQualityInput(
             project_path=str(project_path),
-            docs_path=params.source_path,
-            response_format=ResponseFormat.JSON
+            docs_path=params.source_path
         ))
 
-        quality_data = json.loads(quality_result)
+        quality_data = quality_result if isinstance(quality_result, dict) else json.loads(quality_result)
         existing_score = quality_data.get("overall_score", "unknown")
 
-        lines.append(f"✓ Existing documentation quality: **{existing_score}**")
+        lines.append(f"Existing documentation quality: **{existing_score}**")
         lines.append("")
 
         # Step 2: Detect platforms
@@ -561,11 +549,10 @@ async def migrate(params: MigrateInput) -> str:
 
         from ..models import DetectPlatformInput
         platform_result = await detect_platform(DetectPlatformInput(
-            project_path=str(project_path),
-            response_format=ResponseFormat.JSON
+            project_path=str(project_path)
         ))
 
-        platform_data = json.loads(platform_result)
+        platform_data = platform_result if isinstance(platform_result, dict) else json.loads(platform_result)
         current_platform = platform_data.get("recommendation", "unknown")
         target_platform = params.target_platform.value if params.target_platform else current_platform
 
@@ -574,92 +561,160 @@ async def migrate(params: MigrateInput) -> str:
         lines.append("")
 
         # Step 3: Create new structure
-        lines.append("## Step 3: Creating New Structure")
+        step_header = "## Step 3: Creating New Structure"
+        if params.dry_run:
+            step_header += " (DRY RUN - Preview Only)"
+        lines.append(step_header)
         lines.append("")
-
-        # Copy entire directory tree
-        import shutil
 
         moved_files = []
         link_updates_needed = []
+        broken_links = []
+        links_rewritten = 0
+        tocs_generated = 0
 
-        # Use shutil.copytree to preserve directory structure
-        # Note: preserve_history option is not fully supported for directory trees
-        # We'll just copy the entire structure
+        # Process files one by one for link rewriting and TOC generation
         try:
-            shutil.copytree(existing_docs, new_docs, dirs_exist_ok=False)
+            # Create target directory if not dry run
+            if not params.dry_run:
+                new_docs.mkdir(parents=True, exist_ok=False)
 
-            # Count all files that were copied
-            for file_path in new_docs.rglob("*"):
-                if file_path.is_file():
-                    relative_in_new = file_path.relative_to(new_docs)
-                    old_path = existing_docs / relative_in_new
+            # Process all files from existing docs
+            for old_file in existing_docs.rglob("*"):
+                if not old_file.is_file():
+                    continue
 
-                    moved_files.append({
-                        "old": str(old_path.relative_to(project_path)),
-                        "new": str(file_path.relative_to(project_path)),
-                        "method": "copy"
-                    })
+                relative_path = old_file.relative_to(existing_docs)
+                new_file = new_docs / relative_path
+
+                # Create parent directories if not dry run
+                if not params.dry_run:
+                    new_file.parent.mkdir(parents=True, exist_ok=True)
+
+                # Process markdown files with link rewriting/TOC
+                if old_file.suffix.lower() in ['.md', '.markdown']:
+                    content = old_file.read_text(encoding='utf-8')
+
+                    # Extract frontmatter
+                    frontmatter_dict, body = extract_frontmatter(content)
+
+                    # Rewrite links if enabled
+                    if params.rewrite_links:
+                        from ..indexing.link_rewriter import (
+                            compute_link_mappings,
+                            rewrite_links_in_content,
+                        )
+
+                        link_mappings = compute_link_mappings(
+                            body,
+                            new_file,
+                            existing_docs,
+                            new_docs,
+                            project_path
+                        )
+
+                        if link_mappings:
+                            body = rewrite_links_in_content(body, link_mappings)
+                            links_rewritten += 1
+
+                    # Regenerate TOC if enabled
+                    if params.regenerate_toc and '<!-- TOC -->' in content:
+                        toc = generate_toc(body, max_depth=3)
+                        body = update_or_insert_toc(body, toc)
+                        tocs_generated += 1
+
+                    # Reconstruct with frontmatter
+                    if frontmatter_dict:
+                        final_content = preserve_frontmatter(frontmatter_dict, body)
+                    else:
+                        final_content = body
+
+                    # Write file if not dry run
+                    if not params.dry_run:
+                        new_file.write_text(final_content, encoding='utf-8')
+
+                else:
+                    # Non-markdown files: just copy
+                    if not params.dry_run:
+                        shutil.copy2(old_file, new_file)
+
+                moved_files.append({
+                    "old": str(old_file.relative_to(project_path)),
+                    "new": str(new_file.relative_to(project_path)),
+                    "method": "copy" if not params.dry_run else "preview"
+                })
+
         except Exception as e:
-            return f"Error copying documentation: {e}"
+            return enforce_response_limit(f"Error: Failed to migrate documentation: {e}")
 
-        lines.append(f"✓ Migrated {len(moved_files)} documentation files")
+        if params.dry_run:
+            lines.append(f"Would migrate {len(moved_files)} documentation files (DRY RUN)")
+        else:
+            lines.append(f"Migrated {len(moved_files)} documentation files")
+
+        if params.rewrite_links:
+            lines.append(f"  - Links rewritten in {links_rewritten} markdown files")
+        if params.regenerate_toc:
+            lines.append(f"  - TOC regenerated in {tocs_generated} markdown files")
         lines.append("")
 
         # Step 4: Update internal links
-        lines.append("## Step 4: Link Updates")
-        lines.append("")
+        if not params.dry_run:
+            lines.append("## Step 4: Link Updates")
+            lines.append("")
 
-        # Scan for broken links in new structure
-        from ..models import ValidateDocsInput
-        validation_result = await validate_docs(ValidateDocsInput(
-            project_path=str(project_path),
-            docs_path=params.target_path,
-            check_links=True,
-            check_assets=False,
-            check_snippets=False,
-            response_format=ResponseFormat.JSON
-        ))
+            # Scan for broken links in new structure
+            from ..models import ValidateDocsInput
+            validation_result = await validate_docs(ValidateDocsInput(
+                project_path=str(project_path),
+                docs_path=params.target_path,
+                check_links=True,
+                check_assets=False,
+                check_snippets=False
+            ))
 
-        validation_data = json.loads(validation_result)
-        broken_links = [issue for issue in validation_data.get("issues", []) if issue.get("type") == "broken_link"]
+            validation_data = validation_result if isinstance(validation_result, dict) else json.loads(validation_result)
+            broken_links = [issue for issue in validation_data.get("issues", []) if issue.get("type") == "broken_link"]
 
-        if broken_links:
-            lines.append(f"⚠️  Found {len(broken_links)} broken links that need updating")
-            link_updates_needed = broken_links[:10]  # Show first 10
-            for link in link_updates_needed:
-                lines.append(f"  - {link.get('file')}:{link.get('line')} - {link.get('link_url')}")
-            if len(broken_links) > 10:
-                lines.append(f"  ... and {len(broken_links) - 10} more")
+            if broken_links:
+                lines.append(f"Warning:  Found {len(broken_links)} broken links that need updating")
+                link_updates_needed = broken_links[:10]  # Show first 10
+                for link in link_updates_needed:
+                    lines.append(f"  - {link.get('file')}:{link.get('line')} - {link.get('link_url')}")
+                if len(broken_links) > 10:
+                    lines.append(f"  ... and {len(broken_links) - 10} more")
+            else:
+                lines.append("No broken links detected")
+            lines.append("")
+
+            # Step 5: Quality assessment of migrated docs
+            lines.append("## Step 5: Post-Migration Quality Assessment")
+            lines.append("")
+
+            new_quality_result = await assess_quality(AssessQualityInput(
+                project_path=str(project_path),
+                docs_path=params.target_path
+            ))
+
+            new_quality_data = new_quality_result if isinstance(new_quality_result, dict) else json.loads(new_quality_result)
+            new_score = new_quality_data.get("overall_score", "unknown")
+
+            lines.append(f"Migrated documentation quality: **{new_score}**")
+
+            if existing_score != new_score:
+                lines.append(f"  (Changed from {existing_score})")
+
+            lines.append("")
         else:
-            lines.append("✓ No broken links detected")
-
-        lines.append("")
-
-        # Step 5: Quality assessment of migrated docs
-        lines.append("## Step 5: Post-Migration Quality Assessment")
-        lines.append("")
-
-        new_quality_result = await assess_quality(AssessQualityInput(
-            project_path=str(project_path),
-            docs_path=params.target_path,
-            response_format=ResponseFormat.JSON
-        ))
-
-        new_quality_data = json.loads(new_quality_result)
-        new_score = new_quality_data.get("overall_score", "unknown")
-
-        lines.append(f"✓ Migrated documentation quality: **{new_score}**")
-
-        if existing_score != new_score:
-            lines.append(f"  (Changed from {existing_score})")
-
-        lines.append("")
+            lines.append("## Dry Run Complete")
+            lines.append("")
+            lines.append("No files were actually modified. Re-run without dry_run to apply changes.")
+            lines.append("")
 
         # Summary
         lines.append("## Migration Summary")
         lines.append("")
-        lines.append("✓ **Migration completed successfully!**")
+        lines.append("**Migration completed successfully!**")
         lines.append("")
         lines.append("**Files Migrated:**")
         lines.append(f"- Total files: {len(moved_files)}")
@@ -677,9 +732,6 @@ async def migrate(params: MigrateInput) -> str:
 
         if broken_links:
             lines.append(f"- {len(broken_links)} broken links need manual updates")
-        else:
-            lines.append("- None detected")
-
         lines.append("")
 
         # Next steps
@@ -700,33 +752,29 @@ async def migrate(params: MigrateInput) -> str:
         lines.append(f"- Old location: `{params.source_path}/`")
         lines.append(f"- New location: `{params.target_path}/`")
 
-        # Return JSON or Markdown based on response_format
-        if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
-                "status": "success",
-                "message": "Documentation migrated successfully",
-                "source_path": params.source_path,
-                "target_path": params.target_path,
-                "target_platform": params.target_platform.value if params.target_platform else target_platform,
-                "files_migrated": len(moved_files),
-                "broken_links": len(broken_links) if broken_links else 0,
-                "steps": {
-                    "assessment": "completed",
-                    "platform_detection": "completed",
-                    "copy": "completed",
-                    "link_detection": "completed",
-                    "quality_check": "completed"
-                },
-                "migrated_files": moved_files
-            }, indent=2)
-        else:
-            return "\n".join(lines)
-
+        return {
+            "status": "success",
+            "message": "Documentation migrated successfully",
+            "report": "\n".join(lines),
+            "source_path": params.source_path,
+            "target_path": params.target_path,
+            "target_platform": params.target_platform.value if params.target_platform else target_platform,
+            "files_migrated": len(moved_files),
+            "broken_links": len(broken_links) if broken_links else 0,
+            "steps": {
+                "assessment": "completed",
+                "platform_detection": "completed",
+                "copy": "completed",
+                "link_detection": "completed",
+                "quality_check": "completed"
+            },
+            "migrated_files": moved_files
+        }
     except Exception as e:
-        return handle_error(e, "migrate")
+        return enforce_response_limit(handle_error(e, "migrate"))
 
 
-async def sync(params: SyncInput) -> str:
+async def sync(params: SyncInput) -> dict[str, Any] | str:
     """Sync documentation with code changes.
 
     Orchestrates documentation synchronization:
@@ -760,7 +808,7 @@ async def sync(params: SyncInput) -> str:
         project_path = Path(params.project_path).resolve()
 
         if not project_path.exists():
-            return f"Error: Project path does not exist: {project_path}"
+            return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
         lines = ["# Documentation Sync Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -775,72 +823,41 @@ async def sync(params: SyncInput) -> str:
         # Check if baseline exists
         baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
         if not baseline_path.exists():
-            return "Error: No baseline found. Please run docmgr_initialize_memory first to establish a baseline for change detection."
+            return enforce_response_limit("Error: No baseline found. Please run docmgr_initialize_memory first to establish a baseline for change detection.")
 
         from ..models import MapChangesInput
         changes_result = await map_changes(MapChangesInput(
-            project_path=str(project_path),
-            response_format=ResponseFormat.JSON
+            project_path=str(project_path)
         ))
 
-        changes_data = json.loads(changes_result)
+        changes_data = changes_result if isinstance(changes_result, dict) else json.loads(changes_result)
         changes_detected = changes_data.get("changes_detected", False)
         total_changes = changes_data.get("total_changes", 0)
         affected_docs = changes_data.get("affected_documentation", [])
 
         if not changes_detected:
-            if params.response_format == ResponseFormat.JSON:
-                return json.dumps({
-                    "status": "success",
-                    "message": "No changes detected",
-                    "changes": 0,
-                    "affected_docs": 0,
-                    "recommendations": []
-                }, indent=2)
-            else:
-                lines.append("✓ No code changes detected since last baseline")
-                lines.append("")
-                lines.append("**Status:** Documentation is up to date!")
-                return "\n".join(lines)
+            return {
+                "status": "success",
+                "message": "No changes detected",
+                "changes": 0,
+                "affected_docs": 0,
+                "recommendations": []
+            }
 
-        lines.append(f"⚠️  Detected {total_changes} code changes")
+        lines.append(f"Warning:  Detected {total_changes} code changes")
         lines.append("")
 
         # Step 2: Identify affected documentation
         lines.append("## Step 2: Affected Documentation")
         lines.append("")
 
+        # Initialize priority lists
+        high_priority: list = []
+
         if not affected_docs:
-            lines.append("✓ No documentation impacts detected")
+            lines.append("No documentation impacts detected")
             lines.append("  (Changes only affected tests, infrastructure, or docs themselves)")
             lines.append("")
-        else:
-            high_priority = [d for d in affected_docs if d["priority"] == "high"]
-            medium_priority = [d for d in affected_docs if d["priority"] == "medium"]
-            low_priority = [d for d in affected_docs if d["priority"] == "low"]
-
-            lines.append(f"**Total Affected:** {len(affected_docs)} documentation files")
-            lines.append(f"- High Priority: {len(high_priority)}")
-            lines.append(f"- Medium Priority: {len(medium_priority)}")
-            lines.append(f"- Low Priority: {len(low_priority)}")
-            lines.append("")
-
-            if high_priority:
-                lines.append("### High Priority Updates Needed")
-                lines.append("")
-                for doc in high_priority[:10]:  # Show first 10
-                    status = "✓ Exists" if doc["exists"] else "⚠️ Needs creation"
-                    lines.append(f"#### {doc['file']} ({status})")
-                    lines.append(f"**Reason:** {doc['reason']}")
-                    lines.append(f"**Affected by:** {', '.join(doc['affected_by'][:3])}")
-                    if len(doc['affected_by']) > 3:
-                        lines.append(f"  ... and {len(doc['affected_by']) - 3} more")
-                    lines.append("")
-
-                if len(high_priority) > 10:
-                    lines.append(f"*... and {len(high_priority) - 10} more high priority files*")
-                    lines.append("")
-
         # Step 3: Validate current documentation
         lines.append("## Step 3: Current Documentation Status")
         lines.append("")
@@ -854,42 +871,42 @@ async def sync(params: SyncInput) -> str:
         else:
             docs_path = find_docs_directory(project_path)
 
+        # Initialize validation metrics
+        total_issues: int | None = None
+
         if docs_path and docs_path.exists():
             validation_result = await validate_docs(ValidateDocsInput(
                 project_path=str(project_path),
-                docs_path=str(docs_path.relative_to(project_path)),
-                response_format=ResponseFormat.JSON
+                docs_path=str(docs_path.relative_to(project_path))
             ))
 
-            validation_data = json.loads(validation_result)
+            validation_data = validation_result if isinstance(validation_result, dict) else json.loads(validation_result)
             total_issues = validation_data.get("total_issues", 0)
             errors = validation_data.get("errors", 0)
             warnings = validation_data.get("warnings", 0)
 
             if total_issues == 0:
-                lines.append("✓ No validation issues found")
+                lines.append("No validation issues found")
             else:
-                lines.append(f"⚠️  Found {total_issues} validation issues:")
+                lines.append(f"Warning:  Found {total_issues} validation issues:")
                 lines.append(f"  - Errors: {errors}")
                 lines.append(f"  - Warnings: {warnings}")
             lines.append("")
-        else:
-            lines.append("⚠️  No documentation directory found")
-            lines.append("")
-
         # Step 4: Quality assessment
         lines.append("## Step 4: Quality Assessment")
         lines.append("")
+
+        # Initialize quality metrics
+        overall_score: str | None = None
 
         if docs_path:
             from ..models import AssessQualityInput
             quality_result = await assess_quality(AssessQualityInput(
                 project_path=str(project_path),
-                docs_path=str(docs_path.relative_to(project_path)),
-                response_format=ResponseFormat.JSON
+                docs_path=str(docs_path.relative_to(project_path))
             ))
 
-            quality_data = json.loads(quality_result)
+            quality_data = quality_result if isinstance(quality_result, dict) else json.loads(quality_result)
             overall_score = quality_data.get("overall_score", "unknown")
 
             lines.append(f"**Overall Quality:** {overall_score}")
@@ -905,10 +922,6 @@ async def sync(params: SyncInput) -> str:
                     lines.append(f"- {criterion['criterion'].capitalize()}: {criterion['score']}")
 
             lines.append("")
-        else:
-            lines.append("⚠️  Cannot assess quality without documentation directory")
-            lines.append("")
-
         # Step 5: Recommendations
         lines.append("## Sync Recommendations")
         lines.append("")
@@ -968,8 +981,8 @@ async def sync(params: SyncInput) -> str:
         lines.append(f"**Documentation Impact:** {len(affected_docs)} files affected")
 
         if docs_path:
-            lines.append(f"**Validation Issues:** {total_issues if 'total_issues' in locals() else 'N/A'}")
-            lines.append(f"**Quality Score:** {overall_score if 'overall_score' in locals() else 'N/A'}")
+            lines.append(f"**Validation Issues:** {total_issues if total_issues is not None else 'N/A'}")
+            lines.append(f"**Quality Score:** {overall_score if overall_score is not None else 'N/A'}")
 
         lines.append("")
         lines.append("**Next Steps:**")
@@ -977,22 +990,15 @@ async def sync(params: SyncInput) -> str:
             lines.append("1. Review and update affected documentation")
             lines.append("2. Run validation to ensure no broken links")
             lines.append("3. Update memory baseline after changes")
-        else:
-            lines.append("1. Update memory baseline to mark current state as synced")
-
-        # Return JSON or Markdown based on response_format
-        if params.response_format == ResponseFormat.JSON:
-            return json.dumps({
-                "status": "success",
-                "message": "Sync analysis completed",
-                "changes": total_changes,
-                "affected_docs": len(affected_docs),
-                "recommendations": [doc["file"] for doc in affected_docs[:10]],
-                "validation_issues": total_issues if 'total_issues' in locals() else None,
-                "quality_score": overall_score if 'overall_score' in locals() else None
-            }, indent=2)
-        else:
-            return "\n".join(lines)
-
+        return {
+            "status": "success",
+            "message": "Sync analysis completed",
+            "report": "\n".join(lines),
+            "changes": total_changes,
+            "affected_docs": len(affected_docs),
+            "recommendations": [doc["file"] for doc in affected_docs[:10]],
+            "validation_issues": total_issues,
+            "quality_score": overall_score
+        }
     except Exception as e:
-        return handle_error(e, "sync")
+        return enforce_response_limit(handle_error(e, "sync"))
