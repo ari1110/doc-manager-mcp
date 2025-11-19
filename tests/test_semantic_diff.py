@@ -16,6 +16,7 @@ import pytest
 
 from doc_manager_mcp.indexing.semantic_diff import (
     SemanticChange,
+    _is_public_api,
     compare_symbols,
     load_symbol_baseline,
     save_symbol_baseline,
@@ -1014,6 +1015,237 @@ class TestIntegration:
         baseline = load_symbol_baseline(baseline_path)
         assert baseline is not None
         assert baseline["file.py"][0].name == "func_v2"
+
+
+class TestIsPublicApi:
+    """Direct unit tests for _is_public_api helper function.
+
+    Tests language-specific naming conventions:
+    - Python: underscore prefix = private
+    - Go: uppercase first letter = public
+    - JavaScript/TypeScript: all public
+    """
+
+    def test_python_public_function(self):
+        """Test that Python functions without underscore prefix are public."""
+        symbol = Symbol(
+            name="public_function",
+            type=SymbolType.FUNCTION,
+            file="src/module.py",
+            line=10,
+            column=0,
+            signature="def public_function():"
+        )
+
+        assert _is_public_api(symbol) is True, "Python function without underscore should be public"
+
+    def test_python_private_function(self):
+        """Test that Python functions with underscore prefix are private."""
+        symbol = Symbol(
+            name="_private_function",
+            type=SymbolType.FUNCTION,
+            file="src/module.py",
+            line=20,
+            column=0,
+            signature="def _private_function():"
+        )
+
+        assert _is_public_api(symbol) is False, "Python function with underscore should be private"
+
+    def test_python_dunder_method(self):
+        """Test that Python dunder methods are considered private."""
+        symbol = Symbol(
+            name="__init__",
+            type=SymbolType.FUNCTION,
+            file="src/module.py",
+            line=30,
+            column=4,
+            signature="def __init__(self):"
+        )
+
+        assert _is_public_api(symbol) is False, "Python dunder methods should be private"
+
+    def test_python_public_class(self):
+        """Test that Python classes without underscore are public."""
+        symbol = Symbol(
+            name="PublicClass",
+            type=SymbolType.CLASS,
+            file="src/module.py",
+            line=40,
+            column=0,
+            signature="class PublicClass:"
+        )
+
+        assert _is_public_api(symbol) is True, "Python class without underscore should be public"
+
+    def test_python_private_class(self):
+        """Test that Python classes with underscore are private."""
+        symbol = Symbol(
+            name="_PrivateClass",
+            type=SymbolType.CLASS,
+            file="src/module.py",
+            line=50,
+            column=0,
+            signature="class _PrivateClass:"
+        )
+
+        assert _is_public_api(symbol) is False, "Python class with underscore should be private"
+
+    def test_go_public_function(self):
+        """Test that Go functions with uppercase first letter are public."""
+        symbol = Symbol(
+            name="PublicFunction",
+            type=SymbolType.FUNCTION,
+            file="src/module.go",
+            line=10,
+            column=0,
+            signature="func PublicFunction() {}"
+        )
+
+        assert _is_public_api(symbol) is True, "Go function with uppercase should be public"
+
+    def test_go_private_function(self):
+        """Test that Go functions with lowercase first letter are private."""
+        symbol = Symbol(
+            name="privateFunction",
+            type=SymbolType.FUNCTION,
+            file="src/module.go",
+            line=20,
+            column=0,
+            signature="func privateFunction() {}"
+        )
+
+        assert _is_public_api(symbol) is False, "Go function with lowercase should be private"
+
+    def test_go_public_struct(self):
+        """Test that Go structs with uppercase are public."""
+        symbol = Symbol(
+            name="PublicStruct",
+            type=SymbolType.CLASS,
+            file="src/module.go",
+            line=30,
+            column=0,
+            signature="type PublicStruct struct {"
+        )
+
+        assert _is_public_api(symbol) is True, "Go struct with uppercase should be public"
+
+    def test_go_private_struct(self):
+        """Test that Go structs with lowercase are private."""
+        symbol = Symbol(
+            name="privateStruct",
+            type=SymbolType.CLASS,
+            file="src/module.go",
+            line=40,
+            column=0,
+            signature="type privateStruct struct {"
+        )
+
+        assert _is_public_api(symbol) is False, "Go struct with lowercase should be private"
+
+    def test_typescript_function(self):
+        """Test that TypeScript functions are always public."""
+        symbol = Symbol(
+            name="someFunction",
+            type=SymbolType.FUNCTION,
+            file="src/module.ts",
+            line=10,
+            column=0,
+            signature="function someFunction() {}"
+        )
+
+        assert _is_public_api(symbol) is True, "TypeScript function should be public"
+
+    def test_typescript_class(self):
+        """Test that TypeScript classes are always public."""
+        symbol = Symbol(
+            name="SomeClass",
+            type=SymbolType.CLASS,
+            file="src/module.ts",
+            line=20,
+            column=0,
+            signature="class SomeClass {"
+        )
+
+        assert _is_public_api(symbol) is True, "TypeScript class should be public"
+
+    def test_javascript_function(self):
+        """Test that JavaScript functions are always public."""
+        symbol = Symbol(
+            name="someFunction",
+            type=SymbolType.FUNCTION,
+            file="src/module.js",
+            line=10,
+            column=0,
+            signature="function someFunction() {}"
+        )
+
+        assert _is_public_api(symbol) is True, "JavaScript function should be public"
+
+    def test_jsx_component(self):
+        """Test that JSX components are always public."""
+        symbol = Symbol(
+            name="MyComponent",
+            type=SymbolType.FUNCTION,
+            file="src/components.jsx",
+            line=10,
+            column=0,
+            signature="function MyComponent() {"
+        )
+
+        assert _is_public_api(symbol) is True, "JSX component should be public"
+
+    def test_tsx_component(self):
+        """Test that TSX components are always public."""
+        symbol = Symbol(
+            name="MyComponent",
+            type=SymbolType.FUNCTION,
+            file="src/components.tsx",
+            line=10,
+            column=0,
+            signature="function MyComponent() {"
+        )
+
+        assert _is_public_api(symbol) is True, "TSX component should be public"
+
+    def test_empty_name(self):
+        """Test that symbols with empty names are not public."""
+        symbol = Symbol(
+            name="",
+            type=SymbolType.FUNCTION,
+            file="src/module.py",
+            line=10,
+            column=0,
+            signature="def ():"
+        )
+
+        assert _is_public_api(symbol) is False, "Symbol with empty name should not be public"
+
+    def test_none_name(self):
+        """Test that symbols with None names are not public."""
+        symbol = Symbol(
+            name=None,  # type: ignore[arg-type]
+            type=SymbolType.FUNCTION,
+            file="src/module.py",
+            line=10,
+            column=0,
+            signature="def None:"
+        )
+
+        assert _is_public_api(symbol) is False, "Symbol with None name should not be public"
+
+    def test_unknown_language_defaults_public(self):
+        """Test that unknown file extensions default to public."""
+        symbol = Symbol(
+            name="someFunction",
+            type=SymbolType.FUNCTION,
+            file="src/module.cpp",
+            line=10,
+            column=0,
+            signature="void someFunction() {}"
+        )
+
+        assert _is_public_api(symbol) is True, "Unknown language should default to public"
 
 
 if __name__ == "__main__":
