@@ -381,11 +381,11 @@ class MapChangesInput(BaseModel):
                 raise ValueError(
                     f"Invalid mode: '{v}'. Did you mean '{suggestion}'? "
                     f"Valid modes: {valid_modes}"
-                )
+                ) from None
             else:
                 raise ValueError(
                     f"Invalid mode: '{v}'. Valid modes: {valid_modes}"
-                )
+                ) from None
 
     @field_validator('since_commit')
     @classmethod

@@ -8,16 +8,6 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-
-async def scandir_async(path: Path):
-    """Asynchronously scan a directory."""
-    try:
-        for entry in os.scandir(path):
-            yield entry
-    except (FileNotFoundError, PermissionError):
-        # Skip directories that can't be accessed
-        pass
-
 from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
 from ..models import InitializeMemoryInput
 from ..utils import (
@@ -32,6 +22,16 @@ from ..utils import (
     run_git_command,
     validate_path_boundary,
 )
+
+
+async def scandir_async(path: Path):
+    """Asynchronously scan a directory."""
+    try:
+        for entry in os.scandir(path):
+            yield entry
+    except (FileNotFoundError, PermissionError):
+        # Skip directories that can't be accessed
+        pass
 
 
 def with_timeout(timeout_seconds):

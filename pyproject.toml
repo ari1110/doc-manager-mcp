@@ -54,6 +54,7 @@ select = [
 # Ignore rules that are too strict for this project
 ignore = [
     "S101",  # Allow assert statements (used in tests)
+    "E501",  # Line length handled by Black
 ]
 
 [tool.ruff.lint.per-file-ignores]

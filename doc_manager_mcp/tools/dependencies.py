@@ -88,7 +88,7 @@ def _detect_project_name(project_path: Path) -> str | None:
                 config = yaml.safe_load(f)
                 if config and 'project_name' in config:
                     return config['project_name']
-        except Exception:
+        except Exception:  # noqa: S110
             pass  # Fail gracefully if yaml not available or file malformed
 
     # Try git repository name
@@ -104,8 +104,8 @@ def _detect_project_name(project_path: Path) -> str | None:
                     match = re.search(r'url = .*/([^/]+?)(?:\.git)?$', content, re.MULTILINE)
                     if match:
                         return match.group(1)
-        except Exception:
-            pass
+        except Exception:  # noqa: S110
+            pass  # Graceful fallback to directory name
 
     # Fallback: use directory name
     return project_path.name
@@ -367,7 +367,7 @@ def _extract_commands_from_code_blocks(content: str, doc_file: Path, indexer: Sy
                     continue
 
                 # Remove shell prompts ($ or #)
-                if line.startswith('$ ') or line.startswith('# '):
+                if line.startswith(('$ ', '# ')):
                     line = line[2:]
 
                 # Skip variable assignments (export FOO=bar, VAR=value)

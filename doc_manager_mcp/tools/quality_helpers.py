@@ -59,7 +59,7 @@ def check_list_formatting_consistency(
             if sum(file_marker_counts.values()) > 0:
                 file_markers[str(md_file.relative_to(docs_path))] = file_marker_counts
 
-        except Exception:
+        except Exception:  # noqa: S112
             # Skip files that can't be read
             continue
 
@@ -164,7 +164,7 @@ def check_heading_case_consistency(
                     "counts": file_style_counts
                 }
 
-        except Exception:
+        except Exception:  # noqa: S112
             # Skip files that can't be read
             continue
 
@@ -298,7 +298,7 @@ def detect_multiple_h1s(
                     "h1_texts": [h["text"] for h in h1_headers]
                 })
 
-        except Exception:
+        except Exception:  # noqa: S112
             # Skip files that can't be read
             continue
 
@@ -394,8 +394,8 @@ def detect_undocumented_apis(
                 func_name = match.group(3) or match.group(4)
                 documented_symbols.add(func_name)
 
-        except Exception:
-            continue
+        except Exception:  # noqa: S112
+            continue  # Skip files that can't be read
 
     # Step 3: Compare and find undocumented symbols
     undocumented = []
@@ -517,8 +517,8 @@ def calculate_documentation_coverage(
                     if symbol.name in block["code"]:
                         documented_symbols.add(symbol.name)
 
-        except Exception:
-            continue
+        except Exception:  # noqa: S112
+            continue  # Skip files that can't be read
 
     # Match documented references to actual symbols
     documented_count = 0
@@ -540,7 +540,7 @@ def calculate_documentation_coverage(
     coverage_pct = (documented_count / total * 100) if total > 0 else 0.0
 
     # Calculate percentages by type
-    for type_name, counts in breakdown.items():
+    for _type_name, counts in breakdown.items():
         counts["coverage_percentage"] = round(
             counts["documented"] / counts["total"] * 100 if counts["total"] > 0 else 0.0,
             1

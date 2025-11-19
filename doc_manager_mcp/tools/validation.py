@@ -76,7 +76,7 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path) -> str
 
     # Skip Hugo shortcodes - these are processed at build time
     # Common patterns: {{< relref "..." >}}, {{< ref "..." >}}, {{< ... >}}
-    if link_url.startswith('{{<') or link_url.startswith('{{%'):
+    if link_url.startswith(('{{<', '{{%')):
         return None
 
     # Handle anchor-only links (valid if they reference content in same file)
