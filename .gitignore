@@ -32,6 +32,7 @@ uv.lock
 # IDEs
 .vscode/
 .idea/
+.claude/settings.local.json
 *.swp
 *.swo
 *~
