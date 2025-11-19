@@ -1,0 +1,8 @@
+platform: mkdocs
+exclude: []
+sources: []
+docs_path: docs
+metadata:
+  language: Python
+  created: '2025-11-18T21:17:58.104267'
+  version: 1.0.0
