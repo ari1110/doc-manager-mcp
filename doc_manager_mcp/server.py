@@ -48,6 +48,15 @@ from .tools.quality import assess_quality
 from .tools.validation import validate_docs
 from .tools.workflows import bootstrap, migrate, sync
 
+# Fix Windows asyncio event loop for subprocess support
+# Windows requires ProactorEventLoop for asyncio.create_subprocess_exec
+# Uvicorn defaults to SelectorEventLoop which doesn't support subprocess
+import asyncio
+import platform
+
+if platform.system() == 'Windows':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 # Initialize the MCP server
 mcp = FastMCP("doc_manager_mcp")
 

@@ -62,6 +62,7 @@ async def run_git_command(cwd: Path, *args, check_git_available: bool = True) ->
             cwd=cwd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL,  # Prevent hanging on Windows
         )
 
         # 30-second timeout (T019)
@@ -75,7 +76,6 @@ async def run_git_command(cwd: Path, *args, check_git_available: bool = True) ->
         # Git binary not found even after check
         raise RuntimeError("Git is required but not found. Please install git.") from err
     except asyncio.TimeoutError:
-        # Command exceeded timeout
         return None
     except Exception:
         return None
