@@ -6,6 +6,8 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from ..utils import load_config, matches_exclude_pattern
+
 # TreeSitter imports (will be available after pip install)
 if TYPE_CHECKING:
     from tree_sitter import Language, Parser
@@ -131,8 +133,13 @@ class SymbolIndexer:
         """
         self.index = {}
 
-        # Default patterns if none provided
-        if not file_patterns:
+        # Load configuration if available
+        config = load_config(project_path)
+
+        # Determine file patterns: config sources > provided patterns > defaults
+        if config and config.get("sources"):
+            file_patterns = config["sources"]
+        elif not file_patterns:
             file_patterns = [
                 "**/*.go",
                 "**/*.py",
@@ -141,27 +148,38 @@ class SymbolIndexer:
                 "**/*.tsx",
             ]
 
-        # Exclude common directories
-        exclude_patterns = {
-            "node_modules",
-            "vendor",
-            "venv",
-            ".venv",
-            ".git",
-            "dist",
-            "build",
-            "__pycache__",
-            ".pytest_cache",
-        }
+        # Merge user excludes with hardcoded defaults
+        default_excludes = [
+            "node_modules/**",
+            "vendor/**",
+            "venv/**",
+            ".venv/**",
+            ".git/**",
+            "dist/**",
+            "build/**",
+            "__pycache__/**",
+            ".pytest_cache/**",
+        ]
+        user_excludes = config.get("exclude", []) if config else []
+        exclude_patterns = default_excludes + user_excludes
 
         source_files = []
         for pattern in file_patterns:
             for file_path in project_path.glob(pattern):
-                # Skip excluded directories
-                if any(excluded in file_path.parts for excluded in exclude_patterns):
+                if not file_path.is_file():
                     continue
-                if file_path.is_file():
-                    source_files.append(file_path)
+
+                # Get relative path for pattern matching
+                try:
+                    relative_path = str(file_path.relative_to(project_path))
+                except ValueError:
+                    continue
+
+                # Check if excluded using proper pattern matching
+                if matches_exclude_pattern(relative_path, exclude_patterns):
+                    continue
+
+                source_files.append(file_path)
 
         # Index each file
         for file_path in source_files:
