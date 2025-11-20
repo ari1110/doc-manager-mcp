@@ -29,6 +29,9 @@ from .models import (
     AssessQualityInput,
     BootstrapInput,
     DetectPlatformInput,
+    DocmgrDetectChangesInput,
+    DocmgrInitInput,
+    DocmgrUpdateBaselineInput,
     InitializeConfigInput,
     InitializeMemoryInput,
     MapChangesInput,
@@ -42,9 +45,12 @@ from .tools.changes import map_changes
 # Import tool implementations
 from .tools.config import initialize_config
 from .tools.dependencies import track_dependencies
+from .tools.detect_changes import docmgr_detect_changes
+from .tools.init import docmgr_init
 from .tools.memory import initialize_memory
 from .tools.platform import detect_platform
 from .tools.quality import assess_quality
+from .tools.update_baseline import docmgr_update_baseline
 from .tools.validation import validate_docs
 from .tools.workflows import bootstrap, migrate, sync
 
@@ -64,6 +70,125 @@ mcp = FastMCP("doc_manager_mcp")
 # Register Tools
 # ============================================================================
 
+# ----------------------------------------------------------------------------
+# Tier 1: Setup & Initialization
+# ----------------------------------------------------------------------------
+
+@mcp.tool(
+    name="docmgr_init",
+    annotations=ToolAnnotations(
+        title="Initialize Documentation Manager",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
+)
+async def tool_docmgr_init(
+    project_path: str,
+    mode: str = "existing",
+    platform: str | None = None,
+    exclude_patterns: list[str] | None = None,
+    docs_path: str | None = None,
+    sources: list[str] | None = None,
+    ctx: Context | None = None
+) -> dict[str, Any]:
+    """Initialize doc-manager for a project.
+
+    Unified initialization tool that replaces: initialize_config, initialize_memory, bootstrap.
+
+    Modes:
+    - mode="existing": Initialize config + baselines + dependencies for existing project
+    - mode="bootstrap": Create fresh docs + config + baselines + dependencies
+
+    This is the recommended entry point for setting up doc-manager.
+    """
+    params = DocmgrInitInput(
+        project_path=project_path,
+        mode=mode,
+        platform=DocumentationPlatform(platform) if platform else None,
+        exclude_patterns=exclude_patterns,
+        docs_path=docs_path,
+        sources=sources
+    )
+    return await docmgr_init(params, ctx)
+
+# ----------------------------------------------------------------------------
+# Tier 2: Analysis & Read-Only Operations
+# ----------------------------------------------------------------------------
+
+@mcp.tool(
+    name="docmgr_detect_changes",
+    annotations=ToolAnnotations(
+        title="Detect Code Changes (Read-Only)",
+        readOnlyHint=True,  # NEVER writes to baselines
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
+)
+async def tool_docmgr_detect_changes(
+    project_path: str,
+    since_commit: str | None = None,
+    mode: str = "checksum",
+    include_semantic: bool = False
+) -> dict[str, Any]:
+    """Detect code changes without modifying baselines (pure read-only).
+
+    Key difference from map_changes: NEVER writes to symbol-baseline.json.
+
+    Modes:
+    - mode="checksum": Compare file checksums against repo-baseline.json
+    - mode="git_diff": Compare against git commit
+
+    Use docmgr_update_baseline to explicitly update baselines after applying doc updates.
+    """
+    params = DocmgrDetectChangesInput(
+        project_path=project_path,
+        since_commit=since_commit,
+        mode=ChangeDetectionMode(mode),
+        include_semantic=include_semantic
+    )
+    return await docmgr_detect_changes(params)
+
+# ----------------------------------------------------------------------------
+# Tier 3: State Management
+# ----------------------------------------------------------------------------
+
+@mcp.tool(
+    name="docmgr_update_baseline",
+    annotations=ToolAnnotations(
+        title="Update All Baselines",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=True,
+        openWorldHint=False
+    )
+)
+async def tool_docmgr_update_baseline(
+    project_path: str,
+    docs_path: str | None = None,
+    ctx: Context | None = None
+) -> dict[str, Any]:
+    """Update all baseline files atomically.
+
+    Updates three baselines:
+    - repo-baseline.json (file checksums)
+    - symbol-baseline.json (TreeSitter code symbols)
+    - dependencies.json (code-to-doc mappings)
+
+    Call this after applying documentation updates to ensure baselines reflect current state.
+    """
+    params = DocmgrUpdateBaselineInput(
+        project_path=project_path,
+        docs_path=docs_path
+    )
+    return await docmgr_update_baseline(params, ctx)
+
+# ----------------------------------------------------------------------------
+# Legacy Tools (Deprecated - Use docmgr_init instead)
+# ----------------------------------------------------------------------------
+
 @mcp.tool(
     name="docmgr_initialize_config",
     annotations=ToolAnnotations(
@@ -81,7 +206,12 @@ async def docmgr_initialize_config(
     docs_path: str | None = None,
     sources: list[str] | None = None
 ) -> str | dict[str, Any]:
-    """Initialize .doc-manager.yml configuration file for the project."""
+    """DEPRECATED: Use docmgr_init with mode="existing" instead.
+
+    Initialize .doc-manager.yml configuration file for the project.
+
+    This tool is maintained for backward compatibility but will be removed in v2.0.
+    """
     # Pass user patterns only (max 50 items constraint)
     # Tools will merge with DEFAULT_EXCLUDE_PATTERNS when loading config
     params = InitializeConfigInput(
@@ -107,11 +237,20 @@ async def docmgr_initialize_memory(
     project_path: str,
     ctx: Context
 ) -> str | dict[str, Any]:
-    """Initialize the documentation memory system for tracking project state."""
+    """DEPRECATED: Use docmgr_init with mode="existing" instead.
+
+    Initialize the documentation memory system for tracking project state.
+
+    This tool is maintained for backward compatibility but will be removed in v2.0.
+    """
     params = InitializeMemoryInput(
         project_path=project_path
     )
     return await initialize_memory(params, ctx)
+
+# ----------------------------------------------------------------------------
+# Tier 2: Analysis & Read-Only Operations (continued)
+# ----------------------------------------------------------------------------
 
 @mcp.tool(
     name="docmgr_detect_platform",
@@ -204,7 +343,13 @@ async def docmgr_map_changes(
     mode: str = "checksum",
     include_semantic: bool = False
 ) -> str | dict[str, Any]:
-    """Map code changes to affected documentation using checksum comparison or git diff."""
+    """DEPRECATED: Use docmgr_detect_changes (read-only) or docmgr_sync (orchestration) instead.
+
+    Map code changes to affected documentation using checksum comparison or git diff.
+
+    This tool is maintained for backward compatibility but will be removed in v2.0.
+    Note: This tool writes to symbol-baseline.json. Use docmgr_detect_changes for read-only detection.
+    """
     params = MapChangesInput(
         project_path=project_path,
         since_commit=since_commit,
@@ -213,11 +358,15 @@ async def docmgr_map_changes(
     )
     return await map_changes(params)
 
+# ----------------------------------------------------------------------------
+# Tier 3: State Management (continued)
+# ----------------------------------------------------------------------------
+
 @mcp.tool(
     name="docmgr_track_dependencies",
     annotations=ToolAnnotations(
         title="Track Code-to-Documentation Dependencies",
-        readOnlyHint=False,  # T048: Writes dependencies.json file
+        readOnlyHint=False,  # Writes dependencies.json file
         destructiveHint=False,
         idempotentHint=True,
         openWorldHint=False
@@ -227,12 +376,20 @@ async def docmgr_track_dependencies(
     project_path: str,
     docs_path: str | None = None
 ) -> str | dict[str, Any]:
-    """Build dependency graph showing which docs reference which source files."""
+    """Build dependency graph showing which docs reference which source files.
+
+    Note: This is also called automatically by docmgr_init and docmgr_update_baseline.
+    Use this tool when you need to explicitly rebuild the dependency graph.
+    """
     params = TrackDependenciesInput(
         project_path=project_path,
         docs_path=docs_path
     )
     return await track_dependencies(params)
+
+# ----------------------------------------------------------------------------
+# Legacy Tools (Deprecated)
+# ----------------------------------------------------------------------------
 
 @mcp.tool(
     name="docmgr_bootstrap",
@@ -249,13 +406,22 @@ async def docmgr_bootstrap(
     platform: str | None = None,
     docs_path: str = "docs"
 ) -> str | dict[str, Any]:
-    """Bootstrap fresh documentation structure with templates and configuration."""
+    """DEPRECATED: Use docmgr_init with mode="bootstrap" instead.
+
+    Bootstrap fresh documentation structure with templates and configuration.
+
+    This tool is maintained for backward compatibility but will be removed in v2.0.
+    """
     params = BootstrapInput(
         project_path=project_path,
         platform=DocumentationPlatform(platform) if platform else None,
         docs_path=docs_path
     )
     return await bootstrap(params)
+
+# ----------------------------------------------------------------------------
+# Tier 4: Workflows & Orchestration
+# ----------------------------------------------------------------------------
 
 @mcp.tool(
     name="docmgr_migrate",
@@ -294,7 +460,7 @@ async def docmgr_migrate(
     name="docmgr_sync",
     annotations=ToolAnnotations(
         title="Sync Documentation with Code Changes",
-        readOnlyHint=True,
+        readOnlyHint=False,  # mode="resync" updates baselines
         destructiveHint=False,
         idempotentHint=True,
         openWorldHint=False
@@ -302,10 +468,17 @@ async def docmgr_migrate(
 )
 async def docmgr_sync(
     project_path: str,
-    mode: str = "reactive",
+    mode: str = "check",
     docs_path: str | None = None
 ) -> str | dict[str, Any]:
-    """Sync documentation with code changes, identifying what needs updates."""
+    """Sync documentation with code changes, identifying what needs updates.
+
+    Modes:
+    - mode="check": Read-only analysis (detects changes, no baseline updates)
+    - mode="resync": Full sync (detects changes + updates baselines atomically)
+
+    Orchestrates validation, quality assessment, and optional baseline updates.
+    """
     params = SyncInput(
         project_path=project_path,
         mode=mode,
