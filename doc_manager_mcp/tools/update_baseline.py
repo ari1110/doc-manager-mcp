@@ -102,18 +102,78 @@ async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
         dict with status and baseline information
     """
     try:
-        from ..indexing.baseline import create_baseline
-
-        baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
-        baseline = create_baseline(project_path)
-
         import json
+        from datetime import datetime
+
+        from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
+        from ..utils import (
+            calculate_checksum,
+            detect_project_language,
+            find_docs_directory,
+            load_config,
+            matches_exclude_pattern,
+            run_git_command,
+        )
+
+        # Load config and build exclude patterns
+        config = load_config(project_path)
+        user_excludes = config.get("exclude", []) if config else []
+        exclude_patterns = list(DEFAULT_EXCLUDE_PATTERNS) + user_excludes
+
+        # Scan files and calculate checksums
+        checksums = {}
+        file_count = 0
+
+        for root, dirs, files in project_path.walk():
+            if file_count >= MAX_FILES:
+                break
+
+            for file in files:
+                if file_count >= MAX_FILES:
+                    break
+
+                file_path = root / file
+                relative_path = str(file_path.relative_to(project_path)).replace('\\', '/')
+
+                if matches_exclude_pattern(relative_path, exclude_patterns):
+                    continue
+
+                checksums[relative_path] = calculate_checksum(file_path)
+                file_count += 1
+
+        # Get git info
+        git_commit = await run_git_command(project_path, "rev-parse", "HEAD")
+        git_branch = await run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD")
+
+        # Detect project metadata
+        language = detect_project_language(project_path)
+        docs_dir = find_docs_directory(project_path)
+
+        # Create baseline
+        baseline = {
+            "repo_name": project_path.name,
+            "description": f"Repository for {project_path.name}",
+            "language": language,
+            "docs_exist": docs_dir is not None,
+            "docs_path": str(docs_dir.relative_to(project_path)) if docs_dir else None,
+            "metadata": {
+                "git_commit": git_commit,
+                "git_branch": git_branch
+            },
+            "timestamp": datetime.now().isoformat(),
+            "version": "1.0.0",
+            "file_count": file_count,
+            "files": checksums
+        }
+
+        # Write baseline
+        baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
         baseline_path.write_text(json.dumps(baseline, indent=2))
 
         return {
             "status": "success",
-            "files_tracked": len(baseline.get("files", {})),
-            "git_commit": baseline.get("git_commit"),
+            "files_tracked": file_count,
+            "git_commit": git_commit,
             "path": str(baseline_path)
         }
 
@@ -142,14 +202,16 @@ async def _update_symbol_baseline(project_path: Path) -> dict[str, Any]:
         # Index current symbols
         indexer = SymbolIndexer()
         indexer.index_project(project_path)
-        symbols = indexer.get_all_symbols()
 
-        # Save to baseline
-        save_symbol_baseline(baseline_path, symbols)
+        # Save to baseline (use indexer.index which is dict[str, list[Symbol]])
+        save_symbol_baseline(baseline_path, indexer.index)
+
+        # Count total symbols
+        total_symbols = sum(len(symbols) for symbols in indexer.index.values())
 
         return {
             "status": "success",
-            "symbols_tracked": len(symbols),
+            "symbols_tracked": total_symbols,
             "path": str(baseline_path)
         }
 
