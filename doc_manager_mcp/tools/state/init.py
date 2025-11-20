@@ -11,9 +11,9 @@ from ...models import (
     TrackDependenciesInput,
 )
 from ...utils import enforce_response_limit, handle_error
-from ..config import initialize_config
+from .._legacy.config import initialize_config
 from .._internal.dependencies import track_dependencies
-from ..memory import initialize_memory
+from .._legacy.memory import initialize_memory
 from ..workflows import bootstrap
 
 
