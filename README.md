@@ -24,11 +24,10 @@ The server provides **7 core tools** organized into 4 tiers:
 
 #### Tier 3: State Management
 - **`docmgr_update_baseline`** - Atomically update all 3 baselines (repo, symbols, dependencies)
-- **`docmgr_track_dependencies`** - Build code-to-docs dependency graph
+- **`docmgr_sync`** - Orchestrate change detection + validation + quality + baseline updates
 
 #### Tier 4: Workflows & Orchestration
 - **`docmgr_migrate`** - Restructure/migrate documentation
-- **`docmgr_sync`** - Orchestrate change detection + validation + quality + baseline updates
 
 ### Key Improvements (v1.1.0)
 
@@ -248,7 +247,6 @@ Updates 3 files atomically:
 - **`docmgr_detect_platform`** - Auto-detect documentation platform
 - **`docmgr_validate_docs`** - Check links, assets, code snippets
 - **`docmgr_assess_quality`** - Evaluate against 7 quality criteria
-- **`docmgr_track_dependencies`** - Build code-to-docs dependency graph
 - **`docmgr_migrate`** - Restructure documentation
 
 See [API Reference](docs/api-reference.md) for complete documentation.

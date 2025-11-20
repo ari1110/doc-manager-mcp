@@ -378,7 +378,7 @@ If you're still using v1.0.x deprecated tools: **Update your tool calls** per th
 
 ### Q: What about `docmgr_track_dependencies`?
 
-**A:** Still available! It's called automatically by `docmgr_init` and `docmgr_update_baseline`, but you can still call it directly if needed.
+**A:** No longer exposed as an MCP tool. Dependency tracking is now automatic via `docmgr_init` and `docmgr_update_baseline`. The internal function remains but is not directly callable.
 
 ## Examples
 

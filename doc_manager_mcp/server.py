@@ -38,12 +38,10 @@ from .models import (
     DocmgrUpdateBaselineInput,
     MigrateInput,
     SyncInput,
-    TrackDependenciesInput,
     ValidateDocsInput,
 )
 
 # Import tool implementations
-from .tools.dependencies import track_dependencies
 from .tools.detect_changes import docmgr_detect_changes
 from .tools.init import docmgr_init
 from .tools.platform import detect_platform
@@ -255,35 +253,6 @@ async def docmgr_assess_quality(
         criteria=[QualityCriterion(c) for c in criteria] if criteria else None
     )
     return await assess_quality(params)
-
-# ----------------------------------------------------------------------------
-# Tier 3: State Management (continued)
-# ----------------------------------------------------------------------------
-
-@mcp.tool(
-    name="docmgr_track_dependencies",
-    annotations=ToolAnnotations(
-        title="Track Code-to-Documentation Dependencies",
-        readOnlyHint=False,  # Writes dependencies.json file
-        destructiveHint=False,
-        idempotentHint=True,
-        openWorldHint=False
-    )
-)
-async def docmgr_track_dependencies(
-    project_path: str,
-    docs_path: str | None = None
-) -> str | dict[str, Any]:
-    """Build dependency graph showing which docs reference which source files.
-
-    Note: This is also called automatically by docmgr_init and docmgr_update_baseline.
-    Use this tool when you need to explicitly rebuild the dependency graph.
-    """
-    params = TrackDependenciesInput(
-        project_path=project_path,
-        docs_path=docs_path
-    )
-    return await track_dependencies(params)
 
 # ----------------------------------------------------------------------------
 # Tier 4: Workflows & Orchestration
