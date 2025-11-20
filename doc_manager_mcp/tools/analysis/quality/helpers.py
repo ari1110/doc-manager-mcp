@@ -522,3 +522,115 @@ def calculate_documentation_coverage(
         "coverage_percentage": round(coverage_pct, 1),
         "breakdown_by_type": breakdown
     }
+
+
+def check_terminology_compliance(docs_path, conventions):
+    """Check documentation against terminology conventions.
+
+    Args:
+        docs_path: Path to documentation directory
+        conventions: DocumentationConventions object
+
+    Returns:
+        Dict with avoided_terms_found and preferred_term_usage
+    """
+    import re
+
+    if not conventions or not conventions.terminology:
+        return {
+            "avoided_terms_found": [],
+            "preferred_term_usage": {}
+        }
+
+    markdown_files = []
+    for pattern in ["**/*.md", "**/*.markdown"]:
+        markdown_files.extend(docs_path.glob(pattern))
+
+    avoided_terms_found = []
+    preferred_term_usage = {}
+
+    # Check for avoided terms
+    for term_rule in conventions.terminology.avoid:
+        word = term_rule.word
+        exceptions = term_rule.exceptions or []
+
+        # Build exception pattern (phrases that should not be flagged)
+        exception_pattern = None
+        if exceptions:
+            escaped_exceptions = [re.escape(exc) for exc in exceptions]
+            exception_pattern = re.compile(
+                r"\b(" + "|".join(escaped_exceptions) + r")\b",
+                re.IGNORECASE
+            )
+
+        for md_file in markdown_files:
+            try:
+                with open(md_file, encoding='utf-8') as f:
+                    content = f.read()
+
+                # Remove code blocks
+                code_block_pattern = r"^```.*?^```"
+                content_without_code = re.sub(
+                    code_block_pattern, "", content,
+                    flags=re.MULTILINE | re.DOTALL
+                )
+
+                # Split into lines
+                lines = content_without_code.split("\n")
+
+                for i, line in enumerate(lines, 1):
+                    word_pattern = re.compile(
+                        r"\b" + re.escape(word) + r"\b",
+                        re.IGNORECASE
+                    )
+
+                    if word_pattern.search(line):
+                        if exception_pattern and exception_pattern.search(line):
+                            continue
+
+                        avoided_terms_found.append({
+                            "term": word,
+                            "file": str(md_file.relative_to(docs_path)),
+                            "line": i,
+                            "reason": term_rule.reason
+                        })
+
+            except Exception:
+                continue
+
+    # Check preferred terminology usage
+    for term_key, term_config in conventions.terminology.preferred.items():
+        full_form = term_config.full_form
+        abbreviation = term_config.abbreviation
+
+        usage = {
+            "full_form_count": 0,
+            "abbreviation_count": 0,
+            "files": []
+        }
+
+        for md_file in markdown_files:
+            try:
+                with open(md_file, encoding='utf-8') as f:
+                    content = f.read()
+
+                full_form_count = len(re.findall(re.escape(full_form), content, re.IGNORECASE))
+                abbr_count = 0
+                if abbreviation:
+                    abbr_count = len(re.findall(r"\b" + re.escape(abbreviation) + r"\b", content))
+
+                if full_form_count > 0 or abbr_count > 0:
+                    usage["full_form_count"] += full_form_count
+                    usage["abbreviation_count"] += abbr_count
+                    usage["files"].append(str(md_file.relative_to(docs_path)))
+
+            except Exception:
+                continue
+
+        if usage["full_form_count"] > 0 or usage["abbreviation_count"] > 0:
+            preferred_term_usage[term_key] = usage
+
+    return {
+        "avoided_terms_found": avoided_terms_found,
+        "preferred_term_usage": preferred_term_usage
+    }

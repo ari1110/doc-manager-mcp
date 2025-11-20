@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -733,3 +733,285 @@ class DocmgrUpdateBaselineInput(BaseModel):
     @classmethod
     def validate_docs_path(cls, v: str | None) -> str | None:
         return _validate_relative_path(v, field_name="docs_path")
+
+
+# ============================================================================
+# Documentation Conventions Models (chore/integrating-doc-conventions)
+# ============================================================================
+
+class TerminologyRule(BaseModel):
+    """Single terminology rule with optional exceptions and context."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    word: str = Field(
+        ...,
+        description="Word or phrase to avoid",
+        min_length=1
+    )
+    reason: str | None = Field(
+        default=None,
+        description="Explanation of why this term should be avoided"
+    )
+    exceptions: list[str] = Field(
+        default_factory=list,
+        description="Phrases that should not be flagged (e.g., 'just-in-time' when avoiding 'just')"
+    )
+
+
+class PreferredTerminology(BaseModel):
+    """Preferred terminology definition for consistency checking."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    full_form: str = Field(
+        ...,
+        description="Full form of the term (e.g., 'Model Context Protocol')",
+        min_length=1
+    )
+    abbreviation: str | None = Field(
+        default=None,
+        description="Abbreviated form (e.g., 'MCP')"
+    )
+    guidance: str | None = Field(
+        default=None,
+        description="Usage guidance (e.g., 'Spell out on first use, abbreviate after')"
+    )
+
+
+class StyleConventions(BaseModel):
+    """Style-related documentation conventions."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    class HeadingConfig(BaseModel):
+        """Heading style configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        case: Literal["sentence_case", "title_case", "lower", "upper"] | None = Field(
+            default=None,
+            description="Required heading case style"
+        )
+        consistency_required: bool = Field(
+            default=True,
+            description="Enforce consistent heading case throughout project"
+        )
+
+    class CodeConfig(BaseModel):
+        """Code formatting configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        inline_format: Literal["backticks", "html"] = Field(
+            default="backticks",
+            description="Format for inline code references"
+        )
+        block_language_required: bool = Field(
+            default=True,
+            description="Require language specification in code blocks"
+        )
+
+    class VoiceConfig(BaseModel):
+        """Writing voice configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        person: Literal["first", "second", "third"] = Field(
+            default="second",
+            description="Grammatical person for documentation"
+        )
+        active_voice_preferred: bool = Field(
+            default=True,
+            description="Prefer active voice over passive"
+        )
+
+    headings: HeadingConfig = Field(
+        default_factory=HeadingConfig,
+        description="Heading style rules"
+    )
+    code: CodeConfig = Field(
+        default_factory=CodeConfig,
+        description="Code formatting rules"
+    )
+    voice: VoiceConfig = Field(
+        default_factory=VoiceConfig,
+        description="Writing voice rules"
+    )
+
+
+class StructureConventions(BaseModel):
+    """Structure-related documentation conventions."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    class TocConfig(BaseModel):
+        """Table of contents configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        enabled: bool = Field(
+            default=True,
+            description="Whether to require TOC"
+        )
+        min_length: int = Field(
+            default=500,
+            description="Minimum document length (words) to require TOC",
+            ge=0
+        )
+
+    require_intro: bool = Field(
+        default=True,
+        description="Require introductory paragraph before first heading"
+    )
+    require_toc: TocConfig = Field(
+        default_factory=TocConfig,
+        description="Table of contents requirements"
+    )
+    max_heading_depth: int | None = Field(
+        default=3,
+        description="Maximum heading depth (1-6)",
+        ge=1,
+        le=6
+    )
+    heading_hierarchy: Literal["strict", "relaxed"] = Field(
+        default="strict",
+        description="Enforce strict heading hierarchy (no level skipping)"
+    )
+
+
+class QualityConventions(BaseModel):
+    """Quality-related documentation conventions."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    class SentenceConfig(BaseModel):
+        """Sentence length configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        max_length: int | None = Field(
+            default=25,
+            description="Maximum sentence length in words",
+            ge=1
+        )
+        min_length: int | None = Field(
+            default=3,
+            description="Minimum sentence length in words",
+            ge=1
+        )
+
+    class ParagraphConfig(BaseModel):
+        """Paragraph length configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        max_length: int | None = Field(
+            default=150,
+            description="Maximum paragraph length in words",
+            ge=1
+        )
+
+    class LinkConfig(BaseModel):
+        """Link validation configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        validate_links: bool = Field(
+            default=True,
+            description="Validate all links are reachable"
+        )
+
+    class ImageConfig(BaseModel):
+        """Image validation configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        require_alt_text: bool = Field(
+            default=True,
+            description="All images must have descriptive alt text"
+        )
+
+    class CodeQualityConfig(BaseModel):
+        """Code quality validation configuration."""
+        model_config = ConfigDict(extra='forbid')
+
+        validate_syntax: bool = Field(
+            default=False,
+            description="Validate code syntax (expensive, requires TreeSitter)"
+        )
+
+    sentences: SentenceConfig = Field(
+        default_factory=SentenceConfig,
+        description="Sentence length rules"
+    )
+    paragraphs: ParagraphConfig = Field(
+        default_factory=ParagraphConfig,
+        description="Paragraph length rules"
+    )
+    links: LinkConfig = Field(
+        default_factory=LinkConfig,
+        description="Link validation rules"
+    )
+    images: ImageConfig = Field(
+        default_factory=ImageConfig,
+        description="Image validation rules"
+    )
+    code: CodeQualityConfig = Field(
+        default_factory=CodeQualityConfig,
+        description="Code quality validation rules"
+    )
+
+
+class TerminologyConventions(BaseModel):
+    """Terminology-related documentation conventions."""
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    preferred: dict[str, PreferredTerminology] = Field(
+        default_factory=dict,
+        description="Preferred terminology for consistency (detection only)"
+    )
+    avoid: list[TerminologyRule] = Field(
+        default_factory=list,
+        description="Words/phrases to avoid (flagged as warnings)"
+    )
+
+
+class DocumentationConventions(BaseModel):
+    """Complete documentation conventions configuration.
+
+    This model represents the schema for doc-conventions.yml files.
+    """
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
+
+    style: StyleConventions = Field(
+        default_factory=StyleConventions,
+        description="Style conventions (headings, code, voice)"
+    )
+    structure: StructureConventions = Field(
+        default_factory=StructureConventions,
+        description="Structure conventions (intro, TOC, hierarchy)"
+    )
+    quality: QualityConventions = Field(
+        default_factory=QualityConventions,
+        description="Quality conventions (sentences, links, images)"
+    )
+    terminology: TerminologyConventions = Field(
+        default_factory=TerminologyConventions,
+        description="Terminology conventions (preferred terms, words to avoid)"
+    )

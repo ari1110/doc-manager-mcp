@@ -19,6 +19,13 @@ from .checksums import calculate_checksum
 # Configuration
 from .config import load_config, save_config
 
+# Conventions
+from .conventions import (
+    get_convention_summary,
+    load_conventions,
+    validate_against_conventions,
+)
+
 # Error handling
 from .errors import handle_error
 
@@ -58,14 +65,17 @@ __all__ = [
     "file_lock",
     "find_docs_directory",
     "find_markdown_files",
+    "get_convention_summary",
     "handle_error",
     "is_public_symbol",
     "load_config",
+    "load_conventions",
     "matches_exclude_pattern",
     "operation_timeout",
     "run_git_command",
     "safe_json_dumps",
     "safe_resolve",
     "save_config",
+    "validate_against_conventions",
     "validate_path_boundary",
 ]

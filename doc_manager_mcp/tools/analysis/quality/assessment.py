@@ -12,6 +12,7 @@ from doc_manager_mcp.core import (
     find_docs_directory,
     find_markdown_files,
     handle_error,
+    load_conventions,
 )
 from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
 from doc_manager_mcp.models import AssessQualityInput
@@ -20,6 +21,7 @@ from .helpers import (
     calculate_documentation_coverage,
     check_heading_case_consistency,
     check_list_formatting_consistency,
+    check_terminology_compliance,
     detect_multiple_h1s,
     detect_undocumented_apis,
 )
@@ -316,7 +318,7 @@ def _assess_uniqueness(docs_path: Path, markdown_files: list[Path]) -> dict[str,
     }
 
 
-def _assess_consistency(docs_path: Path, markdown_files: list[Path]) -> dict[str, Any]:
+def _assess_consistency(docs_path: Path, markdown_files: list[Path], conventions=None) -> dict[str, Any]:
     """Assess terminology, formatting, and style consistency."""
     issues = []
     findings = []
@@ -382,7 +384,7 @@ def _assess_consistency(docs_path: Path, markdown_files: list[Path]) -> dict[str
     }
 
 
-def _assess_clarity(docs_path: Path, markdown_files: list[Path]) -> dict[str, Any]:
+def _assess_clarity(docs_path: Path, markdown_files: list[Path], conventions=None) -> dict[str, Any]:
     """Assess language precision, examples, and navigation."""
     issues = []
     findings = []
@@ -443,6 +445,30 @@ def _assess_clarity(docs_path: Path, markdown_files: list[Path]) -> dict[str, An
             "severity": "info",
             "message": "Few cross-references between documents - consider linking related topics"
         })
+
+    # Check terminology compliance if conventions exist
+    terminology_issues = []
+    if conventions:
+        terminology_data = check_terminology_compliance(docs_path, conventions)
+
+        # Report avoided terms found
+        avoided_terms = terminology_data.get("avoided_terms_found", [])
+        if avoided_terms:
+            # Group by term
+            terms_summary = {}
+            for item in avoided_terms:
+                term = item["term"]
+                if term not in terms_summary:
+                    terms_summary[term] = {"count": 0, "reason": item.get("reason")}
+                terms_summary[term]["count"] += 1
+
+            for term, data in terms_summary.items():
+                reason_text = f" - {data['reason']}" if data['reason'] else ""
+                issues.append({
+                    "severity": "warning",
+                    "message": f"Found {data['count']} use(s) of '{term}'{reason_text}"
+                })
+                terminology_issues.append(f"'{term}': {data['count']} occurrences")
 
     score = "good" if files_with_examples >= len(markdown_files) * 0.5 else "fair"
 
@@ -674,6 +700,9 @@ async def assess_quality(params: AssessQualityInput) -> str | dict[str, Any]:
         if not markdown_files:
             return enforce_response_limit(f"Error: No markdown files found in {docs_path}")
 
+        # Load documentation conventions (if they exist)
+        conventions = load_conventions(project_path)
+
         # Determine which criteria to assess
         criteria_to_assess = params.criteria or [
             QualityCriterion.RELEVANCE,
@@ -698,9 +727,9 @@ async def assess_quality(params: AssessQualityInput) -> str | dict[str, Any]:
             elif criterion == QualityCriterion.UNIQUENESS:
                 results.append(_assess_uniqueness(docs_path, markdown_files))
             elif criterion == QualityCriterion.CONSISTENCY:
-                results.append(_assess_consistency(docs_path, markdown_files))
+                results.append(_assess_consistency(docs_path, markdown_files, conventions))
             elif criterion == QualityCriterion.CLARITY:
-                results.append(_assess_clarity(docs_path, markdown_files))
+                results.append(_assess_clarity(docs_path, markdown_files, conventions))
             elif criterion == QualityCriterion.STRUCTURE:
                 results.append(_assess_structure(docs_path, markdown_files))
 
