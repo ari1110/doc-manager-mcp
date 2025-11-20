@@ -227,14 +227,17 @@ if any(pattern in file_path for pattern in build_files):
 
 ---
 
-## Usage in `docmgr_map_changes`
+## Usage in `docmgr_detect_changes`
+
+> **Note:** As of v2.0.0, `docmgr_map_changes` has been removed. Use `docmgr_detect_changes` instead.
 
 ```python
-async def map_changes(params: MapChangesInput) -> str:
-    changed_files = await _get_changed_files(project_path, since_commit)
+async def docmgr_detect_changes(params: DocmgrDetectChangesInput) -> dict:
+    changed_files = await _get_changed_files_from_checksums(project_path, baseline)
     affected_docs = []
 
-    for file_path in changed_files:
+    for change_info in changed_files:
+        file_path = change_info["file"]
         # Apply all patterns
         if file_path.startswith("cmd/"):
             affected_docs.extend(_map_cli_changes(file_path))

@@ -15,8 +15,8 @@ from ..indexing.link_rewriter import (
 )
 from ..models import BootstrapInput, MigrateInput, SyncInput
 from ..utils import detect_project_language, enforce_response_limit, handle_error
-from .changes import map_changes
 from .config import initialize_config
+from .detect_changes import docmgr_detect_changes
 from .memory import initialize_memory
 from .platform import detect_platform
 from .quality import assess_quality
@@ -828,11 +828,12 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         # Check if baseline exists
         baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
         if not baseline_path.exists():
-            return enforce_response_limit("Error: No baseline found. Please run docmgr_initialize_memory first to establish a baseline for change detection.")
+            return enforce_response_limit("Error: No baseline found. Please run docmgr_init first to establish a baseline for change detection.")
 
-        from ..models import MapChangesInput
-        changes_result = await map_changes(MapChangesInput(
-            project_path=str(project_path)
+        from ..models import DocmgrDetectChangesInput
+        changes_result = await docmgr_detect_changes(DocmgrDetectChangesInput(
+            project_path=str(project_path),
+            mode="checksum"
         ))
 
         changes_data = changes_result if isinstance(changes_result, dict) else json.loads(changes_result)

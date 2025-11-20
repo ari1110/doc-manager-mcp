@@ -317,11 +317,40 @@ If you're using an MCP client (like Claude Desktop), update tool calls:
 
 ## Timeline
 
-- **v1.1.0** (Current): Old tools deprecated but functional
-- **v1.2.0** (Planned): Old tools removed, breaking changes for those who didn't migrate
-- **v2.0.0** (Future): Clean 7-tool architecture only
+- **v1.0.x**: Original 10-tool architecture
+- **v1.1.0**: Old tools deprecated but functional (tagged)
+- **v2.0.0** (Current): Clean 7-tool architecture - deprecated tools removed
 
-**Recommendation:** Migrate before v1.2.0 release.
+**Breaking Change in v2.0.0:** The 4 deprecated MCP tool names have been removed from the server. If you're still using `docmgr_initialize_config`, `docmgr_initialize_memory`, `docmgr_bootstrap`, or `docmgr_map_changes`, you must migrate to the new tools.
+
+## v2.0.0 Breaking Changes
+
+### Removed Tools (External API Only)
+
+The following MCP tool names are **no longer available**:
+- ❌ `docmgr_initialize_config` → Use `docmgr_init(mode="existing")`
+- ❌ `docmgr_initialize_memory` → Use `docmgr_init(mode="existing")`
+- ❌ `docmgr_bootstrap` → Use `docmgr_init(mode="bootstrap")`
+- ❌ `docmgr_map_changes` → Use `docmgr_detect_changes` or `docmgr_sync`
+
+### What Still Works
+
+✅ **All 7 new tools** are fully functional:
+- `docmgr_init`, `docmgr_detect_changes`, `docmgr_update_baseline`
+- `docmgr_sync`, `docmgr_migrate`, `docmgr_validate_docs`
+- `docmgr_assess_quality`, `docmgr_detect_platform`, `docmgr_track_dependencies`
+
+✅ **Internal implementation** unchanged - all business logic intact
+
+✅ **All tests passing** - 10/10 tests verified
+
+✅ **MCP server** runs normally with clean 7-tool interface
+
+### Migration from v1.1.0 to v2.0.0
+
+If you already migrated to v1.1.0 new tool names: **Zero impact** - everything works.
+
+If you're still using v1.0.x deprecated tools: **Update your tool calls** per the examples above.
 
 ## Getting Help
 

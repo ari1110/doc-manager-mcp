@@ -27,32 +27,25 @@ from .constants import (
 # Import models
 from .models import (
     AssessQualityInput,
-    BootstrapInput,
     DetectPlatformInput,
     DocmgrDetectChangesInput,
     DocmgrInitInput,
     DocmgrUpdateBaselineInput,
-    InitializeConfigInput,
-    InitializeMemoryInput,
-    MapChangesInput,
     MigrateInput,
     SyncInput,
     TrackDependenciesInput,
     ValidateDocsInput,
 )
-from .tools.changes import map_changes
 
 # Import tool implementations
-from .tools.config import initialize_config
 from .tools.dependencies import track_dependencies
 from .tools.detect_changes import docmgr_detect_changes
 from .tools.init import docmgr_init
-from .tools.memory import initialize_memory
 from .tools.platform import detect_platform
 from .tools.quality import assess_quality
 from .tools.update_baseline import docmgr_update_baseline
 from .tools.validation import validate_docs
-from .tools.workflows import bootstrap, migrate, sync
+from .tools.workflows import migrate, sync
 
 # Fix Windows asyncio event loop for subprocess support
 # Windows requires ProactorEventLoop for asyncio.create_subprocess_exec
@@ -186,71 +179,6 @@ async def tool_docmgr_update_baseline(
     return await docmgr_update_baseline(params, ctx)
 
 # ----------------------------------------------------------------------------
-# Legacy Tools (Deprecated - Use docmgr_init instead)
-# ----------------------------------------------------------------------------
-# Commented out to provide clean 7-tool interface during testing
-# Uncomment for backward compatibility if needed
-
-# @mcp.tool(
-#     name="docmgr_initialize_config",
-#     annotations=ToolAnnotations(
-#         title="Initialize Documentation Manager Configuration",
-#         readOnlyHint=False,
-#         destructiveHint=False,
-#         idempotentHint=True,
-#         openWorldHint=False
-#     )
-# )
-# async def docmgr_initialize_config(
-#     project_path: str,
-#     platform: str | None = None,
-#     exclude_patterns: list[str] | None = None,
-#     docs_path: str | None = None,
-#     sources: list[str] | None = None
-# ) -> str | dict[str, Any]:
-#     """DEPRECATED: Use docmgr_init with mode="existing" instead.
-#
-#     Initialize .doc-manager.yml configuration file for the project.
-#
-#     This tool is maintained for backward compatibility but will be removed in v2.0.
-#     """
-#     # Pass user patterns only (max 50 items constraint)
-#     # Tools will merge with DEFAULT_EXCLUDE_PATTERNS when loading config
-#     params = InitializeConfigInput(
-#         project_path=project_path,
-#         platform=DocumentationPlatform(platform) if platform else None,
-#         exclude_patterns=exclude_patterns,
-#         docs_path=docs_path,
-#         sources=sources
-#     )
-#     return await initialize_config(params)
-
-# @mcp.tool(
-#     name="docmgr_initialize_memory",
-#     annotations=ToolAnnotations(
-#         title="Initialize Documentation Memory System",
-#         readOnlyHint=False,
-#         destructiveHint=False,
-#         idempotentHint=True,
-#         openWorldHint=False
-#     )
-# )
-# async def docmgr_initialize_memory(
-#     project_path: str,
-#     ctx: Context
-# ) -> str | dict[str, Any]:
-#     """DEPRECATED: Use docmgr_init with mode="existing" instead.
-#
-#     Initialize the documentation memory system for tracking project state.
-#
-#     This tool is maintained for backward compatibility but will be removed in v2.0.
-#     """
-#     params = InitializeMemoryInput(
-#         project_path=project_path
-#     )
-#     return await initialize_memory(params, ctx)
-
-# ----------------------------------------------------------------------------
 # Tier 2: Analysis & Read-Only Operations (continued)
 # ----------------------------------------------------------------------------
 
@@ -329,37 +257,6 @@ async def docmgr_assess_quality(
     )
     return await assess_quality(params)
 
-# @mcp.tool(
-#     name="docmgr_map_changes",
-#     annotations=ToolAnnotations(
-#         title="Map Code Changes to Documentation",
-#         readOnlyHint=False,  # T047: Writes to memory baseline
-#         destructiveHint=False,
-#         idempotentHint=True,
-#         openWorldHint=False
-#     )
-# )
-# async def docmgr_map_changes(
-#     project_path: str,
-#     since_commit: str | None = None,
-#     mode: str = "checksum",
-#     include_semantic: bool = False
-# ) -> str | dict[str, Any]:
-#     """DEPRECATED: Use docmgr_detect_changes (read-only) or docmgr_sync (orchestration) instead.
-#
-#     Map code changes to affected documentation using checksum comparison or git diff.
-#
-#     This tool is maintained for backward compatibility but will be removed in v2.0.
-#     Note: This tool writes to symbol-baseline.json. Use docmgr_detect_changes for read-only detection.
-#     """
-#     params = MapChangesInput(
-#         project_path=project_path,
-#         since_commit=since_commit,
-#         mode=ChangeDetectionMode(mode),
-#         include_semantic=include_semantic
-#     )
-#     return await map_changes(params)
-
 # ----------------------------------------------------------------------------
 # Tier 3: State Management (continued)
 # ----------------------------------------------------------------------------
@@ -388,38 +285,6 @@ async def docmgr_track_dependencies(
         docs_path=docs_path
     )
     return await track_dependencies(params)
-
-# ----------------------------------------------------------------------------
-# Legacy Tools (Deprecated)
-# ----------------------------------------------------------------------------
-
-# @mcp.tool(
-#     name="docmgr_bootstrap",
-#     annotations=ToolAnnotations(
-#         title="Bootstrap Fresh Documentation",
-#         readOnlyHint=False,
-#         destructiveHint=False,
-#         idempotentHint=False,
-#         openWorldHint=False
-#     )
-# )
-# async def docmgr_bootstrap(
-#     project_path: str,
-#     platform: str | None = None,
-#     docs_path: str = "docs"
-# ) -> str | dict[str, Any]:
-#     """DEPRECATED: Use docmgr_init with mode="bootstrap" instead.
-#
-#     Bootstrap fresh documentation structure with templates and configuration.
-#
-#     This tool is maintained for backward compatibility but will be removed in v2.0.
-#     """
-#     params = BootstrapInput(
-#         project_path=project_path,
-#         platform=DocumentationPlatform(platform) if platform else None,
-#         docs_path=docs_path
-#     )
-#     return await bootstrap(params)
 
 # ----------------------------------------------------------------------------
 # Tier 4: Workflows & Orchestration

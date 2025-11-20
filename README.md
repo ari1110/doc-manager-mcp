@@ -257,39 +257,41 @@ See [API Reference](docs/api-reference.md) for complete documentation.
 
 ### Deprecated Tools (v1.1.0)
 
-The following tools are **deprecated** and will be removed in v2.0:
+The following tools were **removed in v2.0.0**:
 
-| Deprecated Tool | Use Instead | Notes |
+| Removed Tool | Use Instead | Notes |
 |----------------|-------------|-------|
 | `docmgr_initialize_config` | `docmgr_init` with `mode="existing"` | Unified initialization |
 | `docmgr_initialize_memory` | `docmgr_init` with `mode="existing"` | Unified initialization |
 | `docmgr_bootstrap` | `docmgr_init` with `mode="bootstrap"` | Unified initialization |
 | `docmgr_map_changes` | `docmgr_detect_changes` or `docmgr_sync` | Read-only detection |
 
-### Migration Steps
+> **Note:** If you need backward compatibility with v1.0.x tools, use v1.1.0. See [MIGRATION.md](MIGRATION.md) for details.
+
+### Migration Steps (v1.0.x → v2.0.0)
 
 1. **Replace initialization calls:**
    ```python
-   # OLD (deprecated)
+   # OLD (removed in v2.0)
    await docmgr_initialize_config(...)
    await docmgr_initialize_memory(...)
 
-   # NEW (v1.1.0+)
+   # NEW (v2.0.0)
    await docmgr_init(project_path="...", mode="existing")
    ```
 
 2. **Replace change detection:**
    ```python
-   # OLD (deprecated - writes to baselines)
+   # OLD (removed in v2.0 - wrote to baselines)
    await docmgr_map_changes(...)
 
-   # NEW (v1.1.0+ - read-only)
+   # NEW (v2.0.0 - read-only)
    await docmgr_detect_changes(...)
    ```
 
 3. **Use explicit baseline updates:**
    ```python
-   # After updating docs
+   # After updating docs (v2.0.0)
    await docmgr_update_baseline(project_path="...", docs_path="docs")
    ```
 
