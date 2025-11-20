@@ -1,0 +1,74 @@
+platform: mkdocs
+exclude:
+  # Exclude everything except doc_manager_mcp/ and docs/
+  - tests/**
+  - specs/**
+  - references/**
+  - templates/**
+  - __pycache__/**
+  - .claude/**
+  - .venv/**
+  - .pytest_cache/**
+  - .ruff_cache/**
+  - .mypy_cache/**
+  - .doc-manager/**
+  - dist/**
+  - build/**
+  - "*.egg-info/**"
+  - .git/**
+  - .vscode/**
+  - .idea/**
+  - "**/*.pyc"
+  - "**/__pycache__/**"
+  # Root files
+  - .mcp.json
+  - uv.lock
+  - test-registry.json
+  - pyproject.toml
+  - .gitignore
+  - CLAUDE.md
+  - MIGRATION.md
+  - README.md
+
+sources:
+  - doc_manager_mcp/**/*.py
+docs_path: docs
+metadata:
+  language: Python
+  created: '2025-11-20T01:01:28.995846'
+  version: 1.0.0
+
+# ============================================================================
+# Configuration Guide & Examples
+# ============================================================================
+
+# Exclude Patterns
+# ----------------
+# Use glob patterns to exclude files from documentation tracking.
+# Examples:
+#   exclude:
+#     - "**/node_modules/**"     # Exclude all node_modules directories
+#     - "**/*.pyc"               # Exclude Python bytecode files
+#     - "**/dist/**"             # Exclude build artifacts
+#     - "**/.git/**"             # Exclude git directory
+#     - "**/venv/**"             # Exclude Python virtual environments
+#     - "**/__pycache__/**"      # Exclude Python cache
+
+# Source Directories
+# ------------------
+# Additional source directories to track (relative to project root).
+# Examples:
+#   sources:
+#     - "src"                    # Track src directory
+#     - "lib"                    # Track lib directory
+#     - "packages/core"          # Track monorepo package
+
+# Documentation Path
+# -------------------
+# Path to documentation directory (relative to project root).
+# Common values: docs, doc, documentation, website/docs
+
+# Platform
+# --------
+# Documentation platform: mkdocs, sphinx, hugo, docusaurus, etc.
+# Set to 'unknown' if not using a specific platform.
