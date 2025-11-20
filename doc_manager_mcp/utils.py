@@ -83,15 +83,33 @@ async def run_git_command(cwd: Path, *args, check_git_available: bool = True) ->
 def detect_project_language(project_path: Path) -> str:
     """Detect primary programming language of project."""
     language_indicators = {
+        # Go
         "go.mod": "Go",
+        # JavaScript/TypeScript
         "package.json": "JavaScript/TypeScript",
+        # Rust
         "Cargo.toml": "Rust",
+        # Python (check pyproject.toml first as it's the modern standard)
+        "pyproject.toml": "Python",
+        "Pipfile": "Python",
         "requirements.txt": "Python",
         "setup.py": "Python",
+        # Java/Kotlin
         "pom.xml": "Java",
         "build.gradle": "Java",
+        "build.gradle.kts": "Kotlin",
+        # Ruby
         "Gemfile": "Ruby",
-        "composer.json": "PHP"
+        # PHP
+        "composer.json": "PHP",
+        # C/C++
+        "CMakeLists.txt": "C/C++",
+        # Scala
+        "build.sbt": "Scala",
+        # Elixir
+        "mix.exs": "Elixir",
+        # Swift
+        "Package.swift": "Swift",
     }
 
     for file, language in language_indicators.items():
