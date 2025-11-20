@@ -88,22 +88,34 @@ async def docmgr_detect_changes(params: DocmgrDetectChangesInput) -> dict[str, A
 
         # Categorize changes
         categorized_changes = []
-        for file_path in changed_files:
+        for change_info in changed_files:
+            # Handle both dict and string formats for backward compatibility
+            if isinstance(change_info, dict):
+                file_path = change_info["file"]
+                change_type = change_info.get("change_type", "modified")
+            else:
+                # Fallback for string format
+                file_path = str(change_info)
+                change_type = "modified"
+
             category = _categorize_change(file_path)
             categorized_changes.append({
                 "file": file_path,
-                "category": category
+                "category": category,
+                "change_type": change_type
             })
 
         # Map to affected documentation
-        affected_docs = _map_to_affected_docs(changed_files, project_path)
+        affected_docs = _map_to_affected_docs(categorized_changes, project_path)
 
         # Semantic analysis (read-only - loads baseline but DOES NOT save)
         semantic_changes = []
         if params.include_semantic:
+            # Extract file paths for semantic analysis
+            file_paths = [change["file"] for change in categorized_changes]
             semantic_changes = await _get_semantic_changes_readonly(
                 project_path,
-                changed_files
+                file_paths
             )
 
         return {
@@ -156,10 +168,9 @@ async def _get_semantic_changes_readonly(
         # Index current symbols
         indexer = SymbolIndexer()
         indexer.index_project(project_path)
-        new_symbols = indexer.get_all_symbols()
 
-        # Compare symbols
-        semantic_changes = compare_symbols(old_symbols, new_symbols)
+        # Compare symbols (use indexer.index which is dict[str, list[Symbol]])
+        semantic_changes = compare_symbols(old_symbols, indexer.index)
 
         # *** KEY: DO NOT call save_symbol_baseline() ***
         # This keeps the function read-only
