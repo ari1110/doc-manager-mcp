@@ -817,18 +817,47 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
 
         lines = ["# Documentation Sync Report", ""]
         lines.append(f"**Project:** {project_path.name}")
-        lines.append(f"**Mode:** {params.mode} ({'read-only analysis' if params.mode == 'check' else 'analysis + baseline update'})")
+        lines.append(f"**Mode:** {params.mode} ({'read-only analysis' if params.mode == 'check' else 'baseline update + analysis'})")
         lines.append(f"**Started:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        lines.append("")
-
-        # Step 1: Map code changes
-        lines.append("## Step 1: Change Detection")
         lines.append("")
 
         # Check if baseline exists
         baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
         if not baseline_path.exists():
             return enforce_response_limit("Error: No baseline found. Please run docmgr_init first to establish a baseline for change detection.")
+
+        # Step 1: Update baselines FIRST if mode="resync"
+        baseline_updated = False
+        step_offset = 0
+        if params.mode == "resync":
+            lines.append("## Step 1: Updating Baselines")
+            lines.append("")
+
+            from ..models import DocmgrUpdateBaselineInput
+            from .update_baseline import docmgr_update_baseline
+
+            baseline_result = await docmgr_update_baseline(
+                DocmgrUpdateBaselineInput(
+                    project_path=str(project_path),
+                    docs_path=params.docs_path
+                )
+            )
+
+            if baseline_result.get("status") == "success":
+                updated_files = baseline_result.get("updated_files", [])
+                lines.append(f"Successfully updated {len(updated_files)} baseline files:")
+                for file in updated_files:
+                    lines.append(f"  - {file}")
+                baseline_updated = True
+            else:
+                lines.append(f"Warning: Baseline update failed: {baseline_result.get('message', 'Unknown error')}")
+
+            lines.append("")
+            step_offset = 1
+
+        # Step 1/2: Change detection (against fresh baseline if resync)
+        lines.append(f"## Step {1 + step_offset}: Change Detection")
+        lines.append("")
 
         from ..constants import ChangeDetectionMode
         from ..models import DocmgrDetectChangesInput
@@ -843,27 +872,22 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         affected_docs = changes_data.get("affected_documentation", [])
 
         if not changes_detected:
-            return {
-                "status": "success",
-                "message": "No changes detected",
-                "changes": 0,
-                "affected_docs": 0,
-                "recommendations": []
-            }
-
-        lines.append(f"Warning:  Detected {total_changes} code changes")
+            lines.append("No changes detected")
+            lines.append("  (Baseline is current with codebase)")
+        else:
+            lines.append(f"Warning:  Detected {total_changes} code changes")
         lines.append("")
 
-        # Step 2: Identify affected documentation
-        lines.append("## Step 2: Affected Documentation")
+        # Step 2/3: Identify affected documentation
+        lines.append(f"## Step {2 + step_offset}: Affected Documentation")
         lines.append("")
 
         if not affected_docs:
             lines.append("No documentation impacts detected")
             lines.append("  (Changes only affected tests, infrastructure, or docs themselves)")
             lines.append("")
-        # Step 3: Validate current documentation
-        lines.append("## Step 3: Current Documentation Status")
+        # Step 3/4: Validate current documentation
+        lines.append(f"## Step {3 + step_offset}: Current Documentation Status")
         lines.append("")
 
         from ..models import ValidateDocsInput
@@ -896,8 +920,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
                 lines.append(f"  - Errors: {errors}")
                 lines.append(f"  - Warnings: {warnings}")
             lines.append("")
-        # Step 4: Quality assessment
-        lines.append("## Step 4: Quality Assessment")
+        # Step 4/5: Quality assessment
+        lines.append(f"## Step {4 + step_offset}: Quality Assessment")
         lines.append("")
 
         # Initialize quality metrics
@@ -926,35 +950,9 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
                     lines.append(f"- {criterion['criterion'].capitalize()}: {criterion['score']}")
 
             lines.append("")
-        # Step 5: Update baselines (only if mode="resync")
-        baseline_updated = False
-        if params.mode == "resync":
-            lines.append("## Step 5: Updating Baselines")
-            lines.append("")
 
-            from ..models import DocmgrUpdateBaselineInput
-            from .update_baseline import docmgr_update_baseline
-
-            baseline_result = await docmgr_update_baseline(
-                DocmgrUpdateBaselineInput(
-                    project_path=str(project_path),
-                    docs_path=params.docs_path
-                )
-            )
-
-            if baseline_result.get("status") == "success":
-                updated_files = baseline_result.get("updated_files", [])
-                lines.append(f"Successfully updated {len(updated_files)} baseline files:")
-                for file in updated_files:
-                    lines.append(f"  - {file}")
-                baseline_updated = True
-            else:
-                lines.append(f"Warning: Baseline update failed: {baseline_result.get('message', 'Unknown error')}")
-
-            lines.append("")
-
-        # Step 6: Recommendations
-        lines.append(f"## {'Step 6: ' if params.mode == 'resync' else 'Step 5: '}Recommendations")
+        # Step 5/6: Recommendations
+        lines.append(f"## Step {5 + step_offset}: Recommendations")
         lines.append("")
 
         if affected_docs:
