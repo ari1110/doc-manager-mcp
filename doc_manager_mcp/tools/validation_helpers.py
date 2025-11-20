@@ -1,22 +1,12 @@
 """Helper functions for validation.py to prevent file bloat."""
 
-import re
 from pathlib import Path
 from typing import Any
 
+from ..constants import CLASS_EXCLUDES, CLASS_PATTERN, FUNCTION_PATTERN
 from ..indexing.code_validator import CodeValidator
 from ..indexing.markdown_parser import MarkdownParser
 from ..indexing.tree_sitter import Symbol, SymbolIndexer
-
-# Patterns for identifying symbol references in markdown
-FUNCTION_PATTERN = re.compile(r'^(([A-Z][a-zA-Z0-9]*\.)?([a-z_][a-zA-Z0-9_]*)\(\))$')
-CLASS_PATTERN = re.compile(r'^([A-Z][a-zA-Z0-9]+)$')
-
-# Common words to exclude from class matching (acronyms, not actual classes)
-CLASS_EXCLUDES = {
-    'API', 'CLI', 'HTTP', 'HTTPS', 'URL', 'JSON', 'XML', 'HTML', 'CSS',
-    'SQL', 'REST', 'YAML', 'TOML', 'UUID', 'UTF', 'ASCII', 'ISO'
-}
 
 
 def validate_code_examples(

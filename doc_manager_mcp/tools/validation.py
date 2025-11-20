@@ -14,28 +14,13 @@ from ..models import ValidateDocsInput
 from ..utils import (
     enforce_response_limit,
     find_docs_directory,
+    find_markdown_files,
     handle_error,
     safe_resolve,
 )
 from .validation_helpers import validate_code_examples, validate_documented_symbols
 
 
-def _find_markdown_files(docs_path: Path) -> list[Path]:
-    """Find all markdown files in documentation directory."""
-    markdown_files = []
-    file_count = 0
-
-    for pattern in ["**/*.md", "**/*.markdown"]:
-        for file_path in docs_path.glob(pattern):
-            if file_count >= MAX_FILES:
-                raise ValueError(
-                    f"File count limit exceeded (maximum: {MAX_FILES:,} files)\n"
-                    f"→ Consider processing a smaller directory or increasing the limit."
-                )
-            markdown_files.append(file_path)
-            file_count += 1
-
-    return sorted(markdown_files)
 
 
 def _extract_links(content: str, file_path: Path) -> list[dict[str, Any]]:
@@ -122,7 +107,7 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path) -> str
 def _check_broken_links(docs_path: Path) -> list[dict[str, Any]]:
     """Check for broken internal and external links."""
     issues = []
-    markdown_files = _find_markdown_files(docs_path)
+    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
 
     for md_file in markdown_files:
         try:
@@ -191,7 +176,7 @@ def _extract_images(content: str, file_path: Path) -> list[dict[str, Any]]:
 def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
     """Validate asset links and alt text."""
     issues = []
-    markdown_files = _find_markdown_files(docs_path)
+    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
 
     for md_file in markdown_files:
         try:
@@ -278,7 +263,7 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
     """Extract and validate code snippets using TreeSitter."""
     issues = []
     validator = CodeValidator()
-    markdown_files = _find_markdown_files(docs_path)
+    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
 
     for md_file in markdown_files:
         try:
@@ -326,7 +311,7 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
 def _validate_code_syntax(docs_path: Path, project_path: Path) -> list[dict[str, Any]]:
     """Validate code example syntax using TreeSitter (semantic validation)."""
     issues = []
-    markdown_files = _find_markdown_files(docs_path)
+    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
 
     for md_file in markdown_files:
         try:
@@ -352,7 +337,7 @@ def _validate_code_syntax(docs_path: Path, project_path: Path) -> list[dict[str,
 def _validate_symbols(docs_path: Path, project_path: Path, symbol_index=None) -> list[dict[str, Any]]:
     """Validate that documented symbols exist in codebase."""
     issues = []
-    markdown_files = _find_markdown_files(docs_path)
+    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
 
     # Build symbol index once if not provided
     if symbol_index is None:

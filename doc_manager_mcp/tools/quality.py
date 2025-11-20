@@ -9,7 +9,12 @@ from typing import Any
 from ..constants import QualityCriterion
 from ..indexing.markdown_parser import MarkdownParser
 from ..models import AssessQualityInput
-from ..utils import enforce_response_limit, find_docs_directory, handle_error
+from ..utils import (
+    enforce_response_limit,
+    find_docs_directory,
+    find_markdown_files,
+    handle_error,
+)
 from .quality_helpers import (
     calculate_documentation_coverage,
     check_heading_case_consistency,
@@ -19,12 +24,6 @@ from .quality_helpers import (
 )
 
 
-def _find_markdown_files(docs_path: Path) -> list[Path]:
-    """Find all markdown files in documentation directory."""
-    markdown_files = []
-    for pattern in ["**/*.md", "**/*.markdown"]:
-        markdown_files.extend(docs_path.glob(pattern))
-    return sorted(markdown_files)
 
 
 def _assess_relevance(docs_path: Path, markdown_files: list[Path]) -> dict[str, Any]:
@@ -672,7 +671,7 @@ async def assess_quality(params: AssessQualityInput) -> str | dict[str, Any]:
             return enforce_response_limit(f"Error: Documentation path is not a directory: {docs_path}")
 
         # Find all markdown files
-        markdown_files = _find_markdown_files(docs_path)
+        markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
         if not markdown_files:
             return enforce_response_limit(f"Error: No markdown files found in {docs_path}")
 
