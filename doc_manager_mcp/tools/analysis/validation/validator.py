@@ -6,17 +6,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ....core import (
+from doc_manager_mcp.core import (
     enforce_response_limit,
     find_docs_directory,
     find_markdown_files,
     handle_error,
     safe_resolve,
 )
-from ....indexing.analysis.code_validator import CodeValidator
-from ....indexing.analysis.tree_sitter import SymbolIndexer
-from ....indexing.parsers.markdown import MarkdownParser
-from ....models import ValidateDocsInput
+from doc_manager_mcp.indexing.analysis.code_validator import CodeValidator
+from doc_manager_mcp.indexing.analysis.tree_sitter import SymbolIndexer
+from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
+from doc_manager_mcp.models import ValidateDocsInput
+
 from .helpers import validate_code_examples, validate_documented_symbols
 
 

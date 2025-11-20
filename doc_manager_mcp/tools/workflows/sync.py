@@ -18,11 +18,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ...core import enforce_response_limit, handle_error
-from ...models import SyncInput
-from ..analysis.detect_changes import docmgr_detect_changes
-from ..analysis.quality.assessment import assess_quality
-from ..analysis.validation.validator import validate_docs
+from doc_manager_mcp.core import enforce_response_limit, handle_error
+from doc_manager_mcp.models import SyncInput
+from doc_manager_mcp.tools.analysis.detect_changes import docmgr_detect_changes
+from doc_manager_mcp.tools.analysis.quality.assessment import assess_quality
+from doc_manager_mcp.tools.analysis.validation.validator import validate_docs
 
 
 async def sync(params: SyncInput) -> dict[str, Any] | str:
@@ -84,8 +84,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
             lines.append("## Step 1: Updating Baselines")
             lines.append("")
 
-            from ...models import DocmgrUpdateBaselineInput
-            from ..state.update_baseline import docmgr_update_baseline
+            from doc_manager_mcp.models import DocmgrUpdateBaselineInput
+            from doc_manager_mcp.tools.state.update_baseline import docmgr_update_baseline
 
             baseline_result = await docmgr_update_baseline(
                 DocmgrUpdateBaselineInput(
@@ -110,8 +110,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         lines.append(f"## Step {1 + step_offset}: Change Detection")
         lines.append("")
 
-        from ...constants import ChangeDetectionMode
-        from ...models import DocmgrDetectChangesInput
+        from doc_manager_mcp.constants import ChangeDetectionMode
+        from doc_manager_mcp.models import DocmgrDetectChangesInput
         changes_result = await docmgr_detect_changes(DocmgrDetectChangesInput(
             project_path=str(project_path),
             mode=ChangeDetectionMode.CHECKSUM
@@ -141,8 +141,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         lines.append(f"## Step {3 + step_offset}: Current Documentation Status")
         lines.append("")
 
-        from ...core import find_docs_directory
-        from ...models import ValidateDocsInput
+        from doc_manager_mcp.core import find_docs_directory
+        from doc_manager_mcp.models import ValidateDocsInput
 
         # Use provided docs_path or auto-detect
         if params.docs_path:
@@ -179,7 +179,7 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         overall_score: str | None = None
 
         if docs_path:
-            from ...models import AssessQualityInput
+            from doc_manager_mcp.models import AssessQualityInput
             quality_result = await assess_quality(AssessQualityInput(
                 project_path=str(project_path),
                 docs_path=str(docs_path.relative_to(project_path))

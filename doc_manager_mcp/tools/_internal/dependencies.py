@@ -7,16 +7,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ...constants import CLASS_PATTERN, FUNCTION_PATTERN, MAX_FILES
-from ...core import (
+from doc_manager_mcp.constants import CLASS_PATTERN, FUNCTION_PATTERN, MAX_FILES
+from doc_manager_mcp.core import (
     file_lock,
     find_docs_directory,
     find_markdown_files,
     validate_path_boundary,
 )
-from ...indexing import SymbolIndexer
-from ...indexing.parsers.markdown import MarkdownParser
-from ...models import TrackDependenciesInput
+from doc_manager_mcp.indexing import SymbolIndexer
+from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
+from doc_manager_mcp.models import TrackDependenciesInput
 
 # ============================================================================
 # T082: Compiled regex patterns for performance (FR-023)

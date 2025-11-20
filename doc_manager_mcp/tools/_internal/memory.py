@@ -8,8 +8,8 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
-from ...constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
-from ...core import (
+from doc_manager_mcp.constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
+from doc_manager_mcp.core import (
     calculate_checksum,
     detect_project_language,
     enforce_response_limit,
@@ -21,7 +21,7 @@ from ...core import (
     run_git_command,
     validate_path_boundary,
 )
-from ...models import InitializeMemoryInput
+from doc_manager_mcp.models import InitializeMemoryInput
 
 
 async def scandir_async(path: Path):

@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ...core import detect_project_language, enforce_response_limit, handle_error
-from ...models import DetectPlatformInput
+from doc_manager_mcp.core import detect_project_language, enforce_response_limit, handle_error
+from doc_manager_mcp.models import DetectPlatformInput
 
 
 def _check_root_configs(project_path: Path) -> list[dict[str, Any]]:

@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any
 
-from ....core import is_public_symbol
+from doc_manager_mcp.core import is_public_symbol
 
 
 def check_list_formatting_consistency(

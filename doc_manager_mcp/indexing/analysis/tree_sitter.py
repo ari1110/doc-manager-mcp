@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ...core import load_config, matches_exclude_pattern
+from doc_manager_mcp.core import load_config, matches_exclude_pattern
 
 # TreeSitter imports (will be available after pip install)
 if TYPE_CHECKING:

@@ -3,18 +3,20 @@
 from pathlib import Path
 from typing import Any
 
-from ...core import enforce_response_limit, handle_error
-from ...models import (
+from doc_manager_mcp.core import enforce_response_limit, handle_error
+from doc_manager_mcp.models import (
     BootstrapInput,
     DocmgrInitInput,
     InitializeConfigInput,
     InitializeMemoryInput,
     TrackDependenciesInput,
 )
-from .._internal import bootstrap
-from .._internal.config import initialize_config
-from .._internal.dependencies import track_dependencies
-from .._internal.memory import initialize_memory
+from doc_manager_mcp.tools._internal import (
+    bootstrap,
+    initialize_config,
+    initialize_memory,
+    track_dependencies,
+)
 
 
 async def docmgr_init(params: DocmgrInitInput, ctx=None) -> dict[str, Any]:

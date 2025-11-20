@@ -15,17 +15,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ...core import enforce_response_limit, handle_error
-from ...indexing.transforms.links import (
+from doc_manager_mcp.core import enforce_response_limit, handle_error
+from doc_manager_mcp.indexing.transforms.links import (
     extract_frontmatter,
     generate_toc,
     preserve_frontmatter,
     update_or_insert_toc,
 )
-from ...models import MigrateInput
-from ..analysis.platform import detect_platform
-from ..analysis.quality.assessment import assess_quality
-from ..analysis.validation.validator import validate_docs
+from doc_manager_mcp.models import MigrateInput
+from doc_manager_mcp.tools.analysis.platform import detect_platform
+from doc_manager_mcp.tools.analysis.quality.assessment import assess_quality
+from doc_manager_mcp.tools.analysis.validation.validator import validate_docs
 
 
 async def migrate(params: MigrateInput) -> str | dict[str, Any]:

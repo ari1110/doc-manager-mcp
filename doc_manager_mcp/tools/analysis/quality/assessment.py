@@ -6,15 +6,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ....constants import QualityCriterion
-from ....core import (
+from doc_manager_mcp.constants import QualityCriterion
+from doc_manager_mcp.core import (
     enforce_response_limit,
     find_docs_directory,
     find_markdown_files,
     handle_error,
 )
-from ....indexing.parsers.markdown import MarkdownParser
-from ....models import AssessQualityInput
+from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
+from doc_manager_mcp.models import AssessQualityInput
+
 from .helpers import (
     calculate_documentation_coverage,
     check_heading_case_consistency,

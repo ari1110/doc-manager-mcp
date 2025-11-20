@@ -7,8 +7,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ...constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
-from ...core import (
+from doc_manager_mcp.constants import (
+    DEFAULT_EXCLUDE_PATTERNS,
+    MAX_FILES,
+    OPERATION_TIMEOUT,
+    ChangeDetectionMode,
+)
+from doc_manager_mcp.core import (
     calculate_checksum,
     enforce_response_limit,
     handle_error,
@@ -17,14 +22,14 @@ from ...core import (
     run_git_command,
     validate_path_boundary,
 )
-from ...indexing.analysis.semantic_diff import (
+from doc_manager_mcp.indexing.analysis.semantic_diff import (
     SemanticChange,
     compare_symbols,
     load_symbol_baseline,
     save_symbol_baseline,
 )
-from ...indexing.analysis.tree_sitter import SymbolIndexer
-from ...models import MapChangesInput
+from doc_manager_mcp.indexing.analysis.tree_sitter import SymbolIndexer
+from doc_manager_mcp.models import MapChangesInput
 
 
 def _load_baseline(project_path: Path) -> dict[str, Any] | None:

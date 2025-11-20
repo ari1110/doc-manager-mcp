@@ -6,9 +6,9 @@ Key difference from map_changes: NEVER writes to symbol-baseline.json
 from pathlib import Path
 from typing import Any
 
-from ...core import enforce_response_limit, handle_error
-from ...models import DocmgrDetectChangesInput
-from .._internal.changes import (
+from doc_manager_mcp.core import enforce_response_limit, handle_error
+from doc_manager_mcp.models import DocmgrDetectChangesInput
+from doc_manager_mcp.tools._internal.changes import (
     _categorize_change,
     _get_changed_files_from_checksums,
     _get_changed_files_from_git,

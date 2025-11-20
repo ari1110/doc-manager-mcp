@@ -3,8 +3,8 @@
 from pathlib import Path
 from typing import Any
 
-from ...core import enforce_response_limit, handle_error
-from ...models import DocmgrUpdateBaselineInput
+from doc_manager_mcp.core import enforce_response_limit, handle_error
+from doc_manager_mcp.models import DocmgrUpdateBaselineInput
 
 
 async def docmgr_update_baseline(
@@ -111,8 +111,8 @@ async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
         import json
         from datetime import datetime
 
-        from ...constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
-        from ...core import (
+        from doc_manager_mcp.constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
+        from doc_manager_mcp.core import (
             calculate_checksum,
             detect_project_language,
             find_docs_directory,
@@ -242,8 +242,8 @@ async def _update_dependencies(
         dict with status and dependency information
     """
     try:
-        from ...models import TrackDependenciesInput
-        from .._internal.dependencies import track_dependencies
+        from doc_manager_mcp.models import TrackDependenciesInput
+        from doc_manager_mcp.tools._internal import track_dependencies
 
         # Reuse existing track_dependencies function
         result = await track_dependencies(TrackDependenciesInput(

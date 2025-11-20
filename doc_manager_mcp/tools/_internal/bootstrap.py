@@ -14,11 +14,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ...constants import DocumentationPlatform
-from ...core import detect_project_language, enforce_response_limit, handle_error
-from ...models import BootstrapInput
-from ..analysis.platform import detect_platform
-from ..analysis.quality.assessment import assess_quality
+from doc_manager_mcp.constants import DocumentationPlatform
+from doc_manager_mcp.core import detect_project_language, enforce_response_limit, handle_error
+from doc_manager_mcp.models import BootstrapInput
+from doc_manager_mcp.tools.analysis.platform import detect_platform
+from doc_manager_mcp.tools.analysis.quality.assessment import assess_quality
+
 from .config import initialize_config
 from .memory import initialize_memory
 

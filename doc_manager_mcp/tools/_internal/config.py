@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ...core import (
+from doc_manager_mcp.core import (
     detect_platform_quick,
     detect_project_language,
     enforce_response_limit,
@@ -12,7 +12,7 @@ from ...core import (
     handle_error,
     save_config,
 )
-from ...models import InitializeConfigInput
+from doc_manager_mcp.models import InitializeConfigInput
 
 
 async def initialize_config(params: InitializeConfigInput) -> str | dict[str, Any]:
