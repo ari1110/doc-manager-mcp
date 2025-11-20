@@ -7,16 +7,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
-from ..indexing.semantic_diff import (
+from ...constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES, OPERATION_TIMEOUT, ChangeDetectionMode
+from ...indexing.semantic_diff import (
     SemanticChange,
     compare_symbols,
     load_symbol_baseline,
     save_symbol_baseline,
 )
-from ..indexing.tree_sitter import SymbolIndexer
-from ..models import MapChangesInput
-from ..utils import (
+from ...indexing.tree_sitter import SymbolIndexer
+from ...models import MapChangesInput
+from ...utils import (
     calculate_checksum,
     enforce_response_limit,
     handle_error,
