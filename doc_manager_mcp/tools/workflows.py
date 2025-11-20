@@ -777,27 +777,32 @@ async def migrate(params: MigrateInput) -> str | dict[str, Any]:
 async def sync(params: SyncInput) -> dict[str, Any] | str:
     """Sync documentation with code changes.
 
-    Orchestrates documentation synchronization:
+    Orchestrates documentation synchronization with two modes:
+    - mode="check": Read-only analysis (detects changes, no baseline updates)
+    - mode="resync": Full sync (detects changes + updates baselines atomically)
+
+    Steps performed:
     1. Maps code changes to affected documentation
     2. Identifies documentation that needs updates
     3. Validates current documentation state
     4. Assesses documentation quality
-    5. Updates memory baseline (if changes applied)
+    5. Updates baselines (only if mode="resync")
     6. Generates sync report with actionable recommendations
 
     Args:
         params (SyncInput): Validated input parameters containing:
             - project_path (str): Absolute path to project root
-            - mode (str): "reactive" (manual) or "proactive" (auto-detect)
+            - mode (str): "check" (read-only) or "resync" (update baselines)
+            - docs_path (str): Documentation directory path
             - response_format (ResponseFormat): Output format
 
     Returns:
-        str: Sync report with affected docs and recommendations
+        dict: Sync report with affected docs, recommendations, and baseline status
 
     Examples:
-        - Use when: After making code changes
-        - Use when: Before releasing documentation updates
-        - Use when: Running in CI/CD to detect doc staleness
+        - Use when: After making code changes (mode="check" to analyze impact)
+        - Use when: After updating docs (mode="resync" to update baselines)
+        - Use when: Running in CI/CD to detect doc staleness (mode="check")
 
     Error Handling:
         - Returns error if project_path doesn't exist
@@ -812,7 +817,7 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
 
         lines = ["# Documentation Sync Report", ""]
         lines.append(f"**Project:** {project_path.name}")
-        lines.append(f"**Sync Mode:** {params.mode}")
+        lines.append(f"**Mode:** {params.mode} ({'read-only analysis' if params.mode == 'check' else 'analysis + baseline update'})")
         lines.append(f"**Started:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         lines.append("")
 
@@ -922,55 +927,62 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
                     lines.append(f"- {criterion['criterion'].capitalize()}: {criterion['score']}")
 
             lines.append("")
-        # Step 5: Recommendations
-        lines.append("## Sync Recommendations")
+        # Step 5: Update baselines (only if mode="resync")
+        baseline_updated = False
+        if params.mode == "resync":
+            lines.append("## Step 5: Updating Baselines")
+            lines.append("")
+
+            from .update_baseline import docmgr_update_baseline
+            from ..models import DocmgrUpdateBaselineInput
+
+            baseline_result = await docmgr_update_baseline(
+                DocmgrUpdateBaselineInput(
+                    project_path=str(project_path),
+                    docs_path=params.docs_path
+                )
+            )
+
+            if baseline_result.get("status") == "success":
+                updated_files = baseline_result.get("updated_files", [])
+                lines.append(f"Successfully updated {len(updated_files)} baseline files:")
+                for file in updated_files:
+                    lines.append(f"  - {file}")
+                baseline_updated = True
+            else:
+                lines.append(f"Warning: Baseline update failed: {baseline_result.get('message', 'Unknown error')}")
+
+            lines.append("")
+
+        # Step 6: Recommendations
+        lines.append(f"## {'Step 6: ' if params.mode == 'resync' else 'Step 5: '}Recommendations")
         lines.append("")
 
-        if params.mode == "reactive":
-            lines.append("**Manual Actions Required:**")
+        if affected_docs:
+            lines.append("**Affected Documentation:**")
             lines.append("")
+            for doc in affected_docs[:10]:
+                lines.append(f"- {doc['file']} (Priority: {doc.get('priority', 'medium')})")
 
-            if affected_docs:
-                lines.append("1. **Update affected documentation:**")
-                for doc in high_priority[:5]:
-                    lines.append(f"   - {doc['file']}")
-
-                lines.append("")
-                lines.append("2. **Review changes:**")
-                lines.append("   - Check that examples still work")
-                lines.append("   - Update screenshots if UI changed")
-                lines.append("   - Verify configuration examples")
+            if len(affected_docs) > 10:
+                lines.append(f"  ... and {len(affected_docs) - 10} more")
 
             lines.append("")
-            lines.append("3. **Run validation:**")
-            lines.append("   ```")
-            lines.append("   docmgr_validate_docs")
-            lines.append("   ```")
-
-            lines.append("")
-            lines.append("4. **Update baseline:**")
-            lines.append("   After applying updates, refresh the memory baseline:")
-            lines.append("   ```")
-            lines.append("   docmgr_initialize_memory")
-            lines.append("   ```")
-
-        elif params.mode == "proactive":
-            lines.append("**Proactive Sync Suggestions:**")
+            lines.append("**Recommended Actions:**")
+            lines.append("1. Review and update affected documentation")
+            lines.append("2. Check that examples still work")
+            lines.append("3. Update screenshots if UI changed")
+            lines.append("4. Verify configuration examples")
             lines.append("")
 
-            if affected_docs:
-                lines.append("The following documentation files are out of sync with code:")
-                for doc in affected_docs[:10]:
-                    lines.append(f"- {doc['file']} (Priority: {doc['priority']})")
-
-                if len(affected_docs) > 10:
-                    lines.append(f"  ... and {len(affected_docs) - 10} more")
-
-                lines.append("")
-                lines.append("Consider:")
-                lines.append("- Creating a PR to update these files")
-                lines.append("- Adding TODO comments in affected docs")
-                lines.append("- Flagging as 'needs-update' in your issue tracker")
+        if params.mode == "check":
+            lines.append("**Next Steps:**")
+            lines.append("- After updating docs, run sync with mode='resync' to update baselines")
+            lines.append("- Or use docmgr_update_baseline to explicitly update baselines")
+        elif params.mode == "resync" and baseline_updated:
+            lines.append("**Baseline Status:**")
+            lines.append("- All baselines updated successfully")
+            lines.append("- Documentation is now in sync with current codebase")
 
         lines.append("")
 
@@ -984,21 +996,20 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
             lines.append(f"**Validation Issues:** {total_issues if total_issues is not None else 'N/A'}")
             lines.append(f"**Quality Score:** {overall_score if overall_score is not None else 'N/A'}")
 
-        lines.append("")
-        lines.append("**Next Steps:**")
-        if affected_docs:
-            lines.append("1. Review and update affected documentation")
-            lines.append("2. Run validation to ensure no broken links")
-            lines.append("3. Update memory baseline after changes")
+        if params.mode == "resync":
+            lines.append(f"**Baselines Updated:** {'Yes' if baseline_updated else 'No'}")
+
         return {
             "status": "success",
-            "message": "Sync analysis completed",
+            "message": f"Sync {'analysis' if params.mode == 'check' else 'and baseline update'} completed",
+            "mode": params.mode,
             "report": "\n".join(lines),
             "changes": total_changes,
             "affected_docs": len(affected_docs),
             "recommendations": [doc["file"] for doc in affected_docs[:10]],
             "validation_issues": total_issues,
-            "quality_score": overall_score
+            "quality_score": overall_score,
+            "baseline_updated": baseline_updated if params.mode == "resync" else None
         }
     except Exception as e:
         return enforce_response_limit(handle_error(e, "sync"))
