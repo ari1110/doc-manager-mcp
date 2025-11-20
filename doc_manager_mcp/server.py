@@ -12,6 +12,11 @@ An MCP server for comprehensive documentation lifecycle management including:
 - Testing change detection
 """
 
+# Fix Windows asyncio event loop for subprocess support
+# Windows requires ProactorEventLoop for asyncio.create_subprocess_exec
+# Uvicorn defaults to SelectorEventLoop which doesn't support subprocess
+import asyncio
+import platform
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
@@ -46,12 +51,6 @@ from .tools.quality import assess_quality
 from .tools.update_baseline import docmgr_update_baseline
 from .tools.validation import validate_docs
 from .tools.workflows import migrate, sync
-
-# Fix Windows asyncio event loop for subprocess support
-# Windows requires ProactorEventLoop for asyncio.create_subprocess_exec
-# Uvicorn defaults to SelectorEventLoop which doesn't support subprocess
-import asyncio
-import platform
 
 if platform.system() == 'Windows':
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())

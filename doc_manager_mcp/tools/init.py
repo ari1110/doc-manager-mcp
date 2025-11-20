@@ -1,7 +1,7 @@
 """Unified initialization tool for doc-manager (T007)."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..models import (
     BootstrapInput,
@@ -62,7 +62,7 @@ async def docmgr_init(params: DocmgrInitInput, ctx=None) -> dict[str, Any]:
             if ctx:
                 await ctx.info("Step 2/3: Initializing memory system...")
 
-            memory_result = await initialize_memory(
+            _memory_result = await initialize_memory(
                 InitializeMemoryInput(project_path=str(project_path)),
                 ctx
             )
@@ -71,7 +71,7 @@ async def docmgr_init(params: DocmgrInitInput, ctx=None) -> dict[str, Any]:
             if ctx:
                 await ctx.info("Step 3/3: Tracking dependencies...")
 
-            deps_result = await track_dependencies(TrackDependenciesInput(
+            _deps_result = await track_dependencies(TrackDependenciesInput(
                 project_path=str(project_path),
                 docs_path=params.docs_path
             ))
@@ -108,7 +108,7 @@ async def docmgr_init(params: DocmgrInitInput, ctx=None) -> dict[str, Any]:
             if ctx:
                 await ctx.info("Tracking dependencies...")
 
-            deps_result = await track_dependencies(TrackDependenciesInput(
+            _deps_result = await track_dependencies(TrackDependenciesInput(
                 project_path=str(project_path),
                 docs_path=params.docs_path or "docs"
             ))
@@ -129,4 +129,10 @@ async def docmgr_init(params: DocmgrInitInput, ctx=None) -> dict[str, Any]:
             }
 
     except Exception as e:
-        return enforce_response_limit(handle_error(e, "docmgr_init"))
+        error_msg = handle_error(e, "docmgr_init")
+        error_dict = {
+            "status": "error",
+            "message": error_msg
+        }
+        # enforce_response_limit returns dict unchanged when given dict
+        return cast(dict[str, Any], enforce_response_limit(error_dict))

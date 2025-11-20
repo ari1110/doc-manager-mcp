@@ -4,7 +4,7 @@ Key difference from map_changes: NEVER writes to symbol-baseline.json
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..models import DocmgrDetectChangesInput
 from ..utils import enforce_response_limit, handle_error
@@ -130,7 +130,13 @@ async def docmgr_detect_changes(params: DocmgrDetectChangesInput) -> dict[str, A
         }
 
     except Exception as e:
-        return enforce_response_limit(handle_error(e, "docmgr_detect_changes"))
+        error_msg = handle_error(e, "docmgr_detect_changes")
+        error_dict = {
+            "status": "error",
+            "message": error_msg
+        }
+        # enforce_response_limit returns dict unchanged when given dict
+        return cast(dict[str, Any], enforce_response_limit(error_dict))
 
 
 async def _get_semantic_changes_readonly(
@@ -179,10 +185,12 @@ async def _get_semantic_changes_readonly(
         return [
             {
                 "change_type": change.change_type,
-                "symbol_name": change.symbol_name,
+                "symbol_name": change.name,
                 "symbol_type": change.symbol_type,
-                "file_path": change.file_path,
-                "details": change.details
+                "file_path": change.file,
+                "severity": change.severity,
+                "old_signature": change.old_signature,
+                "new_signature": change.new_signature
             }
             for change in semantic_changes
         ]
@@ -190,5 +198,5 @@ async def _get_semantic_changes_readonly(
     except Exception as e:
         # Don't fail the entire detection if semantic analysis fails
         return [{
-            "error": f"Semantic analysis failed: {str(e)}"
+            "error": f"Semantic analysis failed: {e!s}"
         }]

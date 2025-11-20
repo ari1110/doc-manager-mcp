@@ -1,7 +1,7 @@
 """Comprehensive baseline update tool (T009)."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..models import DocmgrUpdateBaselineInput
 from ..utils import enforce_response_limit, handle_error
@@ -89,7 +89,13 @@ async def docmgr_update_baseline(
         }
 
     except Exception as e:
-        return enforce_response_limit(handle_error(e, "docmgr_update_baseline"))
+        error_msg = handle_error(e, "docmgr_update_baseline")
+        error_dict = {
+            "status": "error",
+            "message": error_msg
+        }
+        # enforce_response_limit returns dict unchanged when given dict
+        return cast(dict[str, Any], enforce_response_limit(error_dict))
 
 
 async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
@@ -124,7 +130,7 @@ async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
         checksums = {}
         file_count = 0
 
-        for root, dirs, files in project_path.walk():
+        for root, _dirs, files in project_path.walk():
             if file_count >= MAX_FILES:
                 break
 
@@ -180,7 +186,7 @@ async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Failed to update repo baseline: {str(e)}"
+            "message": f"Failed to update repo baseline: {e!s}"
         }
 
 
@@ -194,8 +200,8 @@ async def _update_symbol_baseline(project_path: Path) -> dict[str, Any]:
         dict with status and symbol information
     """
     try:
-        from ..indexing.tree_sitter import SymbolIndexer
         from ..indexing.semantic_diff import save_symbol_baseline
+        from ..indexing.tree_sitter import SymbolIndexer
 
         baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
 
@@ -218,7 +224,7 @@ async def _update_symbol_baseline(project_path: Path) -> dict[str, Any]:
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Failed to update symbol baseline: {str(e)}"
+            "message": f"Failed to update symbol baseline: {e!s}"
         }
 
 
@@ -236,8 +242,8 @@ async def _update_dependencies(
         dict with status and dependency information
     """
     try:
-        from .dependencies import track_dependencies
         from ..models import TrackDependenciesInput
+        from .dependencies import track_dependencies
 
         # Reuse existing track_dependencies function
         result = await track_dependencies(TrackDependenciesInput(
@@ -254,5 +260,5 @@ async def _update_dependencies(
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Failed to update dependencies: {str(e)}"
+            "message": f"Failed to update dependencies: {e!s}"
         }

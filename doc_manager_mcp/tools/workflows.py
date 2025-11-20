@@ -830,10 +830,11 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         if not baseline_path.exists():
             return enforce_response_limit("Error: No baseline found. Please run docmgr_init first to establish a baseline for change detection.")
 
+        from ..constants import ChangeDetectionMode
         from ..models import DocmgrDetectChangesInput
         changes_result = await docmgr_detect_changes(DocmgrDetectChangesInput(
             project_path=str(project_path),
-            mode="checksum"
+            mode=ChangeDetectionMode.CHECKSUM
         ))
 
         changes_data = changes_result if isinstance(changes_result, dict) else json.loads(changes_result)
@@ -856,9 +857,6 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         # Step 2: Identify affected documentation
         lines.append("## Step 2: Affected Documentation")
         lines.append("")
-
-        # Initialize priority lists
-        high_priority: list = []
 
         if not affected_docs:
             lines.append("No documentation impacts detected")
@@ -934,8 +932,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
             lines.append("## Step 5: Updating Baselines")
             lines.append("")
 
-            from .update_baseline import docmgr_update_baseline
             from ..models import DocmgrUpdateBaselineInput
+            from .update_baseline import docmgr_update_baseline
 
             baseline_result = await docmgr_update_baseline(
                 DocmgrUpdateBaselineInput(

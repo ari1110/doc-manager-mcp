@@ -139,7 +139,7 @@ class SymbolIndexer:
         # Determine file patterns: config sources > provided patterns > defaults
         if config and config.get("sources"):
             file_patterns = config["sources"]
-        elif not file_patterns:
+        if not file_patterns:
             file_patterns = [
                 "**/*.go",
                 "**/*.py",
