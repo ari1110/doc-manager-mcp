@@ -158,8 +158,8 @@ async def _get_semantic_changes_readonly(
         truly read-only.
     """
     try:
-        from ...indexing.semantic_diff import compare_symbols, load_symbol_baseline
-        from ...indexing.tree_sitter import SymbolIndexer
+        from ...indexing.analysis.semantic_diff import compare_symbols, load_symbol_baseline
+        from ...indexing.analysis.tree_sitter import SymbolIndexer
 
         baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
 

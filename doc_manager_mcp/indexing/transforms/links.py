@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 import frontmatter
 
-from .markdown_parser import MarkdownParser
+from ..parsers.markdown import MarkdownParser
 
 
 def extract_frontmatter(content: str) -> tuple[dict[str, Any] | None, str]:
@@ -287,7 +287,7 @@ def compute_link_mappings(
         ... )
         >>> # Returns: {"../guide.md": "../guide.md"} (depth unchanged)
     """
-    from ..indexing.markdown_parser import MarkdownParser
+    from ..parsers.markdown import MarkdownParser
 
     mappings = {}
 

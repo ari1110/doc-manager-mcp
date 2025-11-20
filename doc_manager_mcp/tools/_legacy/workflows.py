@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ..constants import DocumentationPlatform
-from ..indexing.link_rewriter import (
+from ..indexing.transforms.links import (
     extract_frontmatter,
     generate_toc,
     preserve_frontmatter,
@@ -600,7 +600,7 @@ async def migrate(params: MigrateInput) -> str | dict[str, Any]:
 
                     # Rewrite links if enabled
                     if params.rewrite_links:
-                        from ..indexing.link_rewriter import (
+                        from ..indexing.transforms.links import (
                             compute_link_mappings,
                             rewrite_links_in_content,
                         )

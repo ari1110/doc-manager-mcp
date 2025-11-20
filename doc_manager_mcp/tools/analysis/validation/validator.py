@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ....indexing.code_validator import CodeValidator
-from ....indexing.markdown_parser import MarkdownParser
-from ....indexing.tree_sitter import SymbolIndexer
+from ....indexing.analysis.code_validator import CodeValidator
+from ....indexing.analysis.tree_sitter import SymbolIndexer
+from ....indexing.parsers.markdown import MarkdownParser
 from ....models import ValidateDocsInput
 from ....utils import (
     enforce_response_limit,

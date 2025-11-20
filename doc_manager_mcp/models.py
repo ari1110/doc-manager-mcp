@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .constants import ChangeDetectionMode, DocumentationPlatform, QualityCriterion
-from .indexing.semantic_diff import SemanticChange
+from .indexing.analysis.semantic_diff import SemanticChange
 
 
 def _validate_project_path(v: str) -> str:

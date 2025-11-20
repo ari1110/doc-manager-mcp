@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from ....constants import QualityCriterion
-from ....indexing.markdown_parser import MarkdownParser
+from ....indexing.parsers.markdown import MarkdownParser
 from ....models import AssessQualityInput
 from ....utils import (
     enforce_response_limit,

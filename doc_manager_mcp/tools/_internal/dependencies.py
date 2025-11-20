@@ -9,7 +9,7 @@ from typing import Any
 
 from ...constants import CLASS_PATTERN, FUNCTION_PATTERN, MAX_FILES
 from ...indexing import SymbolIndexer
-from ...indexing.markdown_parser import MarkdownParser
+from ...indexing.parsers.markdown import MarkdownParser
 from ...models import TrackDependenciesInput
 from ...utils import (
     file_lock,

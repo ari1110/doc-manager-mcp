@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Any
 
 from ....constants import CLASS_EXCLUDES, CLASS_PATTERN, FUNCTION_PATTERN
-from ....indexing.code_validator import CodeValidator
-from ....indexing.markdown_parser import MarkdownParser
-from ....indexing.tree_sitter import Symbol, SymbolIndexer
+from ....indexing.analysis.code_validator import CodeValidator
+from ....indexing.analysis.tree_sitter import Symbol, SymbolIndexer
+from ....indexing.parsers.markdown import MarkdownParser
 
 
 def validate_code_examples(
