@@ -1,6 +1,17 @@
 """Constants and enums for doc-manager MCP server."""
 
+import re
 from enum import Enum
+
+# Code reference patterns (shared between dependencies.py and validation_helpers.py)
+FUNCTION_PATTERN = re.compile(r'^(([A-Z][a-zA-Z0-9]*\.)?([a-z_][a-zA-Z0-9_]*)\(\))$')
+CLASS_PATTERN = re.compile(r'^([A-Z][a-zA-Z0-9]+)$')
+
+# Common words to exclude from class matching (acronyms, not actual classes)
+CLASS_EXCLUDES = {
+    'API', 'CLI', 'HTTP', 'HTTPS', 'URL', 'JSON', 'XML', 'HTML', 'CSS',
+    'SQL', 'REST', 'YAML', 'TOML', 'UUID', 'UTF', 'ASCII', 'ISO'
+}
 
 # Response size limit
 CHARACTER_LIMIT = 25000  # Maximum response size in characters

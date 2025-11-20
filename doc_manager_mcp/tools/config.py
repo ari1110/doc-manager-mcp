@@ -7,6 +7,7 @@ from typing import Any
 from ..constants import DocumentationPlatform
 from ..models import InitializeConfigInput
 from ..utils import (
+    detect_platform_quick,
     detect_project_language,
     enforce_response_limit,
     find_docs_directory,
@@ -62,17 +63,7 @@ async def initialize_config(params: InitializeConfigInput) -> str | dict[str, An
         # Detect platform if not specified
         platform = params.platform
         if not platform:
-            # Try to detect platform
-            if (project_path / "docsite" / "hugo.yaml").exists() or (project_path / "hugo.toml").exists():
-                platform = DocumentationPlatform.HUGO
-            elif (project_path / "docusaurus.config.js").exists():
-                platform = DocumentationPlatform.DOCUSAURUS
-            elif (project_path / "mkdocs.yml").exists():
-                platform = DocumentationPlatform.MKDOCS
-            elif (project_path / "conf.py").exists():
-                platform = DocumentationPlatform.SPHINX
-            else:
-                platform = DocumentationPlatform.UNKNOWN
+            platform = detect_platform_quick(project_path)
 
         # Detect project language
         language = detect_project_language(project_path)
