@@ -11,7 +11,9 @@ from doc_manager_mcp.core import (
     find_docs_directory,
     find_markdown_files,
     handle_error,
+    load_conventions,
     safe_resolve,
+    validate_against_conventions,
 )
 from doc_manager_mcp.indexing.analysis.code_validator import CodeValidator
 from doc_manager_mcp.indexing.analysis.tree_sitter import SymbolIndexer
@@ -401,6 +403,49 @@ def with_timeout(timeout_seconds):
     return decorator
 
 
+def _validate_conventions(docs_path: Path, conventions) -> list[dict[str, Any]]:
+    """Validate documentation files against conventions.
+
+    Args:
+        docs_path: Path to documentation directory
+        conventions: DocumentationConventions object
+
+    Returns:
+        List of convention violations
+    """
+    issues = []
+    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+
+    for md_file in markdown_files:
+        try:
+            with open(md_file, encoding='utf-8') as f:
+                content = f.read()
+
+            # Validate against conventions
+            violations = validate_against_conventions(
+                content,
+                conventions,
+                str(md_file.relative_to(docs_path))
+            )
+
+            # Convert violations to issue format
+            for violation in violations:
+                issues.append({
+                    "type": "convention",
+                    "severity": violation.get("severity", "warning"),
+                    "file": violation.get("file", str(md_file.relative_to(docs_path))),
+                    "line": violation.get("line"),
+                    "rule": violation.get("rule"),
+                    "message": violation.get("message")
+                })
+
+        except Exception as e:
+            print(f"Warning: Failed to validate conventions in {md_file}: {e}", file=sys.stderr)
+            continue
+
+    return issues
+
+
 async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
     """Validate documentation for broken links, missing assets, and code snippet issues.
 
@@ -454,8 +499,16 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
         if not docs_path.is_dir():
             return enforce_response_limit(f"Error: Documentation path is not a directory: {docs_path}")
 
+        # Load conventions if they exist
+        conventions = load_conventions(project_path)
+
         # Run validation checks
         all_issues = []
+
+        # Check convention compliance if conventions exist
+        if conventions:
+            convention_issues = _validate_conventions(docs_path, conventions)
+            all_issues.extend(convention_issues)
 
         if params.check_links:
             link_issues = _check_broken_links(docs_path)

@@ -18,7 +18,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from doc_manager_mcp.core import enforce_response_limit, handle_error
+from doc_manager_mcp.core import (
+    enforce_response_limit,
+    get_convention_summary,
+    handle_error,
+    load_conventions,
+)
 from doc_manager_mcp.models import SyncInput
 from doc_manager_mcp.tools.analysis.detect_changes import docmgr_detect_changes
 from doc_manager_mcp.tools.analysis.quality.assessment import assess_quality
@@ -66,10 +71,22 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         if not project_path.exists():
             return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
+        # Load conventions if they exist
+        conventions = load_conventions(project_path)
+
         lines = ["# Documentation Sync Report", ""]
         lines.append(f"**Project:** {project_path.name}")
         lines.append(f"**Mode:** {params.mode} ({'read-only analysis' if params.mode == 'check' else 'baseline update + analysis'})")
         lines.append(f"**Started:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+        # Add conventions summary if they exist
+        if conventions:
+            lines.append("")
+            lines.append("**Documentation Conventions:**")
+            convention_summary = get_convention_summary(conventions)
+            for line in convention_summary.split("\n"):
+                lines.append(line)
+
         lines.append("")
 
         # Check if baseline exists
