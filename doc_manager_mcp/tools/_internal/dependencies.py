@@ -650,10 +650,27 @@ def _build_reference_index(all_references: list[dict[str, Any]]) -> dict[str, li
     return ref_index
 
 
+def _build_asset_to_docs_index(all_assets: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """Build index of assets to docs that reference them: asset_path -> [doc_files]."""
+    asset_index = {}
+
+    for asset in all_assets:
+        asset_path = asset["asset_path"]
+        doc_file = asset["doc_file"]
+
+        if asset_path not in asset_index:
+            asset_index[asset_path] = []
+        if doc_file not in asset_index[asset_path]:
+            asset_index[asset_path].append(doc_file)
+
+    return asset_index
+
+
 def _save_dependencies_to_memory(project_path: Path, dependencies: dict[str, list[str]],
                                  code_to_doc: dict[str, list[str]], unmatched_refs: dict[str, list[str]],
                                  all_references: list[dict[str, Any]] | None = None,
-                                 reference_index: dict[str, list[str]] | None = None):
+                                 reference_index: dict[str, list[str]] | None = None,
+                                 asset_to_docs: dict[str, list[str]] | None = None):
     """Save dependency graph to memory directory with separated file and reference mappings."""
     memory_dir = project_path / ".doc-manager"
 
@@ -689,6 +706,10 @@ def _save_dependencies_to_memory(project_path: Path, dependencies: dict[str, lis
                 "doc_file": ref["doc_file"]
             })
         data["all_references"] = refs_by_type
+
+    # Add asset_to_docs mapping (asset path -> docs that reference it)
+    if asset_to_docs:
+        data["asset_to_docs"] = asset_to_docs
 
     try:
         # T066: Use file locking to prevent concurrent modification (FR-018)
@@ -805,6 +826,8 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
             include_root_readme=include_root_readme
         )
         all_references = []
+        all_assets = []  # Track all asset references (images, etc.)
+        parser = MarkdownParser()
 
         if markdown_files:
             # Extract references from all docs (using TreeSitter for code blocks)
@@ -813,13 +836,25 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
                     with open(md_file, encoding='utf-8') as f:
                         content = f.read()
 
+                    doc_relative_path = get_doc_relative_path(md_file, docs_path, project_path)
+
                     # Extract inline references (backticks, prose)
-                    references = _extract_code_references(content, get_doc_relative_path(md_file, docs_path, project_path))
+                    references = _extract_code_references(content, doc_relative_path)
                     all_references.extend(references)
 
                     # Extract commands from fenced code blocks (TreeSitter markdown)
-                    code_block_refs = _extract_commands_from_code_blocks(content, get_doc_relative_path(md_file, docs_path, project_path), symbol_index, project_name)
+                    code_block_refs = _extract_commands_from_code_blocks(content, doc_relative_path, symbol_index, project_name)
                     all_references.extend(code_block_refs)
+
+                    # Extract image assets
+                    images = parser.extract_images(content)
+                    for img in images:
+                        all_assets.append({
+                            "asset_path": img["src"],  # Can be relative or absolute
+                            "doc_file": doc_relative_path,
+                            "asset_type": "image",
+                            "alt_text": img.get("alt", "")
+                        })
                 except Exception as e:
                     print(f"Warning: Failed to read markdown file {md_file}: {e}", file=sys.stderr)
                     continue
@@ -833,8 +868,11 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
         # Build reference index (reference text -> docs that mention it)
         reference_index = _build_reference_index(all_references)
 
+        # Build asset_to_docs mapping (asset path -> docs that reference it)
+        asset_to_docs = _build_asset_to_docs_index(all_assets)
+
         # Save to memory
-        _save_dependencies_to_memory(project_path, dependencies, code_to_doc, unmatched_refs, all_references, reference_index)
+        _save_dependencies_to_memory(project_path, dependencies, code_to_doc, unmatched_refs, all_references, reference_index, asset_to_docs)
 
         return _format_dependency_report(dependencies, code_to_doc, unmatched_refs, len(all_references), all_references, tree_sitter_stats)
 
