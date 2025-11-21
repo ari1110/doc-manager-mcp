@@ -1,6 +1,5 @@
 """Convention loading and validation utilities."""
 
-import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 

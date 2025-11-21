@@ -84,7 +84,7 @@ def _assess_relevance(project_path: Path, docs_path: Path, markdown_files: list[
 
     if deprecated_count > 0:
         # Round at display to avoid floating point precision issues (Bug #2 fix)
-        findings.append(f"Found {int(round(deprecated_count))} references to deprecated/outdated content across {len(files_with_deprecated)} files")
+        findings.append(f"Found {round(deprecated_count)} references to deprecated/outdated content across {len(files_with_deprecated)} files")
 
     # Check if README exists (relevance to getting started)
     has_readme = (docs_path / "README.md").exists() or (docs_path.parent / "README.md").exists()
@@ -101,7 +101,7 @@ def _assess_relevance(project_path: Path, docs_path: Path, markdown_files: list[
         issues.append({
             "severity": "warning",
             # Round at display to avoid floating point precision issues (Bug #2 fix)
-            "message": f"High number of deprecated references ({int(round(deprecated_count))}) - consider removing or updating outdated content"
+            "message": f"High number of deprecated references ({round(deprecated_count)}) - consider removing or updating outdated content"
         })
     elif deprecated_count > 5:
         findings.append("Some deprecated content found - ensure it's clearly marked with migration guidance")
@@ -113,7 +113,7 @@ def _assess_relevance(project_path: Path, docs_path: Path, markdown_files: list[
         "issues": issues,
         "metrics": {
             # Round at display to avoid floating point precision issues (Bug #2 fix)
-            "deprecated_references": int(round(deprecated_count)),
+            "deprecated_references": round(deprecated_count),
             "files_with_deprecated": len(files_with_deprecated),
             "has_readme": has_readme
         }
