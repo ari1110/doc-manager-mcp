@@ -55,3 +55,10 @@ metadata:
 # --------
 # Documentation platform: mkdocs, sphinx, hugo, docusaurus, etc.
 # Set to 'unknown' if not using a specific platform.
+
+# Include Root README
+# -------------------
+# Set to true to include the root README.md in documentation operations.
+# When enabled, validation, quality assessment, and change detection
+# will include the root README.md alongside docs in the docs/ directory.
+# Default: false (backwards compatible)
