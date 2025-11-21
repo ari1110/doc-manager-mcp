@@ -4,24 +4,17 @@ Workflows typically orchestrate multiple utility functions and other tools.
 Copy this template and customize for your specific workflow.
 """
 
-from pathlib import Path
-from typing import Dict, Any, List
 import json
+from pathlib import Path
+from typing import Any
 
-from ..models import WorkflowInput  # Replace with actual model name
-from ..constants import ResponseFormat, DocumentationPlatform
+from ..constants import ResponseFormat
 from ..core import (
     handle_error,
-    detect_project_language,
-    find_docs_directory,
-    load_config,
-    save_config
 )
+from ..models import WorkflowInput  # Replace with actual model name
 
 # Import other tools that this workflow orchestrates
-from .platform import detect_platform
-from .quality import assess_quality  # Example
-from .validation import validate_docs  # Example
 
 
 async def workflow_name(params: WorkflowInput) -> str:
@@ -111,7 +104,7 @@ async def workflow_name(params: WorkflowInput) -> str:
 
 # Workflow step functions
 
-async def _check_prerequisites(project_path: Path, params: WorkflowInput) -> Dict[str, Any]:
+async def _check_prerequisites(project_path: Path, params: WorkflowInput) -> dict[str, Any]:
     """Check if all prerequisites for the workflow are met.
 
     Args:
@@ -137,7 +130,7 @@ async def _check_prerequisites(project_path: Path, params: WorkflowInput) -> Dic
     }
 
 
-async def _workflow_step_1(project_path: Path, params: WorkflowInput) -> Dict[str, Any]:
+async def _workflow_step_1(project_path: Path, params: WorkflowInput) -> dict[str, Any]:
     """First major step of the workflow.
 
     Args:
@@ -169,8 +162,8 @@ async def _workflow_step_1(project_path: Path, params: WorkflowInput) -> Dict[st
 async def _workflow_step_2(
     project_path: Path,
     params: WorkflowInput,
-    previous_result: Dict[str, Any]
-) -> Dict[str, Any]:
+    previous_result: dict[str, Any]
+) -> dict[str, Any]:
     """Second major step of the workflow.
 
     Args:
@@ -195,8 +188,8 @@ async def _workflow_step_2(
 
 async def _finalize_workflow(
     project_path: Path,
-    workflow_results: Dict[str, Any]
-) -> Dict[str, Any]:
+    workflow_results: dict[str, Any]
+) -> dict[str, Any]:
     """Finalize the workflow with validation and cleanup.
 
     Args:
@@ -222,7 +215,7 @@ async def _finalize_workflow(
 
 # Response formatting functions
 
-def _format_workflow_response(results: Dict[str, Any], response_format: ResponseFormat) -> str:
+def _format_workflow_response(results: dict[str, Any], response_format: ResponseFormat) -> str:
     """Format workflow results for output.
 
     Args:
@@ -238,7 +231,7 @@ def _format_workflow_response(results: Dict[str, Any], response_format: Response
         return _format_markdown_workflow_report(results)
 
 
-def _format_markdown_workflow_report(results: Dict[str, Any]) -> str:
+def _format_markdown_workflow_report(results: dict[str, Any]) -> str:
     """Format workflow results as Markdown report.
 
     Args:
@@ -286,7 +279,7 @@ def _format_markdown_workflow_report(results: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _format_error(step_name: str, error_details: Dict[str, Any]) -> str:
+def _format_error(step_name: str, error_details: dict[str, Any]) -> str:
     """Format error message for workflow failures.
 
     Args:
@@ -317,7 +310,6 @@ async def _create_backup(project_path: Path) -> Path:
         Path to backup directory
     """
     # TODO: Implement backup logic
-    pass
 
 
 async def _rollback_changes(project_path: Path, backup_path: Path) -> bool:
@@ -331,4 +323,3 @@ async def _rollback_changes(project_path: Path, backup_path: Path) -> bool:
         True if rollback successful
     """
     # TODO: Implement rollback logic
-    pass

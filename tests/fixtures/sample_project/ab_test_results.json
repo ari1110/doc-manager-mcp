@@ -1,19 +1,19 @@
 {
   "success": true,
-  "old_count": 32,
-  "new_count": 32,
+  "old_count": 22,
+  "new_count": 22,
   "removed_count": 0,
   "duplicates_removed": 0,
   "false_negatives_count": 0,
   "type_distribution_old": {
-    "function": 17,
-    "method": 10,
-    "class": 5
+    "class": 5,
+    "method": 8,
+    "function": 9
   },
   "type_distribution_new": {
-    "function": 17,
-    "method": 10,
-    "class": 5
+    "class": 5,
+    "method": 8,
+    "function": 9
   },
   "errors": []
 }
