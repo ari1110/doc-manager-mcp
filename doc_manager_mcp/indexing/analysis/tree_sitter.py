@@ -305,29 +305,49 @@ class SymbolIndexer:
                         self._add_symbol(symbol)
 
     def _extract_python_symbols(self, node: Any, source: str, file_path: str):
-        """Extract symbols from Python AST."""
-        # Function definitions
-        for func_node in self._find_nodes(node, "function_definition"):
-            name_node = self._find_child(func_node, "identifier")
-            if name_node:
-                name = self._get_node_text(name_node, source)
-                signature = self._get_node_text(func_node, source).split(":")[0].strip()
+        """Extract symbols from Python AST.
 
-                symbol = Symbol(
-                    name=name,
-                    type=SymbolType.FUNCTION,
-                    file=file_path,
-                    line=func_node.start_point[0] + 1,
-                    column=func_node.start_point[1],
-                    signature=signature,
-                )
-                self._add_symbol(symbol)
+        Uses processed node tracking to prevent methods from being counted twice
+        (once as FUNCTION, once as METHOD). See Phase 1 of data quality bug fix.
+        """
+        # Track processed function nodes to prevent duplicates (Bug #1 fix)
+        processed_func_nodes: set[int] = set()
 
-        # Class definitions
+        # FIRST: Process classes and their methods
+        # Build a map of class node to (name, start_line, end_line) for parent attribution
+        class_info: dict[int, tuple[str, int, int]] = {}
         for class_node in self._find_nodes(node, "class_definition"):
             name_node = self._find_child(class_node, "identifier")
             if name_node:
                 name = self._get_node_text(name_node, source)
+                start_line = class_node.start_point[0]
+                end_line = class_node.end_point[0]
+                class_info[id(class_node)] = (name, start_line, end_line)
+
+        # Process each class
+        for class_node in self._find_nodes(node, "class_definition"):
+            name_node = self._find_child(class_node, "identifier")
+            if name_node:
+                name = self._get_node_text(name_node, source)
+                current_start = class_node.start_point[0]
+                current_end = class_node.end_point[0]
+
+                # Find parent class by checking if this class is within another class's range
+                parent_class_name = None
+                smallest_parent_range = float('inf')
+
+                for other_id, (other_name, other_start, other_end) in class_info.items():
+                    # Skip self
+                    if other_id == id(class_node):
+                        continue
+
+                    # Check if current class is within other class's range
+                    if other_start < current_start and current_end < other_end:
+                        # This is a potential parent - choose the closest (smallest range)
+                        parent_range = other_end - other_start
+                        if parent_range < smallest_parent_range:
+                            smallest_parent_range = parent_range
+                            parent_class_name = other_name
 
                 symbol = Symbol(
                     name=name,
@@ -335,11 +355,15 @@ class SymbolIndexer:
                     file=file_path,
                     line=class_node.start_point[0] + 1,
                     column=class_node.start_point[1],
+                    parent=parent_class_name,
                 )
                 self._add_symbol(symbol)
 
-                # Extract methods within class
-                for method_node in self._find_nodes(class_node, "function_definition"):
+                # Extract methods within class (only direct methods, not from nested classes)
+                for method_node in self._find_direct_methods(class_node):
+                    # Mark this node as processed to prevent duplicate counting
+                    processed_func_nodes.add(id(method_node))
+
                     method_name_node = self._find_child(method_node, "identifier")
                     if method_name_node:
                         method_name = self._get_node_text(method_name_node, source)
@@ -355,6 +379,27 @@ class SymbolIndexer:
                             parent=name,
                         )
                         self._add_symbol(method_symbol)
+
+        # SECOND: Process module-level functions (skip already-processed methods)
+        for func_node in self._find_nodes(node, "function_definition"):
+            # Skip if this node was already processed as a method
+            if id(func_node) in processed_func_nodes:
+                continue
+
+            name_node = self._find_child(func_node, "identifier")
+            if name_node:
+                name = self._get_node_text(name_node, source)
+                signature = self._get_node_text(func_node, source).split(":")[0].strip()
+
+                symbol = Symbol(
+                    name=name,
+                    type=SymbolType.FUNCTION,
+                    file=file_path,
+                    line=func_node.start_point[0] + 1,
+                    column=func_node.start_point[1],
+                    signature=signature,
+                )
+                self._add_symbol(symbol)
 
     def _extract_js_symbols(self, node: Any, source: str, file_path: str):
         """Extract symbols from JavaScript/TypeScript AST."""
@@ -423,6 +468,39 @@ class SymbolIndexer:
 
         traverse(node)
         return nodes
+
+    def _find_direct_methods(self, class_node: Any, func_type: str = "function_definition") -> list[Any]:
+        """Find function definitions that are direct methods of this class.
+
+        This method finds functions that belong to the class but stops recursion
+        at nested class boundaries. This prevents methods of nested classes from
+        being attributed to the outer class.
+
+        Args:
+            class_node: The class AST node to search
+            func_type: Node type to search for (default: "function_definition")
+
+        Returns:
+            List of function nodes that are direct methods of this class
+        """
+        methods = []
+
+        def traverse(n, inside_nested_class=False):
+            # If we encounter a nested class definition, mark that we're inside it
+            if n != class_node and n.type == "class_definition":
+                inside_nested_class = True
+
+            # Only collect functions that are NOT inside nested classes
+            if n.type == func_type and not inside_nested_class:
+                methods.append(n)
+
+            # Continue traversal, passing the nested class flag
+            for child in n.children:
+                traverse(child, inside_nested_class)
+
+        # Start traversal from class body
+        traverse(class_node)
+        return methods
 
     def _find_child(self, node: Any, child_type: str) -> Any | None:
         """Find first direct child of a specific type."""
