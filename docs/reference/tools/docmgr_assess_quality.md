@@ -213,7 +213,7 @@ await mcp.call_tool("docmgr_assess_quality", {
 
 ## Typical workflow
 
-```
+```text
 1. Run docmgr_assess_quality to get baseline scores
 2. Review findings and recommendations
 3. Make improvements based on issues identified

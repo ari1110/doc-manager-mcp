@@ -95,7 +95,7 @@ await mcp.call_tool("docmgr_init", {
 
 ## Typical workflow
 
-```
+```text
 1. Run docmgr_init once at project setup
 2. Edit .doc-manager.yml to refine sources/excludes if needed
 3. Proceed with other doc-manager tools (sync, validate, etc.)

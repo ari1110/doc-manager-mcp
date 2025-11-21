@@ -106,7 +106,7 @@ Platform detection looks for these config files:
 
 ## Typical workflow
 
-```
+```text
 1. Run docmgr_detect_platform to identify platform
 2. Review detected platform or recommendations
 3. Use platform value for docmgr_init

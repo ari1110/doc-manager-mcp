@@ -176,7 +176,7 @@ Shows what would happen without making changes.
 
 ## Typical workflow
 
-```
+```text
 1. Run with dry_run=true to preview migration
 2. Review planned operations and warnings
 3. Commit any uncommitted changes (if preserve_history)

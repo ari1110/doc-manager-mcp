@@ -147,7 +147,7 @@ await mcp.call_tool("docmgr_validate_docs", {
 
 ## Typical workflow
 
-```
+```text
 1. Run docmgr_validate_docs to find issues
 2. Fix reported errors and warnings
 3. Re-run validation to confirm fixes

@@ -97,6 +97,6 @@ This updates all baselines atomically to match the current codebase.
 
 ## Next steps
 
-- [Basic Usage Guide](../guides/basic-usage.md) - Learn about each tool
+- [Workflows Guide](../guides/workflows.md) - Learn about common workflows
 - [Configuration Reference](../reference/configuration.md) - Detailed config options
 - [Tools Reference](../reference/tools.md) - Complete API documentation

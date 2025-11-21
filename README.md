@@ -144,7 +144,7 @@ Updates 3 files atomically:
 - `symbol-baseline.json` (code symbols via TreeSitter)
 - `dependencies.json` (code-to-docs mappings)
 
-## Tool Reference
+## Tool reference
 
 ### docmgr_init
 
@@ -249,7 +249,7 @@ Updates 3 files atomically:
 - **`docmgr_assess_quality`** - Evaluate against 7 quality criteria
 - **`docmgr_migrate`** - Restructure documentation
 
-See [API Reference](docs/api-reference.md) for complete documentation.
+See [Tools Reference](docs/reference/tools.md) for complete documentation.
 
 ## Migration from v1.0.x
 
@@ -306,7 +306,7 @@ See [MIGRATION.md](MIGRATION.md) for detailed migration guide.
 
 ## Project Structure
 
-```
+```text
 doc-manager/
 ├── doc_manager_mcp/
 │   ├── server.py              # Main MCP server
@@ -368,7 +368,7 @@ metadata:
 
 ### Baseline Workflow
 
-```
+```text
 1. docmgr_init              → Create initial baselines
 2. (make code changes)
 3. docmgr_detect_changes    → Detect changes (read-only)
@@ -430,4 +430,4 @@ Contributions welcome! Please:
 
 - **Issues:** [GitHub Issues](https://github.com/yourusername/doc-manager/issues)
 - **Spec Docs:** See `specs/` directory for technical specifications
-- **API Reference:** See [docs/api-reference.md](docs/api-reference.md)
+- **Tools Reference:** See [docs/reference/tools.md](docs/reference/tools.md)

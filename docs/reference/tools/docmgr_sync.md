@@ -158,7 +158,7 @@ await mcp.call_tool("docmgr_sync", {
 ## Sync workflow comparison
 
 ### Manual workflow (individual tools)
-```
+```text
 1. docmgr_detect_changes → see what changed
 2. docmgr_validate_docs → find issues
 3. docmgr_assess_quality → check quality
@@ -166,7 +166,7 @@ await mcp.call_tool("docmgr_sync", {
 ```
 
 ### Automated workflow (sync tool)
-```
+```text
 1. docmgr_sync mode="check" → comprehensive report
    (or mode="resync" to include baseline update)
 ```
@@ -184,7 +184,7 @@ await mcp.call_tool("docmgr_sync", {
 
 ### After code changes
 
-```
+```text
 1. Make code changes
 2. Run docmgr_sync mode="check"
 3. Review affected_docs and recommendations
@@ -194,7 +194,7 @@ await mcp.call_tool("docmgr_sync", {
 
 ### Regular health checks
 
-```
+```text
 1. Run docmgr_sync mode="check" weekly/monthly
 2. Track quality scores over time
 3. Address validation issues

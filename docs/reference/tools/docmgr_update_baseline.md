@@ -87,7 +87,7 @@ All three baseline files are updated atomically:
 
 ## Typical workflow
 
-```
+```text
 1. Detect changes with docmgr_detect_changes
 2. Update documentation to match code changes
 3. Run docmgr_update_baseline to reset baselines

@@ -101,7 +101,7 @@ Changes are categorized as:
 
 ## Typical workflow
 
-```
+```text
 1. Make code changes
 2. Run docmgr_detect_changes to see what changed
 3. Review affected_docs to identify which docs need updates
