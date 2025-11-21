@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from doc_manager_mcp.constants import CLASS_EXCLUDES, CLASS_PATTERN, FUNCTION_PATTERN
+from doc_manager_mcp.core import get_doc_relative_path
 from doc_manager_mcp.indexing.analysis.code_validator import CodeValidator
 from doc_manager_mcp.indexing.analysis.tree_sitter import Symbol, SymbolIndexer
 from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
@@ -12,7 +13,8 @@ from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
 def validate_code_examples(
     content: str,
     file_path: Path,
-    project_path: Path
+    project_path: Path,
+    docs_path: Path
 ) -> list[dict[str, Any]]:
     """Validate code examples for semantic correctness.
 
@@ -22,6 +24,7 @@ def validate_code_examples(
         content: Markdown content
         file_path: Path to markdown file
         project_path: Project root
+        docs_path: Documentation directory path
 
     Returns:
         List of issues found in code examples
@@ -56,7 +59,7 @@ def validate_code_examples(
                 issues.append({
                     "type": "code_syntax_error",
                     "severity": "warning",
-                    "file": str(file_path.relative_to(project_path)),
+                    "file": get_doc_relative_path(file_path, docs_path, project_path),
                     "line": block["line"] + error["line"] - 1,  # Adjust line number
                     "message": f"{language}: {error['message']} at line {error['line']}, column {error['column']}",
                     "language": block["language"],
@@ -70,7 +73,8 @@ def validate_documented_symbols(
     content: str,
     file_path: Path,
     project_path: Path,
-    symbol_index: dict[str, list[Symbol]] | None = None
+    symbol_index: dict[str, list[Symbol]] | None = None,
+    docs_path: Path | None = None
 ) -> list[dict[str, Any]]:
     """Validate that documented symbols exist in codebase.
 
@@ -81,6 +85,7 @@ def validate_documented_symbols(
         file_path: Path to markdown file
         project_path: Project root
         symbol_index: Pre-built symbol index (from SymbolIndexer) or None to build
+        docs_path: Documentation directory path (for relative path computation)
 
     Returns:
         List of issues for documented symbols that don't exist
@@ -115,10 +120,12 @@ def validate_documented_symbols(
             symbols = symbol_index.get(func_name, [])
 
             if not symbols:
+                # Use get_doc_relative_path if docs_path provided, otherwise fall back
+                file_str = get_doc_relative_path(file_path, docs_path, project_path) if docs_path else str(file_path.relative_to(project_path))
                 issues.append({
                     "type": "missing_symbol",
                     "severity": "warning",
-                    "file": str(file_path.relative_to(project_path)),
+                    "file": file_str,
                     "line": line,
                     "message": f"Function '{code_text}' not found in codebase",
                     "symbol": code_text,
@@ -137,10 +144,12 @@ def validate_documented_symbols(
             symbols = symbol_index.get(class_name, [])
 
             if not symbols:
+                # Use get_doc_relative_path if docs_path provided, otherwise fall back
+                file_str = get_doc_relative_path(file_path, docs_path, project_path) if docs_path else str(file_path.relative_to(project_path))
                 issues.append({
                     "type": "missing_symbol",
                     "severity": "warning",
-                    "file": str(file_path.relative_to(project_path)),
+                    "file": file_str,
                     "line": line,
                     "message": f"Class '{class_name}' not found in codebase",
                     "symbol": class_name,

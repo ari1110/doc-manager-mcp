@@ -36,6 +36,10 @@ def save_config(project_path: Path, config: dict[str, Any]) -> bool:
             if not config_copy.get('sources'):
                 config_copy['sources'] = None
 
+            # Ensure include_root_readme is saved with default if not set
+            if 'include_root_readme' not in config_copy:
+                config_copy['include_root_readme'] = False
+
             yaml.dump(config_copy, f, default_flow_style=False, sort_keys=False)
 
             # Add helpful examples and documentation
@@ -76,6 +80,13 @@ def save_config(project_path: Path, config: dict[str, Any]) -> bool:
             f.write("# --------\n")
             f.write("# Documentation platform: mkdocs, sphinx, hugo, docusaurus, etc.\n")
             f.write("# Set to 'unknown' if not using a specific platform.\n")
+            f.write("\n")
+            f.write("# Include Root README\n")
+            f.write("# -------------------\n")
+            f.write("# Set to true to include the root README.md in documentation operations.\n")
+            f.write("# When enabled, validation, quality assessment, and change detection\n")
+            f.write("# will include the root README.md alongside docs in the docs/ directory.\n")
+            f.write("# Default: false (backwards compatible)\n")
 
         return True
     except Exception:

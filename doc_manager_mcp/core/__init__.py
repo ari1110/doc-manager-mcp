@@ -44,6 +44,7 @@ from .project import (
     detect_project_language,
     find_docs_directory,
     find_markdown_files,
+    get_doc_relative_path,
     is_public_symbol,
 )
 
@@ -66,6 +67,7 @@ __all__ = [
     "find_docs_directory",
     "find_markdown_files",
     "get_convention_summary",
+    "get_doc_relative_path",
     "handle_error",
     "is_public_symbol",
     "load_config",

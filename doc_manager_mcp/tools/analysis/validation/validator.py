@@ -10,7 +10,9 @@ from doc_manager_mcp.core import (
     enforce_response_limit,
     find_docs_directory,
     find_markdown_files,
+    get_doc_relative_path,
     handle_error,
+    load_config,
     load_conventions,
     safe_resolve,
     validate_against_conventions,
@@ -104,10 +106,15 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path) -> str
     return None
 
 
-def _check_broken_links(docs_path: Path) -> list[dict[str, Any]]:
+def _check_broken_links(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
     """Check for broken internal and external links."""
     issues = []
-    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+    markdown_files = find_markdown_files(
+        docs_path,
+        project_path=project_path,
+        validate_boundaries=False,
+        include_root_readme=include_root_readme
+    )
 
     for md_file in markdown_files:
         try:
@@ -123,7 +130,7 @@ def _check_broken_links(docs_path: Path) -> list[dict[str, Any]]:
                     issues.append({
                         "type": "broken_link",
                         "severity": "error",
-                        "file": str(md_file.relative_to(docs_path)),
+                        "file": get_doc_relative_path(md_file, docs_path, project_path),
                         "line": link['line'],
                         "message": error,
                         "link_text": link['text'],
@@ -134,7 +141,7 @@ def _check_broken_links(docs_path: Path) -> list[dict[str, Any]]:
             issues.append({
                 "type": "read_error",
                 "severity": "error",
-                "file": str(md_file.relative_to(docs_path)),
+                "file": get_doc_relative_path(md_file, docs_path, project_path),
                 "line": 1,
                 "message": f"Failed to read file: {e!s}"
             })
@@ -173,10 +180,15 @@ def _extract_images(content: str, file_path: Path) -> list[dict[str, Any]]:
     return images
 
 
-def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
+def _validate_assets(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
     """Validate asset links and alt text."""
     issues = []
-    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+    markdown_files = find_markdown_files(
+        docs_path,
+        project_path=project_path,
+        validate_boundaries=False,
+        include_root_readme=include_root_readme
+    )
 
     for md_file in markdown_files:
         try:
@@ -191,7 +203,7 @@ def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
                     issues.append({
                         "type": "missing_alt_text",
                         "severity": "warning",
-                        "file": str(md_file.relative_to(docs_path)),
+                        "file": get_doc_relative_path(md_file, docs_path, project_path),
                         "line": img['line'],
                         "message": f"Image missing alt text: {img['src']}",
                         "image_src": img['src']
@@ -213,7 +225,7 @@ def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
                             issues.append({
                                 "type": "missing_asset",
                                 "severity": "error",
-                                "file": str(md_file.relative_to(docs_path)),
+                                "file": get_doc_relative_path(md_file, docs_path, project_path),
                                 "line": img['line'],
                                 "message": f"Image file not found: {img['src']}",
                                 "image_src": img['src']
@@ -223,7 +235,7 @@ def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
                         issues.append({
                             "type": "invalid_asset_path",
                             "severity": "error",
-                            "file": str(md_file.relative_to(docs_path)),
+                            "file": get_doc_relative_path(md_file, docs_path, project_path),
                             "line": img['line'],
                             "message": f"Invalid image path: {img['src']}",
                             "image_src": img['src']
@@ -233,7 +245,7 @@ def _validate_assets(docs_path: Path) -> list[dict[str, Any]]:
             issues.append({
                 "type": "read_error",
                 "severity": "error",
-                "file": str(md_file.relative_to(docs_path)),
+                "file": get_doc_relative_path(md_file, docs_path, project_path),
                 "line": 1,
                 "message": f"Failed to read file: {e!s}"
             })
@@ -259,11 +271,16 @@ def _extract_code_blocks(content: str, file_path: Path) -> list[dict[str, Any]]:
     return code_blocks
 
 
-def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
+def _validate_code_snippets(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
     """Extract and validate code snippets using TreeSitter."""
     issues = []
     validator = CodeValidator()
-    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+    markdown_files = find_markdown_files(
+        docs_path,
+        project_path=project_path,
+        validate_boundaries=False,
+        include_root_readme=include_root_readme
+    )
 
     for md_file in markdown_files:
         try:
@@ -290,7 +307,7 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
                         issues.append({
                             "type": "syntax_error",
                             "severity": "warning",
-                            "file": str(md_file.relative_to(docs_path)),
+                            "file": get_doc_relative_path(md_file, docs_path, project_path),
                             "line": block['line'] + error['line'] - 1,  # Adjust line number
                             "message": f"{error['message']} at line {error['line']}, column {error['column']}",
                             "language": block['language']
@@ -300,7 +317,7 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
             issues.append({
                 "type": "read_error",
                 "severity": "error",
-                "file": str(md_file.relative_to(docs_path)),
+                "file": get_doc_relative_path(md_file, docs_path, project_path),
                 "line": 1,
                 "message": f"Failed to read file: {e!s}"
             })
@@ -308,10 +325,15 @@ def _validate_code_snippets(docs_path: Path) -> list[dict[str, Any]]:
     return issues
 
 
-def _validate_code_syntax(docs_path: Path, project_path: Path) -> list[dict[str, Any]]:
+def _validate_code_syntax(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
     """Validate code example syntax using TreeSitter (semantic validation)."""
     issues = []
-    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+    markdown_files = find_markdown_files(
+        docs_path,
+        project_path=project_path,
+        validate_boundaries=False,
+        include_root_readme=include_root_readme
+    )
 
     for md_file in markdown_files:
         try:
@@ -319,14 +341,14 @@ def _validate_code_syntax(docs_path: Path, project_path: Path) -> list[dict[str,
                 content = f.read()
 
             # Use validation_helpers function
-            file_issues = validate_code_examples(content, md_file, project_path)
+            file_issues = validate_code_examples(content, md_file, project_path, docs_path)
             issues.extend(file_issues)
 
         except Exception as e:
             issues.append({
                 "type": "read_error",
                 "severity": "error",
-                "file": str(md_file.relative_to(docs_path)),
+                "file": get_doc_relative_path(md_file, docs_path, project_path),
                 "line": 1,
                 "message": f"Failed to read file: {e!s}"
             })
@@ -334,10 +356,15 @@ def _validate_code_syntax(docs_path: Path, project_path: Path) -> list[dict[str,
     return issues
 
 
-def _validate_symbols(docs_path: Path, project_path: Path, symbol_index=None) -> list[dict[str, Any]]:
+def _validate_symbols(docs_path: Path, project_path: Path, include_root_readme: bool = False, symbol_index=None) -> list[dict[str, Any]]:
     """Validate that documented symbols exist in codebase."""
     issues = []
-    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+    markdown_files = find_markdown_files(
+        docs_path,
+        project_path=project_path,
+        validate_boundaries=False,
+        include_root_readme=include_root_readme
+    )
 
     # Build symbol index once if not provided
     if symbol_index is None:
@@ -356,14 +383,14 @@ def _validate_symbols(docs_path: Path, project_path: Path, symbol_index=None) ->
                 content = f.read()
 
             # Use validation_helpers function
-            file_issues = validate_documented_symbols(content, md_file, project_path, symbol_index)
+            file_issues = validate_documented_symbols(content, md_file, project_path, symbol_index, docs_path)
             issues.extend(file_issues)
 
         except Exception as e:
             issues.append({
                 "type": "read_error",
                 "severity": "error",
-                "file": str(md_file.relative_to(docs_path)),
+                "file": get_doc_relative_path(md_file, docs_path, project_path),
                 "line": 1,
                 "message": f"Failed to read file: {e!s}"
             })
@@ -403,18 +430,25 @@ def with_timeout(timeout_seconds):
     return decorator
 
 
-def _validate_conventions(docs_path: Path, conventions) -> list[dict[str, Any]]:
+def _validate_conventions(docs_path: Path, project_path: Path, conventions, include_root_readme: bool = False) -> list[dict[str, Any]]:
     """Validate documentation files against conventions.
 
     Args:
         docs_path: Path to documentation directory
+        project_path: Path to project root
         conventions: DocumentationConventions object
+        include_root_readme: Whether to include root README.md
 
     Returns:
         List of convention violations
     """
     issues = []
-    markdown_files = find_markdown_files(docs_path, validate_boundaries=False)
+    markdown_files = find_markdown_files(
+        docs_path,
+        project_path=project_path,
+        validate_boundaries=False,
+        include_root_readme=include_root_readme
+    )
 
     for md_file in markdown_files:
         try:
@@ -425,7 +459,7 @@ def _validate_conventions(docs_path: Path, conventions) -> list[dict[str, Any]]:
             violations = validate_against_conventions(
                 content,
                 conventions,
-                str(md_file.relative_to(docs_path))
+                get_doc_relative_path(md_file, docs_path, project_path)
             )
 
             # Convert violations to issue format
@@ -433,7 +467,7 @@ def _validate_conventions(docs_path: Path, conventions) -> list[dict[str, Any]]:
                 issues.append({
                     "type": "convention",
                     "severity": violation.get("severity", "warning"),
-                    "file": violation.get("file", str(md_file.relative_to(docs_path))),
+                    "file": violation.get("file", get_doc_relative_path(md_file, docs_path, project_path)),
                     "line": violation.get("line"),
                     "rule": violation.get("rule"),
                     "message": violation.get("message")
@@ -499,7 +533,9 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
         if not docs_path.is_dir():
             return enforce_response_limit(f"Error: Documentation path is not a directory: {docs_path}")
 
-        # Load conventions if they exist
+        # Load config and conventions
+        config = load_config(project_path)
+        include_root_readme = config.get('include_root_readme', False) if config else False
         conventions = load_conventions(project_path)
 
         # Run validation checks
@@ -507,27 +543,27 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
 
         # Check convention compliance if conventions exist
         if conventions:
-            convention_issues = _validate_conventions(docs_path, conventions)
+            convention_issues = _validate_conventions(docs_path, project_path, conventions, include_root_readme)
             all_issues.extend(convention_issues)
 
         if params.check_links:
-            link_issues = _check_broken_links(docs_path)
+            link_issues = _check_broken_links(docs_path, project_path, include_root_readme)
             all_issues.extend(link_issues)
 
         if params.check_assets:
-            asset_issues = _validate_assets(docs_path)
+            asset_issues = _validate_assets(docs_path, project_path, include_root_readme)
             all_issues.extend(asset_issues)
 
         if params.check_snippets:
-            snippet_issues = _validate_code_snippets(docs_path)
+            snippet_issues = _validate_code_snippets(docs_path, project_path, include_root_readme)
             all_issues.extend(snippet_issues)
 
         if params.validate_code_syntax:
-            syntax_issues = _validate_code_syntax(docs_path, project_path)
+            syntax_issues = _validate_code_syntax(docs_path, project_path, include_root_readme)
             all_issues.extend(syntax_issues)
 
         if params.validate_symbols:
-            symbol_issues = _validate_symbols(docs_path, project_path)
+            symbol_issues = _validate_symbols(docs_path, project_path, include_root_readme)
             all_issues.extend(symbol_issues)
 
         return enforce_response_limit(_format_validation_report(all_issues))

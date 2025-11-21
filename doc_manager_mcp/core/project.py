@@ -64,11 +64,48 @@ def find_docs_directory(project_path: Path) -> Path | None:
     return None
 
 
+def get_doc_relative_path(file_path: Path, docs_path: Path, project_path: Path) -> str:
+    """Get documentation-relative path for a file.
+
+    Handles both documentation files inside docs/ and root README.md.
+
+    Args:
+        file_path: Absolute path to the file
+        docs_path: Absolute path to docs directory
+        project_path: Absolute path to project root
+
+    Returns:
+        - For files in docs/: path relative to docs/ (e.g., "guides/setup.md")
+        - For root README.md: "README.md" (special identifier)
+
+    Examples:
+        >>> get_doc_relative_path(Path("/proj/docs/guide.md"), Path("/proj/docs"), Path("/proj"))
+        "guide.md"
+        >>> get_doc_relative_path(Path("/proj/README.md"), Path("/proj/docs"), Path("/proj"))
+        "README.md"
+    """
+    file_path = file_path.resolve()
+    docs_path = docs_path.resolve()
+    project_path = project_path.resolve()
+
+    # Check if file is root README.md
+    if file_path == project_path / "README.md":
+        return "README.md"
+
+    # Otherwise compute relative path from docs/
+    try:
+        return str(file_path.relative_to(docs_path))
+    except ValueError:
+        # File is outside docs/ directory, return relative to project root
+        return str(file_path.relative_to(project_path))
+
+
 def find_markdown_files(
     docs_path: Path,
     project_path: Path | None = None,
     validate_boundaries: bool = True,
-    max_files: int | None = None
+    max_files: int | None = None,
+    include_root_readme: bool = False
 ) -> list[Path]:
     """Find all markdown files in documentation directory.
 
@@ -77,9 +114,11 @@ def find_markdown_files(
         project_path: Project root path (for boundary validation). Required if validate_boundaries=True.
         validate_boundaries: Whether to validate paths don't escape project boundary (default: True)
         max_files: Maximum number of files to process. Defaults to MAX_FILES constant if None.
+        include_root_readme: Whether to include root README.md in the file list (default: False)
 
     Returns:
-        List of validated markdown file paths, sorted alphabetically
+        List of validated markdown file paths, sorted alphabetically.
+        If include_root_readme=True and root README.md exists, it's included in the list.
 
     Raises:
         ValueError: If file count exceeds max_files limit
@@ -114,6 +153,27 @@ def find_markdown_files(
             else:
                 markdown_files.append(file_path)
                 file_count += 1
+
+    # Optionally include root README.md
+    if include_root_readme and project_path is not None:
+        root_readme = project_path / "README.md"
+        if root_readme.exists() and root_readme.is_file():
+            if file_count >= limit:
+                raise ValueError(
+                    f"File count limit exceeded (maximum: {limit:,} files)\n"
+                    f"→ Consider processing a smaller directory or increasing the limit."
+                )
+            # Validate root README if boundaries are being checked
+            if validate_boundaries:
+                try:
+                    from .paths import validate_path_boundary
+                    _ = validate_path_boundary(root_readme, project_path)
+                    markdown_files.append(root_readme)
+                except ValueError:
+                    # Skip if validation fails
+                    pass
+            else:
+                markdown_files.append(root_readme)
 
     return sorted(markdown_files)
 

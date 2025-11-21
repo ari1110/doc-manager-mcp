@@ -197,6 +197,10 @@ class InitializeConfigInput(BaseModel):
         description="Source file patterns to track for documentation (e.g., 'src/**/*.py')",
         max_length=50
     )
+    include_root_readme: bool = Field(
+        default=False,
+        description="Include root README.md in documentation operations (validation, quality assessment, change detection)"
+    )
 
     @field_validator('project_path')
     @classmethod
@@ -639,6 +643,10 @@ class DocmgrInitInput(BaseModel):
         default=None,
         description="Source file patterns to track (e.g., ['src/**/*.py'])",
         max_length=50
+    )
+    include_root_readme: bool = Field(
+        default=False,
+        description="Include root README.md in documentation operations (validation, quality assessment, change detection)"
     )
 
     @field_validator('project_path')
