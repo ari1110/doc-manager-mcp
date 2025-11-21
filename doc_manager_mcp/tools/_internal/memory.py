@@ -296,15 +296,10 @@ terminology:
             with open(conventions_path, 'w', encoding='utf-8') as f:
                 f.write(conventions_yaml)
 
-        asset_manifest = {
-            "assets": [],
-            "created_at": datetime.now().isoformat(),
-            "last_updated": datetime.now().isoformat()
-        }
-
-        asset_path = memory_dir / "asset-manifest.json"
-        with open(asset_path, 'w', encoding='utf-8') as f:
-            json.dump(asset_manifest, f, indent=2)
+        # NOTE: Asset-manifest.json has been deprecated.
+        # Assets are now tracked in two places:
+        # 1. repo-baseline.json (checksums for all files including images)
+        # 2. dependencies.json (asset_to_docs mapping for doc references)
 
         if ctx:
             await ctx.report_progress(progress=100, total=100)
