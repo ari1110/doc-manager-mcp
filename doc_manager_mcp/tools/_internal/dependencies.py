@@ -12,6 +12,8 @@ from doc_manager_mcp.core import (
     file_lock,
     find_docs_directory,
     find_markdown_files,
+    get_doc_relative_path,
+    load_config,
     validate_path_boundary,
 )
 from doc_manager_mcp.indexing import SymbolIndexer
@@ -762,6 +764,10 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
             if not docs_path:
                 return {"error": "Could not find documentation directory. Specify docs_path parameter."}
 
+        # Load config to get include_root_readme setting
+        config = load_config(project_path)
+        include_root_readme = config.get('include_root_readme', False) if config else False
+
         # Detect project name for smart command filtering
         project_name = _detect_project_name(project_path)
         print(f"Detected project name: {project_name}", file=sys.stderr)
@@ -792,7 +798,12 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
             print(f"Warning: TreeSitter indexing failed: {e}. Falling back to file-based matching.", file=sys.stderr)
 
         # Find all markdown files
-        markdown_files = find_markdown_files(docs_path, project_path, validate_boundaries=True)
+        markdown_files = find_markdown_files(
+            docs_path,
+            project_path=project_path,
+            validate_boundaries=True,
+            include_root_readme=include_root_readme
+        )
         all_references = []
 
         if markdown_files:
@@ -803,11 +814,11 @@ async def track_dependencies(params: TrackDependenciesInput) -> dict[str, Any]:
                         content = f.read()
 
                     # Extract inline references (backticks, prose)
-                    references = _extract_code_references(content, md_file.relative_to(docs_path))
+                    references = _extract_code_references(content, get_doc_relative_path(md_file, docs_path, project_path))
                     all_references.extend(references)
 
                     # Extract commands from fenced code blocks (TreeSitter markdown)
-                    code_block_refs = _extract_commands_from_code_blocks(content, md_file.relative_to(docs_path), symbol_index, project_name)
+                    code_block_refs = _extract_commands_from_code_blocks(content, get_doc_relative_path(md_file, docs_path, project_path), symbol_index, project_name)
                     all_references.extend(code_block_refs)
                 except Exception as e:
                     print(f"Warning: Failed to read markdown file {md_file}: {e}", file=sys.stderr)
