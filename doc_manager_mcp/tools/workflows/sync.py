@@ -22,6 +22,7 @@ from doc_manager_mcp.core import (
     enforce_response_limit,
     get_convention_summary,
     handle_error,
+    load_config,
     load_conventions,
 )
 from doc_manager_mcp.models import SyncInput
@@ -71,8 +72,10 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         if not project_path.exists():
             return enforce_response_limit(f"Error: Project path does not exist: {project_path}")
 
-        # Load conventions if they exist
+        # Load conventions and config if they exist
         conventions = load_conventions(project_path)
+        config = load_config(project_path)
+        include_root_readme = config.get('include_root_readme', False) if config else False
 
         lines = ["# Documentation Sync Report", ""]
         lines.append(f"**Project:** {project_path.name}")
@@ -173,7 +176,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         if docs_path and docs_path.exists():
             validation_result = await validate_docs(ValidateDocsInput(
                 project_path=str(project_path),
-                docs_path=str(docs_path.relative_to(project_path))
+                docs_path=str(docs_path.relative_to(project_path)),
+                include_root_readme=include_root_readme
             ))
 
             validation_data = validation_result if isinstance(validation_result, dict) else json.loads(validation_result)
@@ -199,7 +203,8 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
             from doc_manager_mcp.models import AssessQualityInput
             quality_result = await assess_quality(AssessQualityInput(
                 project_path=str(project_path),
-                docs_path=str(docs_path.relative_to(project_path))
+                docs_path=str(docs_path.relative_to(project_path)),
+                include_root_readme=include_root_readme
             ))
 
             quality_data = quality_result if isinstance(quality_result, dict) else json.loads(quality_result)
