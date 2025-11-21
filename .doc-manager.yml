@@ -1,0 +1,56 @@
+platform: mkdocs
+exclude:
+  - "tests/**"
+  - "templates/**"
+  - ".venv/**"
+  - "**/__pycache__/**"
+  - "**/*.pyc"
+  - ".pytest_cache/**"
+  - ".ruff_cache/**"
+  - "dist/**"
+  - "specs/**"
+  - ".claude/**"
+sources:
+  - "doc_manager_mcp/**/*.py"
+docs_path: docs
+metadata:
+  language: Python
+  created: '2025-11-20T20:22:51.007874'
+  version: 1.0.0
+
+# ============================================================================
+# Configuration Guide & Examples
+# ============================================================================
+
+# Exclude Patterns
+# ----------------
+# Use glob patterns to exclude files from documentation tracking.
+# Examples:
+#   exclude:
+#     - "**/node_modules/**"     # Exclude all node_modules directories
+#     - "**/*.pyc"               # Exclude Python bytecode files
+#     - "**/dist/**"             # Exclude build artifacts
+#     - "**/.git/**"             # Exclude git directory
+#     - "**/venv/**"             # Exclude Python virtual environments
+#     - "**/__pycache__/**"      # Exclude Python cache
+
+# Source Files (Glob Patterns)
+# -----------------------------
+# Glob patterns to specify which source files to track.
+# IMPORTANT: Use glob patterns (e.g., 'src/**/*.py'), not just directory names.
+# Examples:
+#   sources:
+#     - "src/**/*.py"            # All Python files in src/
+#     - "lib/**/*.js"            # All JavaScript files in lib/
+#     - "packages/core/**/*.ts"  # TypeScript files in packages/core/
+#     - "**/*.go"                # All Go files in project
+
+# Documentation Path
+# -------------------
+# Path to documentation directory (relative to project root).
+# Common values: docs, doc, documentation, website/docs
+
+# Platform
+# --------
+# Documentation platform: mkdocs, sphinx, hugo, docusaurus, etc.
+# Set to 'unknown' if not using a specific platform.
