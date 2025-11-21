@@ -3,13 +3,14 @@
 Copy this file to src/tools/ and customize for your specific tool.
 """
 
-from pathlib import Path
-from typing import Optional, List, Dict, Any
 import json
+from pathlib import Path
+from typing import Any
 
-from ..models import YourToolInput  # Replace with actual model name
 from ..constants import ResponseFormat
 from ..core import handle_error
+from ..models import YourToolInput  # Replace with actual model name
+
 
 async def your_tool_name(params: YourToolInput) -> str:
     """Brief one-line description of what this tool does.
@@ -64,7 +65,7 @@ async def your_tool_name(params: YourToolInput) -> str:
 
 # Private helper functions
 
-async def _perform_tool_operation(project_path: Path, params: YourToolInput) -> Dict[str, Any]:
+async def _perform_tool_operation(project_path: Path, params: YourToolInput) -> dict[str, Any]:
     """Main logic for the tool.
 
     Args:
@@ -85,7 +86,7 @@ async def _perform_tool_operation(project_path: Path, params: YourToolInput) -> 
     return result
 
 
-def _format_markdown_response(data: Dict[str, Any]) -> str:
+def _format_markdown_response(data: dict[str, Any]) -> str:
     """Format results as human-readable Markdown.
 
     Args:
@@ -109,7 +110,7 @@ def _format_markdown_response(data: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _load_memory(project_path: Path) -> Optional[Dict[str, Any]]:
+def _load_memory(project_path: Path) -> dict[str, Any] | None:
     """Load memory baseline from .doc-manager/ if needed.
 
     Args:
@@ -124,7 +125,7 @@ def _load_memory(project_path: Path) -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        with open(memory_file, 'r', encoding='utf-8') as f:
+        with open(memory_file, encoding='utf-8') as f:
             return json.load(f)
     except Exception:
         return None
