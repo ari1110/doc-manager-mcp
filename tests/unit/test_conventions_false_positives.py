@@ -5,6 +5,7 @@ as markdown, preventing false positives from comments, examples, and teaching co
 """
 
 import pytest
+
 from doc_manager_mcp.core.conventions import validate_against_conventions
 from doc_manager_mcp.models import DocumentationConventions
 

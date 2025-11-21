@@ -1,6 +1,5 @@
 """Unit tests for new refactored tools (docmgr_init, docmgr_detect_changes, docmgr_update_baseline)."""
 
-import json
 import tempfile
 from pathlib import Path
 
