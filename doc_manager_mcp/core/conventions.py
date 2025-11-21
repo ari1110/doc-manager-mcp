@@ -2,14 +2,15 @@
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from doc_manager_mcp.models import DocumentationConventions
+if TYPE_CHECKING:
+    from doc_manager_mcp.models import DocumentationConventions
 
 
-def load_conventions(project_path: Path) -> DocumentationConventions | None:
+def load_conventions(project_path: Path) -> "DocumentationConventions | None":
     """Load conventions from project's .doc-manager directory.
 
     Args:
@@ -23,6 +24,8 @@ def load_conventions(project_path: Path) -> DocumentationConventions | None:
         >>> if conventions and conventions.style.headings.case:
         ...     print(f"Use {conventions.style.headings.case} for headings")
     """
+    from doc_manager_mcp.models import DocumentationConventions
+
     conventions_path = project_path / ".doc-manager" / "memory" / "doc-conventions.yml"
 
     if not conventions_path.exists():
@@ -43,7 +46,7 @@ def load_conventions(project_path: Path) -> DocumentationConventions | None:
 
 def validate_against_conventions(
     content: str,
-    conventions: DocumentationConventions,
+    conventions: "DocumentationConventions",
     file_path: str | None = None
 ) -> list[dict[str, Any]]:
     """Validate markdown content against conventions.
@@ -238,7 +241,7 @@ def _check_heading_hierarchy(lines: list[str], file_path: str | None = None) -> 
     return violations
 
 
-def get_convention_summary(conventions: DocumentationConventions) -> str:
+def get_convention_summary(conventions: "DocumentationConventions") -> str:
     """Generate human-readable summary of conventions.
 
     Args:
