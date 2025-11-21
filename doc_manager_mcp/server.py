@@ -83,15 +83,17 @@ async def tool_docmgr_init(
     sources: list[str] | None = None,
     ctx: Context | None = None
 ) -> dict[str, Any]:
-    """Initialize doc-manager for a project.
+    """Initialize doc-manager for a project (existing docs or create new).
 
-    Unified initialization tool that replaces: initialize_config, initialize_memory, bootstrap.
+    Use when: Setting up doc-manager for the first time in a project
+    Result: Creates .doc-manager.yml, baselines (repo, symbols, dependencies), and optionally bootstraps documentation structure
+    Mode: State-modifying (creates files and directories)
 
     Modes:
-    - mode="existing": Initialize config + baselines + dependencies for existing project
-    - mode="bootstrap": Create fresh docs + config + baselines + dependencies
+    - mode="existing": For projects with existing documentation - creates config and baselines only
+    - mode="bootstrap": For new projects - creates documentation structure from templates plus config and baselines
 
-    This is the recommended entry point for setting up doc-manager.
+    Typical workflow: Run once at project setup, before any other doc-manager tools
     """
     params = DocmgrInitInput(
         project_path=project_path,
@@ -125,13 +127,17 @@ async def tool_docmgr_detect_changes(
 ) -> dict[str, Any]:
     """Detect code changes without modifying baselines (pure read-only).
 
-    Key difference from map_changes: NEVER writes to symbol-baseline.json.
+    Use when: Checking if documentation is out of sync after code changes
+    Result: Lists changed files (categorized as code/docs/assets/etc.), affected documentation, and optional semantic changes
+    Mode: Read-only (never modifies any files)
 
     Modes:
-    - mode="checksum": Compare file checksums against repo-baseline.json
-    - mode="git_diff": Compare against git commit
+    - mode="checksum": Compare current file checksums against repo-baseline.json
+    - mode="git_diff": Compare current files against a specific git commit
 
-    Use docmgr_update_baseline to explicitly update baselines after applying doc updates.
+    Set include_semantic=true to detect symbol-level changes (functions/classes added/modified/deleted).
+
+    Typical workflow: Run after code changes to identify which docs may need updates, before deciding whether to update documentation or baselines
     """
     params = DocmgrDetectChangesInput(
         project_path=project_path,
@@ -160,14 +166,15 @@ async def tool_docmgr_update_baseline(
     docs_path: str | None = None,
     ctx: Context | None = None
 ) -> dict[str, Any]:
-    """Update all baseline files atomically.
+    """Update all baseline files to reflect current project state.
 
-    Updates three baselines:
-    - repo-baseline.json (file checksums)
-    - symbol-baseline.json (TreeSitter code symbols)
-    - dependencies.json (code-to-doc mappings)
+    Use when: After updating documentation to match code changes, resetting the "clean" baseline
+    Result: Atomically updates three baseline files: repo-baseline.json (checksums), symbol-baseline.json (code symbols), dependencies.json (code-doc mappings)
+    Mode: State-modifying (rewrites baseline files)
 
-    Call this after applying documentation updates to ensure baselines reflect current state.
+    This resets change detection to current state - run this when documentation is in sync with code.
+
+    Typical workflow: After writing/updating docs → run this to update baselines → future change detection starts from new baseline
     """
     params = DocmgrUpdateBaselineInput(
         project_path=project_path,
@@ -192,7 +199,16 @@ async def tool_docmgr_update_baseline(
 async def docmgr_detect_platform(
     project_path: str
 ) -> str | dict[str, Any]:
-    """Detect and recommend documentation platform for the project."""
+    """Auto-detect documentation platform (MkDocs, Sphinx, Hugo, etc.) or recommend one.
+
+    Use when: Setting up doc-manager for first time and unsure which platform is in use
+    Result: Returns detected platform or recommendations based on project language and structure
+    Mode: Read-only (analyzes project files only)
+
+    Detects by checking for platform-specific config files (mkdocs.yml, conf.py, config.toml, docusaurus.config.js).
+
+    Typical workflow: Run before docmgr_init to determine correct platform value for configuration
+    """
     params = DetectPlatformInput(
         project_path=project_path
     )
@@ -217,7 +233,21 @@ async def docmgr_validate_docs(
     validate_code_syntax: bool = False,
     validate_symbols: bool = False
 ) -> str | dict[str, Any]:
-    """Validate documentation for broken links, missing assets, and code snippet issues."""
+    """Validate documentation for broken links, missing assets, code snippet syntax, and convention compliance.
+
+    Use when: Before releases, after major doc updates, or as part of CI/CD to catch documentation issues
+    Result: Returns list of validation issues categorized by type (broken links, missing assets, syntax errors, convention violations) with file/line numbers
+    Mode: Read-only (only analyzes documentation)
+
+    Optional checks:
+    - check_links: Validate internal links point to existing files
+    - check_assets: Verify images/assets exist and have alt text
+    - check_snippets: Validate code block syntax
+    - validate_code_syntax: Deep syntax validation with TreeSitter (slower)
+    - validate_symbols: Check documented symbols exist in codebase
+
+    Typical workflow: Run regularly to maintain documentation quality, fix reported issues, re-run until clean
+    """
     params = ValidateDocsInput(
         project_path=project_path,
         docs_path=docs_path,
@@ -244,8 +274,22 @@ async def docmgr_assess_quality(
     docs_path: str | None = None,
     criteria: list[str] | None = None
 ) -> str | dict[str, Any]:
-    """Assess documentation quality against 7 criteria: relevance, accuracy, purposefulness,
-    uniqueness, consistency, clarity, structure.
+    """Assess documentation quality against 7 criteria with scores and actionable findings.
+
+    Use when: Auditing documentation health, before major releases, or tracking quality improvements over time
+    Result: Returns quality scores (good/fair/poor) for each criterion plus specific findings, issues, and metrics
+    Mode: Read-only (analyzes documentation only)
+
+    7 Quality criteria evaluated:
+    - Relevance: Addresses current user needs (not outdated)
+    - Accuracy: Reflects actual codebase state
+    - Purposefulness: Clear goals and target audience
+    - Uniqueness: No redundant or conflicting information
+    - Consistency: Aligned terminology, formatting, style
+    - Clarity: Precise language and navigation
+    - Structure: Logical organization and hierarchy
+
+    Typical workflow: Run periodically to track quality trends, use findings to prioritize documentation improvements
     """
     params = AssessQualityInput(
         project_path=project_path,
@@ -278,7 +322,20 @@ async def docmgr_migrate(
     regenerate_toc: bool = False,
     dry_run: bool = False
 ) -> str | dict[str, Any]:
-    """Migrate existing documentation to new structure with optional git history preservation."""
+    """Migrate or restructure documentation while optionally preserving git history.
+
+    Use when: Moving docs to new location, changing documentation platform, or reorganizing documentation structure
+    Result: Moves/restructures documentation files, optionally rewrites internal links, regenerates TOC, preserves git history
+    Mode: State-modifying (moves files, modifies content)
+
+    Options:
+    - preserve_history=true: Uses git mv to maintain file history
+    - rewrite_links=true: Updates internal links to match new structure
+    - regenerate_toc=true: Rebuilds table of contents
+    - dry_run=true: Shows what would be done without making changes
+
+    Typical workflow: Set dry_run=true first to preview changes → review plan → run with dry_run=false to execute migration
+    """
     params = MigrateInput(
         project_path=project_path,
         source_path=source_path,
@@ -306,13 +363,19 @@ async def docmgr_sync(
     mode: str = "check",
     docs_path: str | None = None
 ) -> str | dict[str, Any]:
-    """Sync documentation with code changes, identifying what needs updates.
+    """Orchestrate complete documentation sync: detect changes, validate, assess quality, optionally update baselines.
+
+    Use when: After code changes to get complete documentation health report, or after doc updates to reset baselines
+    Result: Comprehensive sync report with changed files, affected docs, validation issues, quality scores, and baseline status
+    Mode: Depends on mode parameter - "check" is read-only, "resync" modifies baselines
 
     Modes:
-    - mode="check": Read-only analysis (detects changes, no baseline updates)
-    - mode="resync": Full sync (detects changes + updates baselines atomically)
+    - mode="check": Read-only analysis - detects changes, validates docs, assesses quality (no baseline updates)
+    - mode="resync": Full sync - runs all checks PLUS updates all baselines atomically
 
-    Orchestrates validation, quality assessment, and optional baseline updates.
+    This tool orchestrates: change detection → affected doc mapping → validation → quality assessment → optional baseline update.
+
+    Typical workflow: Use mode="check" after code changes to see documentation impact → fix identified issues → use mode="resync" to update baselines
     """
     params = SyncInput(
         project_path=project_path,

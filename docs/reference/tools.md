@@ -2,9 +2,33 @@
 
 Complete reference for all 8 Documentation Manager tools organized by tier.
 
+## Overview
+
+Doc-manager provides 8 MCP tools organized into 4 functional tiers:
+
+**Tier 1: Setup & Initialization**
+- [docmgr_init](tools/docmgr_init.md) - Initialize doc-manager (create config and baselines)
+
+**Tier 2: Analysis & Read-Only Operations**
+- [docmgr_detect_changes](tools/docmgr_detect_changes.md) - Detect code changes without modifying baselines
+- [docmgr_detect_platform](tools/docmgr_detect_platform.md) - Auto-detect documentation platform
+- [docmgr_validate_docs](tools/docmgr_validate_docs.md) - Validate documentation for errors and issues
+- [docmgr_assess_quality](tools/docmgr_assess_quality.md) - Assess quality against 7 criteria
+
+**Tier 3: State Management**
+- [docmgr_update_baseline](tools/docmgr_update_baseline.md) - Update all baselines atomically
+- [docmgr_sync](tools/docmgr_sync.md) - Orchestrate sync with optional baseline update
+
+**Tier 4: Workflows & Orchestration**
+- [docmgr_migrate](tools/docmgr_migrate.md) - Migrate documentation structure
+
+Each tool below includes quick-reference information. Click the tool name for detailed documentation with examples and usage notes.
+
+---
+
 ## Tier 1: Setup & initialization
 
-### docmgr_init
+### [docmgr_init](tools/docmgr_init.md)
 
 Initialize doc-manager for a project.
 
@@ -53,7 +77,7 @@ Initialize doc-manager for a project.
 
 ## Tier 2: Analysis & read-only operations
 
-### docmgr_detect_changes
+### [docmgr_detect_changes](tools/docmgr_detect_changes.md)
 
 Detect code changes without modifying baselines (pure read-only).
 
@@ -94,7 +118,7 @@ Detect code changes without modifying baselines (pure read-only).
 }
 ```
 
-### docmgr_detect_platform
+### [docmgr_detect_platform](tools/docmgr_detect_platform.md)
 
 Detect and recommend documentation platform for the project.
 
@@ -123,7 +147,7 @@ Detect and recommend documentation platform for the project.
 }
 ```
 
-### docmgr_validate_docs
+### [docmgr_validate_docs](tools/docmgr_validate_docs.md)
 
 Validate documentation for broken links, missing assets, and code snippet issues.
 
@@ -170,7 +194,7 @@ Validate documentation for broken links, missing assets, and code snippet issues
 }
 ```
 
-### docmgr_assess_quality
+### [docmgr_assess_quality](tools/docmgr_assess_quality.md)
 
 Assess documentation quality against 7 criteria.
 
@@ -227,7 +251,7 @@ Assess documentation quality against 7 criteria.
 
 ## Tier 3: State management
 
-### docmgr_update_baseline
+### [docmgr_update_baseline](tools/docmgr_update_baseline.md)
 
 Update all baseline files atomically.
 
@@ -266,7 +290,7 @@ Update all baseline files atomically.
 }
 ```
 
-### docmgr_sync
+### [docmgr_sync](tools/docmgr_sync.md)
 
 Sync documentation with code changes, identifying what needs updates.
 
@@ -312,7 +336,7 @@ Sync documentation with code changes, identifying what needs updates.
 
 ## Tier 4: Workflows & orchestration
 
-### docmgr_migrate
+### [docmgr_migrate](tools/docmgr_migrate.md)
 
 Migrate existing documentation to new structure with optional git history preservation.
 
