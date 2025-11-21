@@ -94,10 +94,12 @@ def get_doc_relative_path(file_path: Path, docs_path: Path, project_path: Path) 
 
     # Otherwise compute relative path from docs/
     try:
-        return str(file_path.relative_to(docs_path))
+        # Normalize path separators to forward slashes for cross-platform consistency (Bug #5 fix)
+        return str(file_path.relative_to(docs_path)).replace("\\", "/")
     except ValueError:
         # File is outside docs/ directory, return relative to project root
-        return str(file_path.relative_to(project_path))
+        # Normalize path separators to forward slashes for cross-platform consistency (Bug #5 fix)
+        return str(file_path.relative_to(project_path)).replace("\\", "/")
 
 
 def find_markdown_files(
