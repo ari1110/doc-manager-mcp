@@ -347,7 +347,8 @@ def _assess_consistency(project_path: Path, docs_path: Path, markdown_files: lis
             code_blocks = parser.extract_code_blocks(content)
             for block in code_blocks:
                 lang = block['language']
-                if lang:
+                # Filter out "plaintext" from language count (Bug #3 fix)
+                if lang and lang != "plaintext":
                     code_langs_with_backticks.add(lang)
                 else:
                     code_langs_without_lang += 1
