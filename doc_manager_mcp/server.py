@@ -81,6 +81,7 @@ async def tool_docmgr_init(
     exclude_patterns: list[str] | None = None,
     docs_path: str | None = None,
     sources: list[str] | None = None,
+    use_gitignore: bool = False,
     ctx: Context | None = None
 ) -> dict[str, Any]:
     """Initialize doc-manager for a project (existing docs or create new).
@@ -101,7 +102,8 @@ async def tool_docmgr_init(
         platform=DocumentationPlatform(platform) if platform else None,
         exclude_patterns=exclude_patterns,
         docs_path=docs_path,
-        sources=sources
+        sources=sources,
+        use_gitignore=use_gitignore
     )
     return await docmgr_init(params, ctx)
 
