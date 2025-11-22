@@ -500,25 +500,29 @@ def _find_source_files(
     return source_files
 
 
-def _build_path_index(source_files: list[Path], project_path: Path) -> tuple[dict[str, str], dict[str, list[str]]]:
-    """Build index for O(1) file path lookups.
+def _build_path_index(source_files: list[Path], project_path: Path) -> tuple[dict[str, str], dict[str, list[str]], dict[Path, str]]:
+    """Build index for O(1) file path lookups and pre-normalize all paths.
 
-    Creates two indices:
+    Creates three data structures:
     1. exact_paths: Maps normalized relative paths to themselves for exact matches
     2. suffix_paths: Maps file basenames to all matching relative paths for suffix matches
+    3. path_map: Maps Path objects to normalized strings (eliminates redundant normalization)
 
     Args:
         source_files: List of source file paths
         project_path: Project root path
 
     Returns:
-        Tuple of (exact_paths, suffix_paths)
+        Tuple of (exact_paths, suffix_paths, path_map)
     """
     exact_paths = {}
     suffix_paths = {}
+    path_map = {}
 
     for source_file in source_files:
+        # Normalize once and cache
         relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
+        path_map[source_file] = relative_path
 
         # Add to exact paths index
         exact_paths[relative_path] = relative_path
@@ -530,13 +534,101 @@ def _build_path_index(source_files: list[Path], project_path: Path) -> tuple[dic
             suffix_paths[basename] = []
         suffix_paths[basename].append(relative_path)
 
-    return exact_paths, suffix_paths
+    return exact_paths, suffix_paths, path_map
+
+
+def _get_language_specific_patterns(identifier: str, file_extension: str) -> list[str]:
+    """Get language-specific regex patterns for finding function/class definitions.
+
+    Returns patterns specific to the language, avoiding overly broad matches like
+    identifier\\s*\\( which matches both calls and definitions.
+
+    Args:
+        identifier: Function or class name to search for
+        file_extension: File extension (e.g., '.py', '.go', '.js')
+
+    Returns:
+        List of language-specific regex patterns
+    """
+    patterns = []
+
+    # Python
+    if file_extension == '.py':
+        patterns.extend([
+            rf'\bdef\s+{re.escape(identifier)}\s*\(',  # Function definition
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Class definition
+        ])
+
+    # Go
+    elif file_extension == '.go':
+        patterns.extend([
+            rf'\bfunc\s+{re.escape(identifier)}\s*\(',  # Function definition
+            rf'\btype\s+{re.escape(identifier)}\s+struct\b',  # Struct definition
+            rf'\btype\s+{re.escape(identifier)}\s+interface\b',  # Interface definition
+        ])
+
+    # JavaScript/TypeScript
+    elif file_extension in ['.js', '.jsx', '.ts', '.tsx']:
+        patterns.extend([
+            rf'\bfunction\s+{re.escape(identifier)}\s*\(',  # Function declaration
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Class declaration
+            rf'\bconst\s+{re.escape(identifier)}\s*=\s*function\b',  # Function expression
+            rf'\bconst\s+{re.escape(identifier)}\s*=\s*\([^)]*\)\s*=>',  # Arrow function
+            rf'\b{re.escape(identifier)}\s*:\s*function\s*\(',  # Object method
+        ])
+
+    # Java
+    elif file_extension == '.java':
+        patterns.extend([
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Class definition
+            rf'\binterface\s+{re.escape(identifier)}\b',  # Interface definition
+        ])
+
+    # C/C++
+    elif file_extension in ['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx']:
+        patterns.extend([
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Class definition (C++)
+            rf'\bstruct\s+{re.escape(identifier)}\b',  # Struct definition
+        ])
+
+    # Rust
+    elif file_extension == '.rs':
+        patterns.extend([
+            rf'\bfn\s+{re.escape(identifier)}\s*\(',  # Function definition
+            rf'\bstruct\s+{re.escape(identifier)}\b',  # Struct definition
+            rf'\benum\s+{re.escape(identifier)}\b',  # Enum definition
+        ])
+
+    # Ruby
+    elif file_extension == '.rb':
+        patterns.extend([
+            rf'\bdef\s+{re.escape(identifier)}\b',  # Method definition
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Class definition
+        ])
+
+    # PHP
+    elif file_extension == '.php':
+        patterns.extend([
+            rf'\bfunction\s+{re.escape(identifier)}\s*\(',  # Function definition
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Class definition
+        ])
+
+    # Fallback: Basic patterns for unrecognized languages
+    else:
+        patterns.extend([
+            rf'\bdef\s+{re.escape(identifier)}\s*\(',  # Python-style
+            rf'\bfunc\s+{re.escape(identifier)}\s*\(',  # Go-style
+            rf'\bfunction\s+{re.escape(identifier)}\s*\(',  # JavaScript-style
+            rf'\bclass\s+{re.escape(identifier)}\b',  # Universal class
+        ])
+
+    return patterns
 
 
 def _search_file_for_pattern(
     source_file: Path,
     patterns: list[str],
-    project_path: Path,
+    path_map: dict[Path, str],
     file_cache: dict[Path, str | None]
 ) -> str | None:
     """Search a source file for pattern matches with caching.
@@ -546,7 +638,7 @@ def _search_file_for_pattern(
     Args:
         source_file: Path to source file
         patterns: List of regex patterns to search for
-        project_path: Project root path
+        path_map: Pre-computed mapping of Path → normalized relative path
         file_cache: Cache dict mapping file paths to content (or None if unreadable)
 
     Returns:
@@ -568,7 +660,7 @@ def _search_file_for_pattern(
     # Search for any pattern match
     for pattern in patterns:
         if re.search(pattern, content):
-            return str(source_file.relative_to(project_path)).replace('\\', '/')
+            return path_map[source_file]  # Use pre-computed normalized path
 
     return None
 
@@ -576,7 +668,7 @@ def _search_file_for_pattern(
 def _match_command_to_files(
     command_name: str,
     source_files: list[Path],
-    project_path: Path,
+    path_map: dict[Path, str],
     symbol_index: Any | None = None,
     include_commands_dir: bool = False,
     validate_symbols: bool = False
@@ -588,7 +680,7 @@ def _match_command_to_files(
     Args:
         command_name: The command name to search for (e.g., "add", "vault_backup_create")
         source_files: List of source file paths
-        project_path: Project root path
+        path_map: Pre-computed mapping of Path → normalized relative path
         symbol_index: Optional SymbolIndexer for validating non-empty files
         include_commands_dir: Include "commands" directory pattern (for semantic commands)
         validate_symbols: If True and symbol_index available, verify files have symbols
@@ -603,7 +695,7 @@ def _match_command_to_files(
     pattern = rf'\b{dir_pattern}/{re.escape(command_name)}(/|\.)'
 
     for source_file in source_files:
-        relative_path = str(source_file.relative_to(project_path)).replace('\\', '/')
+        relative_path = path_map[source_file]  # Use pre-computed normalized path
 
         if re.search(pattern, relative_path):
             # If symbol validation requested and available, verify file has symbols
@@ -638,8 +730,8 @@ def _match_references_to_sources(
     dependencies = {}  # doc_file -> [source_files]
     file_cache = {}  # Cache for file contents during regex fallback searches
 
-    # Build path index for O(1) file path lookups
-    exact_paths, suffix_paths = _build_path_index(source_files, project_path)
+    # Build path index for O(1) file path lookups and pre-compute all normalized paths
+    exact_paths, suffix_paths, path_map = _build_path_index(source_files, project_path)
 
     for ref in references:
         doc_file = ref["doc_file"]
@@ -682,17 +774,13 @@ def _match_references_to_sources(
                     continue  # Skip regex fallback if symbol index found matches
 
             # Fallback to regex-based text search if symbol index unavailable or no matches
-            # Look for function/class definitions
-            patterns = [
-                rf'\bfunc\s+{identifier}\b',  # Go
-                rf'\bdef\s+{identifier}\b',   # Python
-                rf'\bfunction\s+{identifier}\b',  # JavaScript
-                rf'\bclass\s+{identifier}\b',  # Most languages
-                rf'\b{identifier}\s*\(',      # Function call/definition
-            ]
-
+            # Use language-specific patterns to avoid false positives
             for source_file in source_files:
-                matched_path = _search_file_for_pattern(source_file, patterns, project_path, file_cache)
+                # Generate patterns based on file extension for more precise matching
+                file_extension = source_file.suffix
+                patterns = _get_language_specific_patterns(identifier, file_extension)
+
+                matched_path = _search_file_for_pattern(source_file, patterns, path_map, file_cache)
                 if matched_path:
                     dependencies[doc_file].add(matched_path)
 
@@ -701,7 +789,7 @@ def _match_references_to_sources(
             command_name = _extract_subcommand(reference)
             if command_name:
                 matched_files = _match_command_to_files(
-                    command_name, source_files, project_path, symbol_index,
+                    command_name, source_files, path_map, symbol_index,
                     include_commands_dir=False, validate_symbols=False
                 )
                 dependencies[doc_file].update(matched_files)
@@ -710,7 +798,7 @@ def _match_references_to_sources(
         elif ref_type == "semantic_command":
             command_name = reference  # Already normalized to lowercase in extraction
             matched_files = _match_command_to_files(
-                command_name, source_files, project_path, symbol_index,
+                command_name, source_files, path_map, symbol_index,
                 include_commands_dir=True, validate_symbols=True
             )
             dependencies[doc_file].update(matched_files)
