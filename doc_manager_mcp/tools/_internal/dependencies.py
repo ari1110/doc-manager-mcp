@@ -3,6 +3,7 @@
 import json
 import re
 import sys
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -690,14 +691,14 @@ def _match_command_to_files(
     """
     matches = set()
 
-    # Build pattern: include "commands?" directory for semantic commands
+    # Build and compile pattern once: include "commands?" directory for semantic commands
     dir_pattern = r'(cmd|cli|commands?)' if include_commands_dir else r'(cmd|cli)'
-    pattern = rf'\b{dir_pattern}/{re.escape(command_name)}(/|\.)'
+    pattern = re.compile(rf'\b{dir_pattern}/{re.escape(command_name)}(/|\.)')
 
     for source_file in source_files:
         relative_path = path_map[source_file]  # Use pre-computed normalized path
 
-        if re.search(pattern, relative_path):
+        if pattern.search(relative_path):
             # If symbol validation requested and available, verify file has symbols
             if validate_symbols and symbol_index:
                 file_symbols = symbol_index.get_symbols_in_file(relative_path)
@@ -727,7 +728,7 @@ def _match_references_to_sources(
     Returns:
         Dictionary mapping doc files to matched source files
     """
-    dependencies = {}  # doc_file -> [source_files]
+    dependencies = defaultdict(set)  # doc_file -> set[source_files]
     file_cache = {}  # Cache for file contents during regex fallback searches
 
     # Build path index for O(1) file path lookups and pre-compute all normalized paths
@@ -738,8 +739,9 @@ def _match_references_to_sources(
         reference = ref["reference"]
         ref_type = ref["type"]
 
-        if doc_file not in dependencies:
-            dependencies[doc_file] = set()
+        # Ensure doc_file entry exists (even if no matches found)
+        # This preserves behavior: all doc files with references appear in output
+        dependencies[doc_file]  # Access to create entry in defaultdict
 
         # Match file path references using index
         if ref_type == "file_path":
@@ -822,14 +824,12 @@ def _build_reverse_index(dependencies: dict[str, list[str]], all_references: lis
             - code_to_doc: Real source file paths -> [doc_files]
             - unmatched_references: Unmatched reference strings -> [doc_files]
     """
-    code_to_doc = {}
-    unmatched_refs = {}
+    code_to_doc = defaultdict(list)
+    unmatched_refs = defaultdict(list)
 
     # Add matched source files to code_to_doc
     for doc_file, source_files in dependencies.items():
         for source_file in source_files:
-            if source_file not in code_to_doc:
-                code_to_doc[source_file] = []
             code_to_doc[source_file].append(doc_file)
 
     # Separate unmatched references into their own dictionary
@@ -851,10 +851,13 @@ def _build_reverse_index(dependencies: dict[str, list[str]], all_references: lis
             # For semantic commands and commands, check if any dependency matches this reference
             if ref_type in ["semantic_command", "command"]:
                 command_name = reference.split()[0] if ref_type == "command" else reference
+                # Pre-compile pattern for this reference to avoid recompiling in inner loop
+                pattern = re.compile(rf'\b(cmd|cli|commands?)/{re.escape(command_name)}(/|\.)')
+
                 if doc_file in dependencies:
                     for source_file in dependencies[doc_file]:
                         # Check if this source file path matches the command pattern
-                        if re.search(rf'\b(cmd|cli|commands?)/{re.escape(command_name)}(/|\.)', source_file):
+                        if pattern.search(source_file):
                             matched_ref_pairs.add((doc_file, reference))
                             break
 
@@ -884,45 +887,41 @@ def _build_reverse_index(dependencies: dict[str, list[str]], all_references: lis
                         if first_word in UNIVERSAL_BLOCKLIST or not reference.startswith(project_name):
                             continue  # Skip blocklisted or non-project commands
 
-                    # Add to unmatched refs
-                    if reference not in unmatched_refs:
-                        unmatched_refs[reference] = []
+                    # Add to unmatched refs (avoid duplicates)
                     if doc_file not in unmatched_refs[reference]:
                         unmatched_refs[reference].append(doc_file)
 
-    return code_to_doc, unmatched_refs
+    return dict(code_to_doc), dict(unmatched_refs)
 
 
 def _build_reference_index(all_references: list[dict[str, Any]]) -> dict[str, list[str]]:
     """Build index of references to docs that mention them: reference -> [doc_files]."""
-    ref_index = {}
+    ref_index = defaultdict(list)
 
     for ref in all_references:
         reference = ref["reference"]
         doc_file = ref["doc_file"]
 
-        if reference not in ref_index:
-            ref_index[reference] = []
+        # Avoid duplicates
         if doc_file not in ref_index[reference]:
             ref_index[reference].append(doc_file)
 
-    return ref_index
+    return dict(ref_index)
 
 
 def _build_asset_to_docs_index(all_assets: list[dict[str, Any]]) -> dict[str, list[str]]:
     """Build index of assets to docs that reference them: asset_path -> [doc_files]."""
-    asset_index = {}
+    asset_index = defaultdict(list)
 
     for asset in all_assets:
         asset_path = asset["asset_path"]
         doc_file = asset["doc_file"]
 
-        if asset_path not in asset_index:
-            asset_index[asset_path] = []
+        # Avoid duplicates
         if doc_file not in asset_index[asset_path]:
             asset_index[asset_path].append(doc_file)
 
-    return asset_index
+    return dict(asset_index)
 
 
 def _save_dependencies_to_memory(project_path: Path, dependencies: dict[str, list[str]],
