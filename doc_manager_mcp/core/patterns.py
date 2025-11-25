@@ -90,3 +90,74 @@ def matches_exclude_pattern(path: str, exclude_patterns: list[str]) -> bool:
                 return True
 
     return False
+
+
+# File categorization patterns for detect_changes
+FILE_CATEGORY_PATTERNS = {
+    "cli": {
+        "path_patterns": ["cmd/", "/cmd/"],
+        "description": "CLI and command-line tool changes"
+    },
+    "api": {
+        "path_patterns": ["api/", "internal/", "pkg/", "lib/", "src/"],
+        "description": "API and library code changes"
+    },
+    "config": {
+        "extensions": [".yml", ".yaml", ".toml", ".json", ".ini", ".conf"],
+        "description": "Configuration file changes"
+    },
+    "documentation": {
+        "extensions": [".md", ".rst", ".txt"],
+        "path_patterns": ["/docs/", "/documentation/"],
+        "description": "Documentation changes"
+    },
+    "asset": {
+        "extensions": [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico", ".pdf", ".mp4", ".webm", ".mov"],
+        "description": "Asset and media file changes"
+    },
+    "dependency": {
+        "files": ["package.json", "go.mod", "requirements.txt", "cargo.toml", "pom.xml", "build.gradle"],
+        "description": "Dependency and package manifest changes"
+    },
+    "test": {
+        "path_patterns": ["test_", "_test.", "test/", "tests/", "spec/", "__tests__/"],
+        "description": "Test code changes"
+    },
+    "infrastructure": {
+        "path_patterns": [".github/", ".gitlab/", "docker", "Dockerfile", ".ci/", "deploy/"],
+        "description": "Infrastructure and CI/CD changes"
+    }
+}
+
+
+def categorize_file_change(file_path: str) -> str:
+    """Categorize the scope of a code change based on configurable patterns.
+
+    Args:
+        file_path: Relative file path to categorize
+
+    Returns:
+        Category string (cli, api, config, documentation, asset, dependency, test, infrastructure, other)
+    """
+    file_lower = file_path.lower()
+    normalized_path = file_path.replace('\\', '/')
+
+    # Check each category in priority order
+    for category, config in FILE_CATEGORY_PATTERNS.items():
+        # Check path patterns (for directories and file name patterns)
+        if "path_patterns" in config:
+            for pattern in config["path_patterns"]:
+                if normalized_path.startswith(pattern) or pattern in normalized_path:
+                    return category
+
+        # Check file extensions
+        if "extensions" in config:
+            if any(file_lower.endswith(ext) for ext in config["extensions"]):
+                return category
+
+        # Check exact file names
+        if "files" in config:
+            if any(file_name in file_lower for file_name in config["files"]):
+                return category
+
+    return "other"

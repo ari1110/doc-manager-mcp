@@ -20,16 +20,16 @@ from doc_manager_mcp.core import (
     load_config,
     matches_exclude_pattern,
     run_git_command,
-    validate_path_boundary,
 )
+from doc_manager_mcp.core.patterns import categorize_file_change
 from doc_manager_mcp.indexing.analysis.semantic_diff import (
     SemanticChange,
     compare_symbols,
     load_symbol_baseline,
     save_symbol_baseline,
 )
-from doc_manager_mcp.indexing.path_index import build_path_index
 from doc_manager_mcp.indexing.analysis.tree_sitter import SymbolIndexer
+from doc_manager_mcp.indexing.path_index import build_path_index
 from doc_manager_mcp.models import MapChangesInput
 
 
@@ -165,45 +165,9 @@ async def _get_changed_files_from_git(project_path: Path, since_commit: str) -> 
     return changed_files
 
 
-def _categorize_change(file_path: str) -> str:
-    """Categorize the scope of a code change."""
-    file_lower = file_path.lower()
-    # Normalize path separators for consistent matching
-    normalized_path = file_path.replace('\\', '/')
-
-    # CLI/Command changes
-    if normalized_path.startswith("cmd/") or "/cmd/" in normalized_path:
-        return "cli"
-
-    # API/Library changes
-    if any(x in normalized_path for x in ["api/", "internal/", "pkg/", "lib/", "src/"]):
-        return "api"
-
-    # Configuration changes
-    if any(file_lower.endswith(ext) for ext in [".yml", ".yaml", ".toml", ".json", ".ini", ".conf"]):
-        return "config"
-
-    # Documentation changes
-    if file_lower.endswith((".md", ".rst", ".txt")) or "/docs/" in normalized_path or "/documentation/" in normalized_path:
-        return "documentation"
-
-    # Asset changes (images, media files commonly referenced in docs)
-    if any(file_lower.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico", ".pdf", ".mp4", ".webm", ".mov"]):
-        return "asset"
-
-    # Build/Dependency changes
-    if any(x in file_lower for x in ["package.json", "go.mod", "requirements.txt", "cargo.toml", "pom.xml", "build.gradle"]):
-        return "dependency"
-
-    # Tests
-    if any(x in file_lower for x in ["test_", "_test.", "test/", "tests/", "spec/", "__tests__/"]):
-        return "test"
-
-    # Infrastructure/Config
-    if any(x in normalized_path for x in [".github/", ".gitlab/", "docker", "Dockerfile", ".ci/", "deploy/"]):
-        return "infrastructure"
-
-    return "other"
+# Note: _categorize_change() has been moved to core/patterns.py as categorize_file_change()
+# This maintains backward compatibility while using the centralized implementation.
+_categorize_change = categorize_file_change
 
 
 def _map_to_affected_docs(changed_files: list[dict[str, str]], project_path: Path) -> list[dict[str, Any]]:
