@@ -13,6 +13,7 @@ Steps performed:
 6. Generates sync report with actionable recommendations
 """
 
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
@@ -157,12 +158,9 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
             lines.append("No documentation impacts detected")
             lines.append("  (Changes only affected tests, infrastructure, or docs themselves)")
             lines.append("")
-        # Step 3/4: Validate current documentation
-        lines.append(f"## Step {3 + step_offset}: Current Documentation Status")
-        lines.append("")
 
         from doc_manager_mcp.core import find_docs_directory
-        from doc_manager_mcp.models import ValidateDocsInput
+        from doc_manager_mcp.models import ValidateDocsInput, AssessQualityInput
 
         # Use provided docs_path or auto-detect
         if params.docs_path:
@@ -170,15 +168,34 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         else:
             docs_path = find_docs_directory(project_path)
 
-        # Initialize validation metrics
+        # Initialize metrics
         total_issues: int | None = None
+        overall_score: str | None = None
 
+        # Step 3/4: Run validation and quality assessment in parallel
         if docs_path and docs_path.exists():
-            validation_result = await validate_docs(ValidateDocsInput(
+            # Create tasks for parallel execution
+            validation_task = validate_docs(ValidateDocsInput(
                 project_path=str(project_path),
                 docs_path=str(docs_path.relative_to(project_path)),
                 include_root_readme=include_root_readme
             ))
+
+            quality_task = assess_quality(AssessQualityInput(
+                project_path=str(project_path),
+                docs_path=str(docs_path.relative_to(project_path)),
+                include_root_readme=include_root_readme
+            ))
+
+            # Run both tasks concurrently
+            validation_result, quality_result = await asyncio.gather(
+                validation_task,
+                quality_task
+            )
+
+            # Process validation results
+            lines.append(f"## Step {3 + step_offset}: Current Documentation Status")
+            lines.append("")
 
             validation_data = validation_result if isinstance(validation_result, dict) else json.loads(validation_result)
             total_issues = validation_data.get("total_issues", 0)
@@ -192,20 +209,10 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
                 lines.append(f"  - Errors: {errors}")
                 lines.append(f"  - Warnings: {warnings}")
             lines.append("")
-        # Step 4/5: Quality assessment
-        lines.append(f"## Step {4 + step_offset}: Quality Assessment")
-        lines.append("")
 
-        # Initialize quality metrics
-        overall_score: str | None = None
-
-        if docs_path:
-            from doc_manager_mcp.models import AssessQualityInput
-            quality_result = await assess_quality(AssessQualityInput(
-                project_path=str(project_path),
-                docs_path=str(docs_path.relative_to(project_path)),
-                include_root_readme=include_root_readme
-            ))
+            # Process quality results
+            lines.append(f"## Step {4 + step_offset}: Quality Assessment")
+            lines.append("")
 
             quality_data = quality_result if isinstance(quality_result, dict) else json.loads(quality_result)
             overall_score = quality_data.get("overall_score", "unknown")
@@ -222,6 +229,17 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
                 for criterion in low_scores:
                     lines.append(f"- {criterion['criterion'].capitalize()}: {criterion['score']}")
 
+            lines.append("")
+        else:
+            # No docs found - report separately for validation and quality
+            lines.append(f"## Step {3 + step_offset}: Current Documentation Status")
+            lines.append("")
+            lines.append("No documentation directory found")
+            lines.append("")
+
+            lines.append(f"## Step {4 + step_offset}: Quality Assessment")
+            lines.append("")
+            lines.append("No documentation directory found")
             lines.append("")
 
         # Step 5/6: Recommendations
