@@ -164,70 +164,25 @@ async def migrate(params: MigrateInput) -> str | dict[str, Any]:
 
                 # Process markdown files with link rewriting/TOC
                 if old_file.suffix.lower() in ['.md', '.markdown']:
-                    content = old_file.read_text(encoding='utf-8')
+                    from .migrate_helpers import process_markdown_file
 
-                    # Extract frontmatter
-                    frontmatter_dict, body = extract_frontmatter(content)
+                    result = process_markdown_file(
+                        old_file,
+                        new_file,
+                        existing_docs,
+                        new_docs,
+                        project_path,
+                        rewrite_links_enabled=params.rewrite_links,
+                        regenerate_toc=params.regenerate_toc,
+                        use_git=use_git,
+                        dry_run=params.dry_run
+                    )
 
-                    # Rewrite links if enabled
-                    if params.rewrite_links:
-                        from ...indexing.transforms.links import (
-                            compute_link_mappings,
-                            rewrite_links_in_content,
-                        )
-
-                        link_mappings = compute_link_mappings(
-                            body,
-                            new_file,
-                            existing_docs,
-                            new_docs,
-                            project_path
-                        )
-
-                        if link_mappings:
-                            body = rewrite_links_in_content(body, link_mappings)
-                            links_rewritten += 1
-
-                    # Regenerate TOC if enabled
-                    if params.regenerate_toc and '<!-- TOC -->' in content:
-                        toc = generate_toc(body, max_depth=3)
-                        body = update_or_insert_toc(body, toc)
+                    method = result["method"]
+                    if result["links_rewritten"]:
+                        links_rewritten += 1
+                    if result["toc_generated"]:
                         tocs_generated += 1
-
-                    # Reconstruct with frontmatter
-                    if frontmatter_dict:
-                        final_content = preserve_frontmatter(frontmatter_dict, body)
-                    else:
-                        final_content = body
-
-                    # Write file if not dry run
-                    if not params.dry_run:
-                        new_file.write_text(final_content, encoding='utf-8')
-
-                        # For markdown files with transformations, use git rm + git add
-                        # (Git will detect this as a rename with modifications)
-                        if use_git:
-                            try:
-                                # Stage new file
-                                subprocess.run(
-                                    ['git', 'add', str(new_file)],
-                                    cwd=project_path,
-                                    check=True,
-                                    capture_output=True
-                                )
-                                # Remove old file from git
-                                subprocess.run(
-                                    ['git', 'rm', str(old_file)],
-                                    cwd=project_path,
-                                    check=True,
-                                    capture_output=True
-                                )
-                                method = "git mv"
-                            except subprocess.CalledProcessError:
-                                # Git operations failed, but file is already copied
-                                method = "copy"
-                        else:
-                            method = "copy"
 
                 else:
                     # Non-markdown files: use git mv if preserving history, else copy
