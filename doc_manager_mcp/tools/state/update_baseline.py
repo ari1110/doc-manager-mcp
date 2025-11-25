@@ -99,6 +99,101 @@ async def docmgr_update_baseline(
         return enforce_response_limit(error_dict)
 
 
+def _calculate_file_checksums(project_path: Path) -> tuple[dict[str, str], int]:
+    """Calculate checksums for all project files.
+
+    Args:
+        project_path: Project root path
+
+    Returns:
+        Tuple of (checksums dict, file count)
+    """
+    from doc_manager_mcp.constants import MAX_FILES
+    from doc_manager_mcp.core import calculate_checksum
+    from doc_manager_mcp.core.file_scanner import scan_project_files
+
+    checksums = {}
+    file_count = 0
+
+    for file_path in scan_project_files(project_path, max_files=MAX_FILES, use_walk=True):
+        relative_path = str(file_path.relative_to(project_path)).replace('\\', '/')
+        checksums[relative_path] = calculate_checksum(file_path)
+        file_count += 1
+
+    return checksums, file_count
+
+
+async def _get_git_metadata(project_path: Path) -> dict[str, str | None]:
+    """Get git commit and branch information.
+
+    Args:
+        project_path: Project root path
+
+    Returns:
+        Dict with git_commit and git_branch
+    """
+    from doc_manager_mcp.core import run_git_command
+
+    git_commit = await run_git_command(project_path, "rev-parse", "HEAD")
+    git_branch = await run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD")
+
+    return {
+        "git_commit": git_commit,
+        "git_branch": git_branch
+    }
+
+
+def _build_baseline_structure(
+    project_path: Path,
+    checksums: dict[str, str],
+    file_count: int,
+    git_metadata: dict[str, str | None]
+) -> dict[str, Any]:
+    """Build baseline structure with all metadata.
+
+    Args:
+        project_path: Project root path
+        checksums: File checksums dict
+        file_count: Number of files tracked
+        git_metadata: Git commit and branch info
+
+    Returns:
+        Complete baseline structure
+    """
+    from datetime import datetime
+
+    from doc_manager_mcp.core import detect_project_language, find_docs_directory
+
+    language = detect_project_language(project_path)
+    docs_dir = find_docs_directory(project_path)
+
+    return {
+        "repo_name": project_path.name,
+        "description": f"Repository for {project_path.name}",
+        "language": language,
+        "docs_exist": docs_dir is not None,
+        "docs_path": str(docs_dir.relative_to(project_path)) if docs_dir else None,
+        "metadata": git_metadata,
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "file_count": file_count,
+        "files": checksums
+    }
+
+
+def _write_baseline_safely(baseline_path: Path, baseline: dict[str, Any]) -> None:
+    """Write baseline to disk with file locking.
+
+    Args:
+        baseline_path: Path to baseline file
+        baseline: Baseline data structure
+    """
+    import json
+
+    with file_lock(baseline_path, timeout=10, retries=3):
+        baseline_path.write_text(json.dumps(baseline, indent=2))
+
+
 async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
     """Update repo-baseline.json with current file checksums.
 
@@ -109,65 +204,28 @@ async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
         dict with status and baseline information
     """
     try:
-        import json
-        from datetime import datetime
+        # Calculate file checksums
+        checksums, file_count = _calculate_file_checksums(project_path)
 
-        from doc_manager_mcp.constants import MAX_FILES
-        from doc_manager_mcp.core import (
-            calculate_checksum,
-            detect_project_language,
-            find_docs_directory,
-            load_config,
-            run_git_command,
+        # Get git metadata
+        git_metadata = await _get_git_metadata(project_path)
+
+        # Build baseline structure
+        baseline = _build_baseline_structure(
+            project_path,
+            checksums,
+            file_count,
+            git_metadata
         )
-        from doc_manager_mcp.core.file_scanner import scan_project_files
 
-        # Load config
-        config = load_config(project_path)
-
-        # Scan files and calculate checksums using shared scanner
-        checksums = {}
-        file_count = 0
-
-        for file_path in scan_project_files(project_path, max_files=MAX_FILES, use_walk=True):
-            relative_path = str(file_path.relative_to(project_path)).replace('\\', '/')
-            checksums[relative_path] = calculate_checksum(file_path)
-            file_count += 1
-
-        # Get git info
-        git_commit = await run_git_command(project_path, "rev-parse", "HEAD")
-        git_branch = await run_git_command(project_path, "rev-parse", "--abbrev-ref", "HEAD")
-
-        # Detect project metadata
-        language = detect_project_language(project_path)
-        docs_dir = find_docs_directory(project_path)
-
-        # Create baseline
-        baseline = {
-            "repo_name": project_path.name,
-            "description": f"Repository for {project_path.name}",
-            "language": language,
-            "docs_exist": docs_dir is not None,
-            "docs_path": str(docs_dir.relative_to(project_path)) if docs_dir else None,
-            "metadata": {
-                "git_commit": git_commit,
-                "git_branch": git_branch
-            },
-            "timestamp": datetime.now().isoformat(),
-            "version": "1.0.0",
-            "file_count": file_count,
-            "files": checksums
-        }
-
-        # Write baseline with file locking to prevent corruption
+        # Write baseline safely
         baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
-        with file_lock(baseline_path, timeout=10, retries=3):
-            baseline_path.write_text(json.dumps(baseline, indent=2))
+        _write_baseline_safely(baseline_path, baseline)
 
         return {
             "status": "success",
             "files_tracked": file_count,
-            "git_commit": git_commit,
+            "git_commit": git_metadata["git_commit"],
             "path": str(baseline_path)
         }
 
