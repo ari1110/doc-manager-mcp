@@ -15,6 +15,29 @@ from doc_manager_mcp.core import (
 from doc_manager_mcp.models import InitializeConfigInput
 
 
+def _generate_default_doc_mappings(docs_path: str) -> dict[str, str]:
+    """Generate sensible default documentation path mappings.
+
+    Creates mappings from change categories to likely documentation file paths
+    based on the docs directory structure.
+
+    Args:
+        docs_path: Path to documentation directory (e.g., 'docs', 'documentation', 'wiki')
+
+    Returns:
+        Dictionary mapping categories to doc paths
+    """
+    base = docs_path.rstrip("/")  # Remove trailing slash if present
+
+    return {
+        "cli": f"{base}/reference/command-reference.md",
+        "api": f"{base}/reference/api.md",
+        "config": f"{base}/reference/configuration.md",
+        "dependency": f"{base}/getting-started/installation.md",
+        "infrastructure": f"{base}/development/ci-cd.md",
+    }
+
+
 async def initialize_config(params: InitializeConfigInput) -> str | dict[str, Any]:
     """Initialize .doc-manager.yml configuration file for the project.
 
@@ -80,6 +103,12 @@ async def initialize_config(params: InitializeConfigInput) -> str | dict[str, An
         # Use provided sources or empty list
         sources = params.sources if params.sources else []
 
+        # Generate doc_mappings (use provided or generate defaults)
+        if params.doc_mappings:
+            doc_mappings = params.doc_mappings
+        else:
+            doc_mappings = _generate_default_doc_mappings(docs_path)
+
         # Create configuration
         config = {
             "platform": platform.value,
@@ -87,6 +116,7 @@ async def initialize_config(params: InitializeConfigInput) -> str | dict[str, An
             "sources": sources,
             "docs_path": docs_path,
             "use_gitignore": params.use_gitignore,
+            "doc_mappings": doc_mappings,
             "metadata": {
                 "language": language,
                 "created": datetime.now().isoformat(),

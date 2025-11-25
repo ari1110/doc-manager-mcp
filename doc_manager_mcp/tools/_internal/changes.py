@@ -214,7 +214,7 @@ def _categorize_change(file_path: str) -> str:
         return "cli"
 
     # API/Library changes
-    if any(x in normalized_path for x in ["internal/", "pkg/", "lib/", "src/"]):
+    if any(x in normalized_path for x in ["api/", "internal/", "pkg/", "lib/", "src/"]):
         return "api"
 
     # Configuration changes
@@ -245,8 +245,30 @@ def _categorize_change(file_path: str) -> str:
 
 
 def _map_to_affected_docs(changed_files: list[dict[str, str]], project_path: Path) -> list[dict[str, Any]]:
-    """Map changed files to affected documentation."""
+    """Map changed files to affected documentation using configurable doc_mappings.
+
+    Loads doc_mappings from .doc-manager.yml config. If not configured, falls back
+    to default paths in docs/ directory. Supports non-standard layouts like
+    documentation/, wiki/, _docs/, etc.
+    """
     affected_docs = {}  # Use dict to deduplicate
+
+    # Load config and get doc_mappings
+    config = load_config(project_path)
+    docs_path = config.get("docs_path", "docs") if config else "docs"
+
+    # Start with default paths
+    doc_mappings = {
+        "cli": f"{docs_path}/reference/command-reference.md",
+        "api": f"{docs_path}/reference/api.md",
+        "config": f"{docs_path}/reference/configuration.md",
+        "dependency": f"{docs_path}/getting-started/installation.md",
+        "infrastructure": f"{docs_path}/development/ci-cd.md",
+    }
+
+    # Override with user-configured mappings (supports partial configs)
+    if config and config.get("doc_mappings"):
+        doc_mappings.update(config["doc_mappings"])
 
     for change in changed_files:
         file_path = change["file"]
@@ -256,87 +278,111 @@ def _map_to_affected_docs(changed_files: list[dict[str, str]], project_path: Pat
         if category == "documentation":
             continue
 
-        # Map based on category
+        # Map based on category using configured paths
         if category == "cli":
+            primary_doc = doc_mappings.get("cli")
+            if primary_doc:
+                _add_affected_doc(
+                    affected_docs,
+                    primary_doc,
+                    f"CLI implementation changed: {file_path}",
+                    "high",
+                    file_path
+                )
+
+            # Secondary docs (workflows and README) - use defaults if not in config
+            workflows_doc = doc_mappings.get("workflows") or f"{docs_path}/guides/basic-workflows.md"
             _add_affected_doc(
                 affected_docs,
-                "docs/reference/command-reference.md",
-                f"CLI implementation changed: {file_path}",
-                "high",
-                file_path
-            )
-            _add_affected_doc(
-                affected_docs,
-                "docs/guides/basic-workflows.md",
+                workflows_doc,
                 f"CLI workflows may need updates due to: {file_path}",
                 "medium",
                 file_path
             )
+
+            readme_doc = doc_mappings.get("readme") or "README.md"
             _add_affected_doc(
                 affected_docs,
-                "README.md",
+                readme_doc,
                 f"Update examples if this affects primary commands: {file_path}",
                 "medium",
                 file_path
             )
 
         elif category == "api":
-            _add_affected_doc(
-                affected_docs,
-                "docs/reference/api.md",
-                f"API/library changed: {file_path}",
-                "high",
-                file_path
-            )
-            if "internal/" in file_path:
+            primary_doc = doc_mappings.get("api")
+            if primary_doc:
                 _add_affected_doc(
                     affected_docs,
-                    "docs/reference/architecture.md",
+                    primary_doc,
+                    f"API/library changed: {file_path}",
+                    "high",
+                    file_path
+                )
+
+            # If internal/ changed, also flag architecture doc
+            if "internal/" in file_path:
+                arch_doc = doc_mappings.get("architecture") or f"{docs_path}/reference/architecture.md"
+                _add_affected_doc(
+                    affected_docs,
+                    arch_doc,
                     f"Internal architecture may have changed: {file_path}",
                     "medium",
                     file_path
                 )
 
         elif category == "config":
+            primary_doc = doc_mappings.get("config")
+            if primary_doc:
+                _add_affected_doc(
+                    affected_docs,
+                    primary_doc,
+                    f"Configuration schema changed: {file_path}",
+                    "high",
+                    file_path
+                )
+
+            # Config changes may also affect installation docs
+            install_doc = doc_mappings.get("dependency") or f"{docs_path}/getting-started/installation.md"
             _add_affected_doc(
                 affected_docs,
-                "docs/reference/configuration.md",
-                f"Configuration schema changed: {file_path}",
-                "high",
-                file_path
-            )
-            _add_affected_doc(
-                affected_docs,
-                "docs/getting-started/installation.md",
+                install_doc,
                 f"Configuration examples may need updates: {file_path}",
                 "medium",
                 file_path
             )
 
         elif category == "dependency":
+            primary_doc = doc_mappings.get("dependency")
+            if primary_doc:
+                _add_affected_doc(
+                    affected_docs,
+                    primary_doc,
+                    f"Dependencies changed: {file_path}",
+                    "high",
+                    file_path
+                )
+
+            # Dependency changes may affect contributing guide
+            contrib_doc = doc_mappings.get("contributing") or f"{docs_path}/development/contributing.md"
             _add_affected_doc(
                 affected_docs,
-                "docs/getting-started/installation.md",
-                f"Dependencies changed: {file_path}",
-                "high",
-                file_path
-            )
-            _add_affected_doc(
-                affected_docs,
-                "docs/development/contributing.md",
+                contrib_doc,
                 f"Development setup may have changed: {file_path}",
                 "medium",
                 file_path
             )
 
         elif category == "infrastructure":
-            _add_affected_doc(
-                affected_docs,
-                "docs/development/ci-cd.md",
-                f"CI/CD configuration changed: {file_path}",
-                "low",
-                file_path
-            )
+            primary_doc = doc_mappings.get("infrastructure")
+            if primary_doc:
+                _add_affected_doc(
+                    affected_docs,
+                    primary_doc,
+                    f"CI/CD configuration changed: {file_path}",
+                    "low",
+                    file_path
+                )
 
     # Convert dict to list and check which docs actually exist
     result = []

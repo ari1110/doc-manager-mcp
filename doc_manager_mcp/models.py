@@ -205,6 +205,10 @@ class InitializeConfigInput(BaseModel):
         default=False,
         description="Automatically exclude files based on .gitignore patterns (opt-in). Priority: user excludes > gitignore > defaults"
     )
+    doc_mappings: dict[str, str] | None = Field(
+        default=None,
+        description="Map change categories to documentation file paths (e.g., {'cli': 'docs/reference/commands.md', 'api': 'docs/reference/api.md'}). Supports non-standard layouts"
+    )
 
     @field_validator('project_path')
     @classmethod

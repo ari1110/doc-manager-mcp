@@ -58,6 +58,10 @@ def save_config(project_path: Path, config: dict[str, Any]) -> bool:
             if 'use_gitignore' not in config_copy:
                 config_copy['use_gitignore'] = False
 
+            # Replace empty dict with None for doc_mappings
+            if not config_copy.get('doc_mappings'):
+                config_copy['doc_mappings'] = None
+
             yaml.dump(config_copy, f, default_flow_style=False, sort_keys=False)
 
             # Add helpful examples and documentation
@@ -116,6 +120,23 @@ def save_config(project_path: Path, config: dict[str, Any]) -> bool:
             f.write("#   use_gitignore: true\n")
             f.write("#   exclude:              # Additional patterns beyond .gitignore\n")
             f.write("#     - \"specs/**\"\n")
+            f.write("\n")
+            f.write("# Documentation Path Mappings\n")
+            f.write("# ---------------------------\n")
+            f.write("# Map change categories to documentation file paths.\n")
+            f.write("# Supports non-standard layouts (documentation/, wiki/, _docs/, etc.).\n")
+            f.write("# When not configured, falls back to default paths in docs/.\n")
+            f.write("# Example:\n")
+            f.write("#   doc_mappings:\n")
+            f.write("#     cli: 'docs/reference/command-reference.md'\n")
+            f.write("#     api: 'docs/reference/api.md'\n")
+            f.write("#     config: 'docs/reference/configuration.md'\n")
+            f.write("#     dependency: 'docs/getting-started/installation.md'\n")
+            f.write("#     infrastructure: 'docs/development/ci-cd.md'\n")
+            f.write("# Non-standard layout example:\n")
+            f.write("#   doc_mappings:\n")
+            f.write("#     cli: 'documentation/commands.md'  # Uses documentation/ instead of docs/\n")
+            f.write("#     api: 'wiki/API-Reference.md'      # Uses wiki/ directory\n")
 
         return True
     except Exception:
