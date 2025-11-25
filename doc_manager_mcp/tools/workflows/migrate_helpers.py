@@ -1,5 +1,6 @@
 """Helper functions for documentation migration."""
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -154,6 +155,89 @@ def process_markdown_file(
             method = "copy"
 
     return {
+        "method": method,
+        "links_rewritten": links_rewritten,
+        "toc_generated": toc_generated
+    }
+
+
+def process_single_file(
+    old_file: Path,
+    existing_docs: Path,
+    new_docs: Path,
+    project_path: Path,
+    *,
+    rewrite_links_enabled: bool,
+    regenerate_toc: bool,
+    use_git: bool,
+    dry_run: bool
+) -> dict[str, str | bool | Path]:
+    """Process a single file (markdown or non-markdown) for migration.
+
+    Args:
+        old_file: Source file path
+        existing_docs: Old documentation directory
+        new_docs: New documentation directory
+        project_path: Project root path
+        rewrite_links_enabled: Whether to rewrite links
+        regenerate_toc: Whether to regenerate TOC
+        use_git: Whether to use git operations
+        dry_run: Whether this is a dry run
+
+    Returns:
+        Dict with keys: old_file, new_file, method, links_rewritten, toc_generated
+    """
+    relative_path = old_file.relative_to(existing_docs)
+    new_file = new_docs / relative_path
+
+    # Create parent directories if not dry run
+    if not dry_run:
+        new_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Process markdown files with link rewriting/TOC
+    if old_file.suffix.lower() in ['.md', '.markdown']:
+        result = process_markdown_file(
+            old_file,
+            new_file,
+            existing_docs,
+            new_docs,
+            project_path,
+            rewrite_links_enabled=rewrite_links_enabled,
+            regenerate_toc=regenerate_toc,
+            use_git=use_git,
+            dry_run=dry_run
+        )
+        method = result["method"]
+        links_rewritten = result["links_rewritten"]
+        toc_generated = result["toc_generated"]
+    else:
+        # Non-markdown files: use git mv if preserving history, else copy
+        method = "preview"
+        links_rewritten = False
+        toc_generated = False
+
+        if not dry_run:
+            if use_git:
+                try:
+                    # Use git mv for non-markdown files
+                    subprocess.run(
+                        ['git', 'mv', str(old_file), str(new_file)],
+                        cwd=project_path,
+                        check=True,
+                        capture_output=True
+                    )
+                    method = "git mv"
+                except subprocess.CalledProcessError:
+                    # Fallback to regular copy if git mv fails
+                    shutil.copy2(old_file, new_file)
+                    method = "copy"
+            else:
+                shutil.copy2(old_file, new_file)
+                method = "copy"
+
+    return {
+        "old_file": old_file,
+        "new_file": new_file,
         "method": method,
         "links_rewritten": links_rewritten,
         "toc_generated": toc_generated
