@@ -2,12 +2,13 @@
 
 ## Executive Summary
 
-This document provides detailed performance analysis for all 6 traced doc-manager tools, including algorithmic complexity, runtime benchmarks, bottleneck identification, and optimization recommendations.
+This document provides detailed performance analysis for all 8 traced doc-manager tools, including algorithmic complexity, runtime benchmarks, bottleneck identification, and optimization recommendations.
 
 **Key Findings:**
 - Most tools are O(N) or O(N+M) - linear with file count
 - validate_docs has quadratic bottleneck: O(M×L×M) for link validation
 - detect_platform is already optimal at O(1) - 10-30ms runtime
+- Workflow orchestrators (sync, migrate) inherit bottlenecks from sub-tools
 - Cross-tool optimizations could provide 2-3x speedup
 
 ## Performance Metrics Table
@@ -20,6 +21,8 @@ This document provides detailed performance analysis for all 6 traced doc-manage
 | **docmgr_detect_changes** | O(N+S) | 2-10s | O(N+S) | Checksum calculation + symbol parsing |
 | **docmgr_validate_docs** | O(M×L×M) ⚠️ | 8-18s | O(M+L) | Link validation (quadratic) |
 | **docmgr_assess_quality** | O(M×C) → O(M) | 3-8s | O(M) | Repeated markdown parsing |
+| **docmgr_sync** | O(M×L) | 15-40s | O(N+M) | validate_docs bottleneck (inherits) |
+| **docmgr_migrate** | O(F×L) | 15-30s | O(F+L) | File processing + link rewriting |
 
 **Legend:**
 - N = Total project files (code + docs + assets)
@@ -27,6 +30,7 @@ This document provides detailed performance analysis for all 6 traced doc-manage
 - S = Code symbols (functions, classes)
 - L = Links per markdown file (avg 10-30)
 - C = Quality criteria (constant 7)
+- F = Files to migrate (subset of N)
 
 ## Detailed Analysis by Tool
 
@@ -235,6 +239,164 @@ Simplified: O(M) since 7 is constant
 
 ---
 
+### 7. docmgr_sync
+**Location:** `doc_manager_mcp/tools/workflows/sync.py`
+**Lines:** 286
+
+**Time Complexity: O(M×L)**
+- Inherits from orchestrated tools:
+  - update_baseline: O(N+M) (resync mode only)
+  - detect_changes: O(N+S)
+  - validate_docs: O(M×L×M) - BOTTLENECK
+  - assess_quality: O(M)
+
+**Total (resync mode): O(N+M+M×L×M)**
+**Simplified: O(M×L×M)** due to validate_docs quadratic bottleneck
+
+**Total (check mode): O(M×L×M)** (no baseline update)
+
+**Space Complexity: O(N+M)**
+- Stores results from each orchestrated tool
+- Accumulates report lines
+- No additional large data structures
+
+**Typical Runtime:**
+- **Check mode:** 15-30s (4-step workflow)
+- **Resync mode:** 25-40s (5-step workflow, adds 3-10s for baseline update)
+
+**Breakdown (M=50 docs, N=500 files):**
+- update_baseline (resync only): 3-10s
+- detect_changes: 2-5s
+- validate_docs: 8-18s (LARGEST - inherited bottleneck)
+- assess_quality: 3-8s
+- Overhead (report generation): <1s
+
+**Bottleneck:** validate_docs link validation (inherited)
+- sync doesn't add complexity, just orchestrates
+- Performance limited by slowest sub-tool
+
+**Optimization Opportunities:**
+1. **Parallelize validate + assess** (HIGH PRIORITY)
+   ```python
+   # Current: Sequential
+   validation_result = await validate_docs(...)
+   quality_result = await assess_quality(...)
+
+   # Proposed: Parallel
+   validation_task = validate_docs(...)
+   quality_task = assess_quality(...)
+   results = await asyncio.gather(validation_task, quality_task)
+   ```
+   Impact: 5-8s faster (run concurrently)
+
+2. **Share markdown cache** (HIGH PRIORITY)
+   ```python
+   cache = MarkdownCache()
+   validation_result = await validate_docs(..., markdown_cache=cache)
+   quality_result = await assess_quality(..., markdown_cache=cache)
+   ```
+   Impact: 30-40% faster for both tools combined
+
+3. **Incremental mode** (LOW PRIORITY)
+   - Only validate/assess affected docs (not all docs)
+   - Requires change tracking
+   - Impact: 5-10x faster for small changes
+
+**Priority:** HIGH - Workflow used frequently, easy optimizations available
+
+**Performance: 6/10** - Acceptable but inherits bottlenecks
+
+---
+
+### 8. docmgr_migrate
+**Location:** `doc_manager_mcp/tools/workflows/migrate.py`
+**Lines:** 329
+
+**Time Complexity: O(F×L)**
+- F = Files to migrate
+- L = Average links per markdown file
+
+**Breakdown:**
+- File iteration: O(F)
+- Per markdown file:
+  - Extract frontmatter: O(content_size)
+  - Compute link mappings: O(L) - Extract + map each link
+  - Rewrite links: O(L) - Replace each link
+  - Generate TOC: O(H) - Parse headings (H = headings per file)
+  - Write file: O(content_size)
+- Per non-markdown file:
+  - Copy: O(file_size)
+- Orchestrated tools:
+  - assess_quality (pre): O(M)
+  - detect_platform: O(1)
+  - validate_docs (post): O(M×L)
+  - assess_quality (post): O(M)
+
+**Total (actual migration): O(F×(L+H) + M×L)**
+**Simplified:** O(F×L) - Dominated by link operations
+
+**Space Complexity: O(F+L)**
+- Stores migrated_files list: O(F)
+- Stores link_mappings per file: O(L)
+- File content in memory: O(max_file_size)
+
+**Typical Runtime:**
+- **Dry run:** 5-10s (preview only, no file writing)
+- **Actual migration:** 15-30s (F=100 files, M=50 markdown)
+- **With link rewriting:** +20-30% overhead
+- **With TOC regeneration:** +10-15% overhead
+
+**Breakdown (F=100 files, M=50 markdown, L=10 links/file):**
+- Quality assessment (pre): 3-5s
+- Platform detection: <1s
+- File processing: 5-15s (depends on rewrite_links, regenerate_toc)
+  - Read files: 2-3s
+  - Link rewriting: 2-5s (if enabled)
+  - TOC generation: 1-2s (if enabled)
+  - Write files: 2-5s
+- Link validation (post): 2-5s
+- Quality assessment (post): 3-5s
+- **Total: 15-30s**
+
+**Bottleneck:** File processing loop (Lines 137-200)
+- 64 lines, 3-4 levels of nesting
+- Sequential file-by-file processing
+- Link rewriting is O(L) per file
+
+**Optimization Opportunities:**
+1. **Parallelize file processing** (MEDIUM PRIORITY)
+   ```python
+   import asyncio
+
+   async def process_file_async(old_file, new_file, params):
+       # Process one file
+       ...
+
+   # Process all files concurrently
+   tasks = [
+       process_file_async(old_file, new_file, params)
+       for old_file in existing_docs.rglob("*")
+   ]
+   await asyncio.gather(*tasks)
+   ```
+   Impact: 2-3x faster for large migrations (F>100)
+   Complexity: Medium (need to handle shared state)
+
+2. **Batch link mappings** (LOW PRIORITY)
+   - Compute all link mappings once, apply to all files
+   - Impact: Minor (link mappings are fast)
+
+3. **Skip unchanged files** (LOW PRIORITY)
+   - Checksum comparison before copying
+   - Impact: Faster for repeated migrations
+   - Use case: Limited (migrations are usually one-time)
+
+**Priority:** MEDIUM - Migration is less frequent, but parallelization is straightforward
+
+**Performance: 7/10** - Acceptable, linear with file count
+
+---
+
 ## Cross-Tool Optimization Opportunities
 
 ### 1. Shared File Scanning Cache
@@ -416,26 +578,49 @@ def update_baseline(...):
 
 ## Benchmark Summary
 
-**Current state (M=50 docs, N=500 files):**
+**Current state (M=50 docs, N=500 files, F=100 files to migrate):**
+
+**Individual Tools:**
 - init: 5s
 - update_baseline: 6s
 - detect_platform: 20ms ⚡
 - detect_changes: 5s
 - validate_docs: 12s ⚠️ (SLOWEST)
 - assess_quality: 5s
-- **Total workflow: ~33s**
+- sync (check): 22s
+- sync (resync): 32s
+- migrate (dry run): 7s
+- migrate (actual): 20s
+
+**Workflow Totals:**
+- Basic workflow (detect + validate + assess): ~22s
+- Full sync (check mode): ~22s
+- Full sync (resync mode): ~32s
+- Migration workflow: 20-30s
 
 **After HIGH priority optimizations:**
+
+**Individual Tools:**
 - init: 3s (40% faster - shared scan)
 - update_baseline: 4s (33% faster - shared scan)
 - detect_platform: 20ms (no change)
 - detect_changes: 2s (60% faster - path index)
 - validate_docs: 4s (67% faster - link index + cache) ✅
 - assess_quality: 3s (40% faster - cache)
-- **Total workflow: ~16s (51% faster)**
+- sync (check): 11s (50% faster - parallel validate+assess, cache)
+- sync (resync): 18s (44% faster)
+- migrate (actual): 12s (40% faster - parallel file processing)
+
+**Workflow Totals:**
+- Basic workflow: ~9s (59% faster)
+- Full sync (check): ~11s (50% faster)
+- Full sync (resync): ~18s (44% faster)
+- Migration workflow: 12-15s (40% faster)
 
 **After ALL optimizations:**
-- **Total workflow: ~8-10s (70-75% faster)**
+- Basic workflow: ~5-6s (73-77% faster)
+- Full sync workflows: ~8-12s (63-73% faster)
+- Migration workflow: ~8-10s (60-67% faster)
 
 ---
 

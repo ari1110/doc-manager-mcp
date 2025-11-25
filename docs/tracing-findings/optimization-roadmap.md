@@ -2,15 +2,15 @@
 
 ## Executive Summary
 
-This document provides a prioritized, actionable roadmap for improving doc-manager based on comprehensive tracing of 6 tools (75% coverage). Improvements are organized by priority, effort, and impact.
+This document provides a prioritized, actionable roadmap for improving doc-manager based on comprehensive tracing of all 8 tools (100% coverage). Improvements are organized by priority, effort, and impact.
 
 **Quick Stats:**
-- **2 CRITICAL** issues (file locking, hardcoded paths)
-- **7 HIGH priority** optimizations (performance + complexity)
-- **5 MEDIUM priority** improvements (code quality)
+- **3 CRITICAL** issues (file locking, hardcoded paths, preserve_history)
+- **10 HIGH priority** optimizations (performance + complexity + workflows)
+- **6 MEDIUM priority** improvements (code quality)
 - **3 LOW priority** enhancements (polish)
 
-**Total effort estimate:** 40-60 hours to implement all improvements
+**Total effort estimate:** 44-59 hours to implement all improvements
 **Expected impact:** 70-75% performance improvement, 2-point code quality increase
 
 ---
@@ -172,9 +172,73 @@ def _map_to_affected_docs(changed_files, category, project_path):
 
 ---
 
+### 3. Implement preserve_history in migrate
+**Tool:** docmgr_migrate
+**Issue:** Git history LOST for all migrated files
+**Risk Level:** HIGH - Permanent history loss
+
+**Problem:**
+```python
+# doc_manager_mcp/tools/workflows/migrate.py:276-282
+# Parameter exists but NOT IMPLEMENTED
+git_mv_count = len([f for f in moved_files if f["method"] == "git mv"])
+
+# But method is ALWAYS "copy" or "preview" (Lines 198, 276)
+moved_files.append({
+    "old": str(old_file),
+    "new": str(new_file),
+    "method": "copy"  # ❌ Never uses "git mv"
+})
+```
+
+Code references `git mv` but only uses `shutil.copy2`, so git history is lost for all migrated files.
+
+**Solution:**
+Implement git mv using subprocess:
+
+```python
+import subprocess
+
+# In file processing loop (migrate.py:137-200)
+if params.preserve_history and is_git_repo(project_path):
+    # Use git mv to preserve history
+    try:
+        subprocess.run(
+            ['git', 'mv', str(old_file), str(new_file)],
+            cwd=project_path,
+            check=True,
+            capture_output=True
+        )
+        method = "git mv"
+    except subprocess.CalledProcessError:
+        # Fallback to copy if git mv fails
+        shutil.copy2(old_file, new_file)
+        method = "copy"
+else:
+    # Standard copy (no git)
+    shutil.copy2(old_file, new_file)
+    method = "copy"
+
+moved_files.append({..., "method": method})
+```
+
+**Effort:** 2-3 hours
+**Impact:** Preserves git history for migrations
+**Timeline:** This week
+
+**Implementation Steps:**
+1. Add helper: `is_git_repo(project_path)` - Check if .git exists
+2. Update file processing loop to use subprocess for git mv
+3. Add fallback to shutil.copy2 if git mv fails
+4. Update method tracking in moved_files
+5. Add tests: Verify git history preserved after migration
+6. Document in migration tool description
+
+---
+
 ## HIGH Priority (P1) - Fix Within 1 Month
 
-### 3. Build Link Index for validate_docs
+### 4. Build Link Index for validate_docs
 **Tool:** docmgr_validate_docs
 **Issue:** Quadratic complexity O(M×L×M) in link validation
 **Performance Impact:** 5-10x faster link validation
@@ -225,7 +289,7 @@ for md_file in markdown_files:              # M iterations
 
 ---
 
-### 4. Cache Markdown Parsing (validate_docs + assess_quality)
+### 5. Cache Markdown Parsing (validate_docs + assess_quality)
 **Tools:** docmgr_validate_docs, docmgr_assess_quality
 **Issue:** Each tool parses files multiple times
 **Performance Impact:** 30-50% faster for both tools
@@ -296,7 +360,7 @@ quality_results = assess_quality(..., markdown_cache=cache)
 
 ---
 
-### 5. Extract Shared File Scanning Logic
+### 6. Extract Shared File Scanning Logic
 **Tools:** docmgr_init, docmgr_update_baseline, docmgr_detect_changes
 **Issue:** Duplicate file scanning code in 3 tools
 **Impact:** Reduces duplication, enables shared caching
@@ -396,7 +460,7 @@ def _should_exclude(path: str, patterns: List[str]) -> bool:
 
 ---
 
-### 6. Extract Shared Exclude Pattern Building
+### 7. Extract Shared Exclude Pattern Building
 **Tools:** docmgr_init, docmgr_update_baseline, docmgr_detect_changes
 **Issue:** Duplicate exclude pattern logic in 3 tools
 **Impact:** Consistent behavior across tools
@@ -464,7 +528,7 @@ def _parse_gitignore(gitignore_path: Path) -> List[str]:
 
 ---
 
-### 7. Modularize validate_docs (Extract 6 Validators)
+### 8. Modularize validate_docs (Extract 6 Validators)
 **Tool:** docmgr_validate_docs
 **Issue:** 573 lines in single file, violates Single Responsibility Principle
 **Impact:** Reduces complexity from 5→3, improves maintainability
@@ -528,7 +592,7 @@ def validate_docs(
 
 ---
 
-### 8. Modularize assess_quality (Extract 7 Analyzers)
+### 9. Modularize assess_quality (Extract 7 Analyzers)
 **Tool:** docmgr_assess_quality
 **Issue:** 771 lines in single file, 2nd largest tool
 **Impact:** Reduces complexity from 5→3
@@ -558,7 +622,7 @@ quality/
 
 ---
 
-### 9. Path Index for detect_changes (Like dependency tracking)
+### 10. Path Index for detect_changes (Like dependency tracking)
 **Tool:** docmgr_detect_changes
 **Issue:** Slow affected doc mapping
 **Performance Impact:** 2-3x faster affected doc mapping
@@ -603,9 +667,168 @@ def map_to_affected_docs(changed_files, config, path_index):
 
 ---
 
+### 11. Parallelize validate_docs + assess_quality in sync
+**Tool:** docmgr_sync
+**Issue:** Sequential execution of independent analysis steps
+**Performance Impact:** 2x faster check/resync mode
+
+**Current Flow:**
+```python
+# doc_manager_mcp/tools/workflows/sync.py:100-150
+# Sequential execution - 4-5 steps run one after another
+changes = detect_changes(...)       # Step 1
+validate = validate_docs(...)       # Step 2 (independent!)
+quality = assess_quality(...)       # Step 3 (independent!)
+```
+
+Both validate_docs and assess_quality analyze the same markdown files independently. They can run concurrently.
+
+**Solution:**
+```python
+import asyncio
+
+async def run_sync_check(params):
+    # Step 1: Change detection (must run first)
+    changes = await detect_changes_async(...)
+
+    # Steps 2-3: Run validation + quality in parallel
+    validate_task = validate_docs_async(...)
+    quality_task = assess_quality_async(...)
+
+    validate, quality = await asyncio.gather(validate_task, quality_task)
+
+    return build_report(changes, validate, quality)
+```
+
+**Combined with markdown cache (item 5):** Massive speedup since both tools share parsed data and run concurrently.
+
+**Effort:** 2 hours
+**Impact:** sync 40-50% faster overall
+**Timeline:** Week 2
+
+---
+
+### 12. Extract File Processing Helpers (migrate)
+**Tool:** docmgr_migrate
+**Issue:** 64-line file processing loop with 3-4 nesting levels
+**Impact:** Reduces complexity from 4→3
+
+**Current Problem:**
+```python
+# doc_manager_mcp/tools/workflows/migrate.py:137-200
+# 64-line loop with deep nesting - hard to test/maintain
+for old_file in existing_docs.rglob("*"):
+    if old_file.suffix.lower() in ['.md', '.markdown']:
+        content = old_file.read_text()
+
+        # Extract frontmatter (10 lines)
+        frontmatter_dict, body = extract_frontmatter(content)
+
+        if params.rewrite_links:  # Nested
+            link_mappings = compute_link_mappings(...)
+            if link_mappings:  # Double nested
+                body = rewrite_links_in_content(body, link_mappings)
+
+        if params.regenerate_toc:  # Nested
+            toc = generate_toc(body, max_depth=3)
+
+        if not params.dry_run:  # Nested
+            new_file.write_text(final_content)
+```
+
+**Solution:**
+Extract 3 helper functions:
+
+```python
+# workflows/migrate_helpers.py
+def process_markdown_file(
+    old_file: Path,
+    new_file: Path,
+    params: MigrateParams,
+    link_mappings: dict
+) -> dict:
+    """Process single markdown file - returns result dict."""
+    content = old_file.read_text()
+    frontmatter, body = extract_frontmatter(content)
+
+    if params.rewrite_links:
+        body = _rewrite_links(body, link_mappings)
+
+    if params.regenerate_toc:
+        body = _add_toc(body)
+
+    if not params.dry_run:
+        _write_markdown_file(new_file, frontmatter, body, params.preserve_history)
+
+    return {
+        "old": str(old_file),
+        "new": str(new_file),
+        "method": "git mv" if params.preserve_history else "copy"
+    }
+
+def _rewrite_links(body: str, mappings: dict) -> str:
+    """Rewrite links in markdown body."""
+    # Extracted from nested if
+    ...
+
+def _add_toc(body: str) -> str:
+    """Add table of contents to markdown body."""
+    # Extracted from nested if
+    ...
+```
+
+Main loop becomes:
+```python
+# Clean 15-line loop
+for old_file in existing_docs.rglob("*"):
+    if old_file.suffix.lower() in ['.md', '.markdown']:
+        result = process_markdown_file(old_file, new_file, params, link_mappings)
+        moved_files.append(result)
+```
+
+**Effort:** 2-3 hours
+**Impact:** Complexity 4→3, much easier to test individual steps
+**Timeline:** Week 2-3
+
+---
+
+### 13. Parallelize File Processing (migrate)
+**Tool:** docmgr_migrate
+**Issue:** Sequential file processing
+**Performance Impact:** 3-4x faster for large migrations
+
+**Constraint:** Can only parallelize when preserve_history=False (git mv must be sequential)
+
+**Solution:**
+```python
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+async def migrate_files_parallel(files, params):
+    if params.preserve_history:
+        # Must use git mv sequentially
+        return migrate_files_sequential(files, params)
+
+    # Parallelize file copying
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        tasks = [
+            executor.submit(process_markdown_file, f, params)
+            for f in files
+        ]
+        results = [task.result() for task in tasks]
+
+    return results
+```
+
+**Effort:** 3-4 hours
+**Impact:** migrate 3-4x faster for large projects (when preserve_history=False)
+**Timeline:** Week 3
+
+---
+
 ## MEDIUM Priority (P2) - Fix Within 3 Months
 
-### 10. Parallelize Validators (validate_docs)
+### 14. Parallelize Validators (validate_docs)
 **Tool:** docmgr_validate_docs
 **Performance Impact:** 2-3x faster
 
@@ -632,18 +855,18 @@ async def validate_docs_async(...):
 
 ---
 
-### 11. Parallelize Analyzers (assess_quality)
+### 15. Parallelize Analyzers (assess_quality)
 **Tool:** docmgr_assess_quality
 **Performance Impact:** 2-3x faster
 
-Similar to #10, run 7 analyzers concurrently.
+Similar to #14, run 7 analyzers concurrently.
 
 **Effort:** 2 hours (after modularization)
 **Timeline:** Month 2
 
 ---
 
-### 12. Split `_update_repo_baseline()` Function
+### 16. Split `_update_repo_baseline()` Function
 **Tool:** docmgr_update_baseline
 **Issue:** 109-line function with 5 responsibilities
 **Impact:** Improves readability
@@ -663,7 +886,7 @@ def _update_repo_baseline(project_path, ...):
 
 ---
 
-### 13. Extract Categorization Patterns (detect_changes)
+### 17. Extract Categorization Patterns (detect_changes)
 **Tool:** docmgr_detect_changes
 **Issue:** 15+ hardcoded patterns in `_categorize_changed_file()`
 **Impact:** Easier to extend
@@ -685,7 +908,7 @@ FILE_CATEGORY_PATTERNS = {
 
 ---
 
-### 14. Incremental Validation (Only Changed Docs)
+### 18. Incremental Validation (Only Changed Docs)
 **Tool:** docmgr_validate_docs
 **Performance Impact:** 5-10x faster for incremental changes
 **Complexity:** High - Requires change tracking
@@ -708,7 +931,7 @@ def validate_docs(docs_path, incremental=False, baseline=None):
 
 ---
 
-### 15. Baseline Loading Cache
+### 19. Baseline Loading Cache
 **Tools:** detect_changes, sync, update_baseline
 **Performance Impact:** Minor (baselines are small)
 
@@ -727,7 +950,7 @@ def load_baseline(baseline_path: Path, baseline_type: str):
 
 ## LOW Priority (P3) - Backlog
 
-### 16. Extract Platform Markers to Config
+### 20. Extract Platform Markers to Config
 **Tool:** docmgr_detect_platform
 **Impact:** Minor - Slightly cleaner code
 
@@ -736,7 +959,7 @@ def load_baseline(baseline_path: Path, baseline_type: str):
 
 ---
 
-### 17. Document Heuristic Thresholds
+### 21. Document Heuristic Thresholds
 **Tool:** docmgr_assess_quality
 **Impact:** Makes scoring more transparent
 
@@ -748,7 +971,7 @@ Add `quality-thresholds.yml` configuration.
 
 ---
 
-### 18. Tune Quality Heuristics
+### 22. Tune Quality Heuristics
 **Tool:** docmgr_assess_quality
 **Impact:** More accurate scoring (ongoing)
 
@@ -760,29 +983,33 @@ Add `quality-thresholds.yml` configuration.
 ## Implementation Phases
 
 ### Phase 1: Critical Fixes (Week 1)
-**Effort:** 4-7 hours
+**Effort:** 7-10 hours
 **Goals:** Fix data corruption + correctness issues
 
 1. Add file locking to update_baseline (30 min)
 2. Make doc paths configurable in detect_changes (4-6 hours)
+3. Implement preserve_history in migrate (2-3 hours)
 
-**Deliverable:** No more data corruption, accurate results for all layouts
+**Deliverable:** No more data corruption, accurate results for all layouts, git history preserved in migrations
 
 ---
 
 ### Phase 2: High-Impact Performance (Weeks 2-3)
-**Effort:** 14-18 hours
+**Effort:** 21-28 hours
 **Goals:** 3-5x performance improvement
 
-3. Build link index for validate_docs (2-3 hours)
-4. Cache markdown parsing (2-3 hours)
-5. Extract shared file scanning (2-3 hours)
-6. Extract shared exclude patterns (1-2 hours)
-7. Modularize validate_docs (3-4 hours)
-8. Modularize assess_quality (3-4 hours)
-9. Path index for detect_changes (2-3 hours)
+4. Build link index for validate_docs (2-3 hours)
+5. Cache markdown parsing (2-3 hours)
+6. Extract shared file scanning (2-3 hours)
+7. Extract shared exclude patterns (1-2 hours)
+8. Modularize validate_docs (3-4 hours)
+9. Modularize assess_quality (3-4 hours)
+10. Path index for detect_changes (2-3 hours)
+11. Parallelize validate_docs + assess_quality in sync (2 hours)
+12. Extract file processing helpers in migrate (2-3 hours)
+13. Parallelize file processing in migrate (3-4 hours)
 
-**Deliverable:** Tools run 3-5x faster, complexity reduced from 5→3
+**Deliverable:** Tools run 3-5x faster, complexity reduced from 5→3, sync and migrate optimized
 
 ---
 
@@ -790,10 +1017,10 @@ Add `quality-thresholds.yml` configuration.
 **Effort:** 8-10 hours
 **Goals:** Improve maintainability
 
-10. Parallelize validators (2 hours)
-11. Parallelize analyzers (2 hours)
-12. Split `_update_repo_baseline()` (2 hours)
-13. Extract categorization patterns (2-3 hours)
+14. Parallelize validators (2 hours)
+15. Parallelize analyzers (2 hours)
+16. Split `_update_repo_baseline()` (2 hours)
+17. Extract categorization patterns (2-3 hours)
 
 **Deliverable:** Code quality 7.3→8.5, 2-3x additional speedup
 
@@ -803,8 +1030,8 @@ Add `quality-thresholds.yml` configuration.
 **Effort:** 5-7 hours
 **Goals:** Incremental validation, polish
 
-14. Incremental validation (4-6 hours)
-15. Baseline loading cache (1 hour)
+18. Incremental validation (4-6 hours)
+19. Baseline loading cache (1 hour)
 
 **Deliverable:** 5-10x faster incremental validation
 
@@ -814,9 +1041,9 @@ Add `quality-thresholds.yml` configuration.
 **Effort:** 3-4 hours
 **Goals:** Configuration, tuning
 
-16. Extract platform markers (1 hour)
-17. Document heuristic thresholds (1-2 hours)
-18. Tune quality heuristics (ongoing)
+20. Extract platform markers (1 hour)
+21. Document heuristic thresholds (1-2 hours)
+22. Tune quality heuristics (ongoing)
 
 **Deliverable:** More transparent, configurable quality assessment
 

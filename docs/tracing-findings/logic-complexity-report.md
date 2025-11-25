@@ -2,13 +2,14 @@
 
 ## Executive Summary
 
-This document provides detailed logic complexity analysis for all 6 traced doc-manager tools, including complexity ratings, code structure metrics, maintainability assessment, and refactoring recommendations.
+This document provides detailed logic complexity analysis for all 8 traced doc-manager tools, including complexity ratings, code structure metrics, maintainability assessment, and refactoring recommendations.
 
 **Key Findings:**
 - 2 tools rated "Very Complex" (5/10): validate_docs, assess_quality
-- 1 tool rated "Complex" (4/10): detect_changes
-- Average complexity: 3.5/10 - Moderate overall
+- 2 tools rated "Complex" (4/10): detect_changes, migrate
+- Average complexity: 3.4/10 - Moderate overall
 - Main complexity drivers: Large files (500+ lines), hardcoded values, multiple responsibilities
+- Workflow orchestrators generally have moderate complexity (3-4/10)
 
 **Complexity Rating Scale:**
 - **1 (Trivial)** - Single responsibility, <50 lines, no nesting
@@ -29,8 +30,10 @@ This document provides detailed logic complexity analysis for all 6 traced doc-m
 | **docmgr_detect_changes** | 4 (Complex) | 732 | 15+ | 3-4 levels | ~30 | Hardcoded paths + patterns |
 | **docmgr_validate_docs** | 5 (Very Complex) | 573 | 13 | 3-4 levels | ~45 | 6 validators in one file |
 | **docmgr_assess_quality** | 5 (Very Complex) | 771 | 10+ | 3-4 levels | ~40 | 7 analyzers + fuzzy logic |
+| **docmgr_sync** | 3 (Moderate) | 286 | 1 | 2-3 levels | ~10 | step_offset handling, report building |
+| **docmgr_migrate** | 4 (Complex) | 329 | 1 | 3-4 levels | ~20 | File processing loop (64 lines, 3-4 nesting) |
 
-**Average Complexity: 3.5/10** (Moderate)
+**Average Complexity: 3.4/10** (Moderate)
 
 ---
 
@@ -570,6 +573,219 @@ def analyze_relevance(docs_path):
    ```
 
 4. **Tune heuristics** based on feedback (ongoing)
+
+---
+
+### 7. docmgr_sync
+**Location:** `doc_manager_mcp/tools/workflows/sync.py`
+**Complexity Rating: 3/10 (Moderate)**
+
+#### Metrics
+- **Lines:** 286
+- **Functions:** 1 main (async)
+- **Orchestrated tools:** 4
+- **Modes:** 2 (check, resync)
+- **Conditional branches:** ~10 (mode checks, existence checks, result checks)
+- **Nesting:** 2-3 levels (if/else + tool calls)
+
+#### Structure
+```
+sync()                          [286 lines] - Main orchestrator
+├── Validation & setup          [~30 lines]
+├── Step 1 (resync): update_baseline  (optional)
+├── Step 1/2: detect_changes    [orchestrated]
+├── Step 2/3: affected_docs     [simple mapping]
+├── Step 3/4: validate_docs     [orchestrated]
+├── Step 4/5: assess_quality    [orchestrated]
+├── Step 5/6: recommendations   [report building]
+└── Summary                     [~30 lines]
+```
+
+#### Code Quality: 8/10
+**Strengths:**
+✅ Single Responsibility: Orchestrates other tools, doesn't duplicate their logic
+✅ Clear mode separation with early branching
+✅ Comprehensive error handling
+✅ Good use of async/await for sub-tool calls
+✅ Descriptive docstring with examples
+
+**Minor Issues:**
+⚠️ `step_offset` variable feels like a workaround (could use separate functions for each mode)
+⚠️ Report line accumulation could be encapsulated in a ReportBuilder class
+⚠️ Some repetition in report formatting
+
+#### Example - step_offset Handling
+```python
+# doc_manager_mcp/tools/workflows/sync.py:100-127
+step_offset = 0
+if params.mode == "resync":
+    lines.append("## Step 1: Updating Baselines")
+    # ... update baselines ...
+    step_offset = 1  # All subsequent step numbers offset by 1
+
+# Step numbering becomes mode-dependent
+lines.append(f"## Step {1 + step_offset}: Change Detection")
+lines.append(f"## Step {2 + step_offset}: Affected Documentation")
+lines.append(f"## Step {3 + step_offset}: Current Documentation Status")
+# ...
+```
+
+**Why this adds complexity:**
+- Mode-dependent step numbering throughout
+- Have to remember offset when adding new steps
+- Could be cleaner with separate functions
+
+#### Recommendations
+**Priority: LOW (already moderate complexity)**
+1. **Refactor mode handling** (2-3 hours):
+   ```python
+   def _run_check_mode(...):
+       # 4-step workflow, no offset needed
+       ...
+
+   def _run_resync_mode(...):
+       # 5-step workflow with baseline update
+       ...
+
+   def sync(...):
+       if params.mode == "check":
+           return _run_check_mode(...)
+       else:
+           return _run_resync_mode(...)
+   ```
+
+2. **Extract report builder** (1-2 hours):
+   ```python
+   class SyncReportBuilder:
+       def add_header(...)
+       def add_conventions(...)
+       def add_step_changes(...)
+       def build() -> str
+   ```
+
+---
+
+### 8. docmgr_migrate
+**Location:** `doc_manager_mcp/tools/workflows/migrate.py`
+**Complexity Rating: 4/10 (Complex)**
+
+#### Metrics
+- **Lines:** 329
+- **Functions:** 1 main (async) + 6 imported link transform helpers
+- **Orchestrated tools:** 3 (assess_quality, detect_platform, validate_docs)
+- **Modes:** 2 (dry run, actual migration)
+- **Nesting:** 3-4 levels (if/for/if/for in file processing loop)
+- **Cyclomatic Complexity:** ~20
+- **File processing:** Loop with markdown special handling
+
+#### Structure
+```
+migrate()                                   [329 lines] - Main orchestrator
+├── Validation & setup                      [~40 lines]
+├── Step 1: assess_quality (pre)            [orchestrated]
+├── Step 2: detect_platform                 [orchestrated]
+├── Step 3: File processing loop            [64 lines] ⚠️ COMPLEX
+│   ├── For each file in source             [loop]
+│   │   ├── If markdown:                    [nested if]
+│   │   │   ├── Extract frontmatter
+│   │   │   ├── If rewrite_links:           [nested if]
+│   │   │   │   └── Compute + apply mappings
+│   │   │   ├── If regenerate_toc:          [nested if]
+│   │   │   │   └── Generate + insert TOC
+│   │   │   └── Write file (if not dry run)
+│   │   └── Else (non-markdown):
+│   │       └── Copy file (if not dry run)
+│   └── Track moved file
+├── Step 4: validate_docs (post)            [orchestrated, if not dry run]
+├── Step 5: assess_quality (post)           [orchestrated, if not dry run]
+└── Summary + next steps                    [~60 lines]
+```
+
+#### Code Quality: 7/10
+**Strengths:**
+✅ Comprehensive 5-step migration workflow
+✅ Dry run mode for safe preview
+✅ Reuses link transform utilities
+✅ Good error handling
+
+**Issues:**
+🔴 **File processing loop complexity** (Lines 137-200)
+- 64 lines with 3-4 levels of nesting
+- Multiple conditional branches (dry_run, markdown, rewrite_links, regenerate_toc)
+- Could be extracted to helper functions
+
+⚠️ **No git mv implementation** - preserve_history parameter exists but not implemented
+⚠️ **Link rewriting assumes relative paths** - May not handle all edge cases
+⚠️ **No rollback on failure** - Partial migrations leave inconsistent state
+
+#### Example - File Processing Loop Complexity
+```python
+# doc_manager_mcp/tools/workflows/migrate.py:137-200
+for old_file in existing_docs.rglob("*"):  # Loop 1
+    if not old_file.is_file():
+        continue
+
+    relative_path = old_file.relative_to(existing_docs)
+    new_file = new_docs / relative_path
+
+    if old_file.suffix.lower() in ['.md', '.markdown']:  # If 1
+        content = old_file.read_text(encoding='utf-8')
+        frontmatter_dict, body = extract_frontmatter(content)
+
+        if params.rewrite_links:  # If 2 (nested)
+            link_mappings = compute_link_mappings(...)
+            if link_mappings:  # If 3 (nested)
+                body = rewrite_links_in_content(body, link_mappings)
+                links_rewritten += 1
+
+        if params.regenerate_toc and '<!-- TOC -->' in content:  # If 2 (nested)
+            toc = generate_toc(body, max_depth=3)
+            body = update_or_insert_toc(body, toc)
+            tocs_generated += 1
+
+        final_content = preserve_frontmatter(frontmatter_dict, body) if frontmatter_dict else body
+
+        if not params.dry_run:  # If 3 (nested)
+            new_file.write_text(final_content, encoding='utf-8')
+    else:  # Else 1
+        if not params.dry_run:  # If 2 (nested)
+            shutil.copy2(old_file, new_file)
+
+    moved_files.append({...})
+```
+
+**Why this is complex:**
+- 64 lines in one loop
+- 3-4 levels of nesting
+- 5 distinct responsibilities: read, extract, rewrite, generate TOC, write
+- Multiple mode checks (dry_run, rewrite_links, regenerate_toc)
+
+#### Recommendations
+**Priority: HIGH**
+1. **Extract file processing helpers** (2-3 hours):
+   ```python
+   def _process_markdown_file(old_file, new_file, params, stats):
+       # Lines 148-189
+       ...
+
+   def _process_non_markdown_file(old_file, new_file, params):
+       # Lines 190-194
+       ...
+
+   def _process_file(old_file, existing_docs, new_docs, params, stats):
+       # Lines 137-200 becomes:
+       relative_path = old_file.relative_to(existing_docs)
+       new_file = new_docs / relative_path
+
+       if old_file.suffix.lower() in ['.md', '.markdown']:
+           return _process_markdown_file(old_file, new_file, params, stats)
+       else:
+           return _process_non_markdown_file(old_file, new_file, params)
+   ```
+
+2. **Implement preserve_history** (2-3 hours) - See CRITICAL issues
+3. **Implement rollback/transaction** (3-4 hours)
+4. **Improve link rewriting** (2-3 hours) - Handle edge cases
 
 ---
 
