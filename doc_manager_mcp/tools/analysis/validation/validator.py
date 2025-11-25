@@ -18,6 +18,7 @@ from doc_manager_mcp.core import (
     validate_against_conventions,
 )
 from doc_manager_mcp.indexing.analysis.code_validator import CodeValidator
+from doc_manager_mcp.core.markdown_cache import MarkdownCache
 from doc_manager_mcp.indexing.analysis.tree_sitter import SymbolIndexer
 from doc_manager_mcp.indexing.link_index import build_link_index
 from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
@@ -26,13 +27,18 @@ from doc_manager_mcp.models import ValidateDocsInput
 from .helpers import validate_code_examples, validate_documented_symbols
 
 
-def _extract_links(content: str, file_path: Path) -> list[dict[str, Any]]:
+def _extract_links(content: str, file_path: Path, markdown_cache: MarkdownCache | None = None) -> list[dict[str, Any]]:
     """Extract all links from markdown content."""
-    parser = MarkdownParser()
     links = []
 
-    # Extract markdown links using MarkdownParser
-    md_links = parser.extract_links(content)
+    # Extract markdown links using cache or parser
+    if markdown_cache:
+        parsed = markdown_cache.parse(file_path, content)
+        md_links = parsed.links
+    else:
+        parser = MarkdownParser()
+        md_links = parser.extract_links(content)
+
     for link in md_links:
         links.append({
             "text": link["text"],
@@ -136,7 +142,7 @@ def _check_internal_link(link_url: str, file_path: Path, docs_root: Path, link_i
     return None
 
 
-def _check_broken_links(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
+def _check_broken_links(docs_path: Path, project_path: Path, include_root_readme: bool = False, markdown_cache: MarkdownCache | None = None) -> list[dict[str, Any]]:
     """Check for broken internal and external links using link index for performance."""
     issues = []
     markdown_files = find_markdown_files(
@@ -154,7 +160,7 @@ def _check_broken_links(docs_path: Path, project_path: Path, include_root_readme
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            links = _extract_links(content, md_file)
+            links = _extract_links(content, md_file, markdown_cache)
 
             for link in links:
                 # Check internal links only using link index
@@ -182,13 +188,18 @@ def _check_broken_links(docs_path: Path, project_path: Path, include_root_readme
     return issues
 
 
-def _extract_images(content: str, file_path: Path) -> list[dict[str, Any]]:
+def _extract_images(content: str, file_path: Path, markdown_cache: MarkdownCache | None = None) -> list[dict[str, Any]]:
     """Extract all images from markdown content."""
-    parser = MarkdownParser()
     images = []
 
-    # Extract markdown images using MarkdownParser
-    md_images = parser.extract_images(content)
+    # Extract markdown images using cache or parser
+    if markdown_cache:
+        parsed = markdown_cache.parse(file_path, content)
+        md_images = parsed.images
+    else:
+        parser = MarkdownParser()
+        md_images = parser.extract_images(content)
+
     for img in md_images:
         images.append({
             "alt": img["alt"],
@@ -213,7 +224,7 @@ def _extract_images(content: str, file_path: Path) -> list[dict[str, Any]]:
     return images
 
 
-def _validate_assets(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
+def _validate_assets(docs_path: Path, project_path: Path, include_root_readme: bool = False, markdown_cache: MarkdownCache | None = None) -> list[dict[str, Any]]:
     """Validate asset links and alt text."""
     issues = []
     markdown_files = find_markdown_files(
@@ -228,7 +239,7 @@ def _validate_assets(docs_path: Path, project_path: Path, include_root_readme: b
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            images = _extract_images(content, md_file)
+            images = _extract_images(content, md_file, markdown_cache)
 
             for img in images:
                 # Check for missing alt text
@@ -286,13 +297,18 @@ def _validate_assets(docs_path: Path, project_path: Path, include_root_readme: b
     return issues
 
 
-def _extract_code_blocks(content: str, file_path: Path) -> list[dict[str, Any]]:
+def _extract_code_blocks(content: str, file_path: Path, markdown_cache: MarkdownCache | None = None) -> list[dict[str, Any]]:
     """Extract code blocks from markdown content."""
-    parser = MarkdownParser()
     code_blocks = []
 
-    # Extract fenced code blocks using MarkdownParser
-    blocks = parser.extract_code_blocks(content)
+    # Extract fenced code blocks using cache or parser
+    if markdown_cache:
+        parsed = markdown_cache.parse(file_path, content)
+        blocks = parsed.code_blocks
+    else:
+        parser = MarkdownParser()
+        blocks = parser.extract_code_blocks(content)
+
     for block in blocks:
         code_blocks.append({
             "language": block["language"] or "plaintext",
@@ -304,7 +320,7 @@ def _extract_code_blocks(content: str, file_path: Path) -> list[dict[str, Any]]:
     return code_blocks
 
 
-def _validate_code_snippets(docs_path: Path, project_path: Path, include_root_readme: bool = False) -> list[dict[str, Any]]:
+def _validate_code_snippets(docs_path: Path, project_path: Path, include_root_readme: bool = False, markdown_cache: MarkdownCache | None = None) -> list[dict[str, Any]]:
     """Extract and validate code snippets using TreeSitter."""
     issues = []
     validator = CodeValidator()
@@ -320,7 +336,7 @@ def _validate_code_snippets(docs_path: Path, project_path: Path, include_root_re
             with open(md_file, encoding='utf-8') as f:
                 content = f.read()
 
-            code_blocks = _extract_code_blocks(content, md_file)
+            code_blocks = _extract_code_blocks(content, md_file, markdown_cache)
 
             for block in code_blocks:
                 # Normalize language names for TreeSitter
@@ -571,6 +587,9 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
         include_root_readme = config.get('include_root_readme', False) if config else False
         conventions = load_conventions(project_path)
 
+        # Create markdown cache for performance (eliminates redundant parsing)
+        markdown_cache = MarkdownCache()
+
         # Run validation checks
         all_issues = []
 
@@ -580,15 +599,15 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
             all_issues.extend(convention_issues)
 
         if params.check_links:
-            link_issues = _check_broken_links(docs_path, project_path, include_root_readme)
+            link_issues = _check_broken_links(docs_path, project_path, include_root_readme, markdown_cache)
             all_issues.extend(link_issues)
 
         if params.check_assets:
-            asset_issues = _validate_assets(docs_path, project_path, include_root_readme)
+            asset_issues = _validate_assets(docs_path, project_path, include_root_readme, markdown_cache)
             all_issues.extend(asset_issues)
 
         if params.check_snippets:
-            snippet_issues = _validate_code_snippets(docs_path, project_path, include_root_readme)
+            snippet_issues = _validate_code_snippets(docs_path, project_path, include_root_readme, markdown_cache)
             all_issues.extend(snippet_issues)
 
         if params.validate_code_syntax:
