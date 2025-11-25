@@ -109,7 +109,7 @@ async def initialize_memory(params: InitializeMemoryInput, ctx=None) -> str | di
             await ctx.info("Initializing memory system...")
 
         # Build exclude patterns using shared logic
-        from doc_manager_mcp.core.file_scanner import build_exclude_patterns
+        from doc_manager_mcp.core.patterns import build_exclude_patterns
         exclude_patterns, gitignore_spec = build_exclude_patterns(project_path)
 
         if ctx:

@@ -48,7 +48,8 @@ def _load_baseline(project_path: Path) -> dict[str, Any] | None:
 
 def _get_changed_files_from_checksums(project_path: Path, baseline: dict[str, Any]) -> list[dict[str, str]]:
     """Compare current checksums with baseline to find changed files."""
-    from doc_manager_mcp.core.file_scanner import scan_project_files, build_exclude_patterns
+    from doc_manager_mcp.core.file_scanner import scan_project_files
+    from doc_manager_mcp.core.patterns import build_exclude_patterns
 
     changed_files = []
     baseline_checksums = baseline.get("files", {})

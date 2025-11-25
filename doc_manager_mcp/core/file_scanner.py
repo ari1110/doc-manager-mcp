@@ -13,45 +13,12 @@ Provides unified file scanning with:
 from pathlib import Path
 from typing import Iterator
 
-from doc_manager_mcp.constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
+from doc_manager_mcp.constants import MAX_FILES
 from doc_manager_mcp.core import (
-    load_config,
     matches_exclude_pattern,
-    parse_gitignore,
     validate_path_boundary,
 )
-
-
-def build_exclude_patterns(project_path: Path) -> tuple[list[str], object | None]:
-    """Build exclude patterns from config, gitignore, and defaults.
-
-    Priority order: user patterns > gitignore > default patterns
-
-    Args:
-        project_path: Project root directory
-
-    Returns:
-        Tuple of (exclude_patterns list, gitignore_spec object or None)
-    """
-    # Load config
-    config = load_config(project_path)
-    user_excludes = config.get("exclude", []) if config else []
-    use_gitignore = config.get("use_gitignore", False) if config else False
-
-    # Build exclude patterns with correct priority
-    # User patterns are checked first (highest priority)
-    exclude_patterns = []
-    exclude_patterns.extend(user_excludes)
-
-    # Parse .gitignore if enabled (middle priority)
-    gitignore_spec = None
-    if use_gitignore:
-        gitignore_spec = parse_gitignore(project_path)
-
-    # Built-in defaults added last (lowest priority)
-    exclude_patterns.extend(DEFAULT_EXCLUDE_PATTERNS)
-
-    return exclude_patterns, gitignore_spec
+from doc_manager_mcp.core.patterns import build_exclude_patterns
 
 
 def scan_project_files(
