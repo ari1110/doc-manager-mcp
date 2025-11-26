@@ -160,7 +160,7 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
             lines.append("")
 
         from doc_manager_mcp.core import find_docs_directory
-        from doc_manager_mcp.models import ValidateDocsInput, AssessQualityInput
+        from doc_manager_mcp.models import AssessQualityInput, ValidateDocsInput
 
         # Use provided docs_path or auto-detect
         if params.docs_path:

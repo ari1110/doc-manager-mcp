@@ -10,8 +10,6 @@ This workflow orchestrates documentation migration:
 """
 
 import json
-import shutil
-import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from functools import partial
@@ -19,12 +17,6 @@ from pathlib import Path
 from typing import Any
 
 from doc_manager_mcp.core import enforce_response_limit, handle_error
-from doc_manager_mcp.indexing.transforms.links import (
-    extract_frontmatter,
-    generate_toc,
-    preserve_frontmatter,
-    update_or_insert_toc,
-)
 from doc_manager_mcp.models import MigrateInput
 from doc_manager_mcp.tools.analysis.platform import detect_platform
 from doc_manager_mcp.tools.analysis.quality.assessment import assess_quality

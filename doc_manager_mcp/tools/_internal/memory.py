@@ -6,9 +6,12 @@ import os
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from doc_manager_mcp.constants import DEFAULT_EXCLUDE_PATTERNS, MAX_FILES
+if TYPE_CHECKING:
+    pass
+
+from doc_manager_mcp.constants import MAX_FILES
 from doc_manager_mcp.core import (
     calculate_checksum,
     detect_project_language,
@@ -16,7 +19,6 @@ from doc_manager_mcp.core import (
     file_lock,
     find_docs_directory,
     handle_error,
-    load_config,
     matches_exclude_pattern,
     run_git_command,
     validate_path_boundary,

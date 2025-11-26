@@ -24,8 +24,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .tree_sitter import Symbol, SymbolType
 from doc_manager_mcp.core.security import file_lock
+
+from .tree_sitter import Symbol, SymbolType
 
 
 @dataclass

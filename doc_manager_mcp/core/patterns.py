@@ -9,9 +9,13 @@ across init, update_baseline, and detect_changes tools.
 
 import fnmatch
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pathspec
 
 
-def build_exclude_patterns(project_path: Path) -> tuple[list[str], object | None]:
+def build_exclude_patterns(project_path: Path) -> tuple[list[str], "pathspec.PathSpec | None"]:
     """Build exclude patterns from config, gitignore, and defaults.
 
     Priority order: user patterns > gitignore > default patterns

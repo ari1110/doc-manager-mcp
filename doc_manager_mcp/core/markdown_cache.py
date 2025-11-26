@@ -9,7 +9,7 @@ assess_quality (13x total when both tools run).
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
 
@@ -48,7 +48,7 @@ class MarkdownCache:
 
     def __init__(self):
         """Initialize empty cache."""
-        self._cache: Dict[Path, ParsedMarkdown] = {}
+        self._cache: dict[Path, ParsedMarkdown] = {}
 
     def parse(self, file_path: Path, content: str) -> ParsedMarkdown:
         """Parse markdown content, using cache if available.

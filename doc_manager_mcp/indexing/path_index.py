@@ -4,8 +4,8 @@ Provides O(1) lookups for documentation files instead of repeated
 file system checks, improving detect_changes performance by 2-3x.
 """
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 
 class PathIndex:

@@ -10,8 +10,9 @@ Provides unified file scanning with:
 - Configurable scanning methods (walk vs rglob)
 """
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
+from typing import TYPE_CHECKING
 
 from doc_manager_mcp.constants import MAX_FILES
 from doc_manager_mcp.core import (
@@ -20,12 +21,15 @@ from doc_manager_mcp.core import (
 )
 from doc_manager_mcp.core.patterns import build_exclude_patterns
 
+if TYPE_CHECKING:
+    import pathspec
+
 
 def scan_project_files(
     project_path: Path,
     *,
     exclude_patterns: list[str] | None = None,
-    gitignore_spec: object | None = None,
+    gitignore_spec: "pathspec.PathSpec | None" = None,
     max_files: int = MAX_FILES,
     validate_boundaries: bool = True,
     use_walk: bool = False

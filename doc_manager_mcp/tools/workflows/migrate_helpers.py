@@ -3,6 +3,7 @@
 import shutil
 import subprocess
 from pathlib import Path
+from typing import TypedDict
 
 from doc_manager_mcp.indexing.transforms.links import (
     compute_link_mappings,
@@ -12,6 +13,22 @@ from doc_manager_mcp.indexing.transforms.links import (
     rewrite_links_in_content,
     update_or_insert_toc,
 )
+
+
+class TransformResult(TypedDict):
+    """Result from transforming a markdown file."""
+    method: str
+    links_rewritten: bool
+    toc_generated: bool
+
+
+class ProcessResult(TypedDict):
+    """Result from processing a single file during migration."""
+    old_file: Path
+    new_file: Path
+    method: str
+    links_rewritten: bool
+    toc_generated: bool
 
 
 def rewrite_links(
@@ -77,7 +94,7 @@ def process_markdown_file(
     regenerate_toc: bool,
     use_git: bool,
     dry_run: bool
-) -> dict[str, str | bool]:
+) -> TransformResult:
     """Process a markdown file with optional transformations.
 
     Args:
@@ -134,15 +151,15 @@ def process_markdown_file(
         if use_git:
             try:
                 # Stage new file
-                subprocess.run(
-                    ['git', 'add', str(new_file)],
+                subprocess.run(  # noqa: S603
+                    ['git', 'add', str(new_file)],  # noqa: S607
                     cwd=project_path,
                     check=True,
                     capture_output=True
                 )
                 # Remove old file from git
-                subprocess.run(
-                    ['git', 'rm', str(old_file)],
+                subprocess.run(  # noqa: S603
+                    ['git', 'rm', str(old_file)],  # noqa: S607
                     cwd=project_path,
                     check=True,
                     capture_output=True
@@ -171,7 +188,7 @@ def process_single_file(
     regenerate_toc: bool,
     use_git: bool,
     dry_run: bool
-) -> dict[str, str | bool | Path]:
+) -> ProcessResult:
     """Process a single file (markdown or non-markdown) for migration.
 
     Args:
@@ -220,8 +237,8 @@ def process_single_file(
             if use_git:
                 try:
                     # Use git mv for non-markdown files
-                    subprocess.run(
-                        ['git', 'mv', str(old_file), str(new_file)],
+                    subprocess.run(  # noqa: S603
+                        ['git', 'mv', str(old_file), str(new_file)],  # noqa: S607
                         cwd=project_path,
                         check=True,
                         capture_output=True

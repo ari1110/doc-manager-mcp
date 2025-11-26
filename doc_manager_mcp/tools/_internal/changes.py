@@ -6,7 +6,10 @@ import sys
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import pathspec
 
 from doc_manager_mcp.constants import (
     DEFAULT_EXCLUDE_PATTERNS,
@@ -128,7 +131,7 @@ async def _get_changed_files_from_git(project_path: Path, since_commit: str) -> 
     exclude_patterns.extend(user_excludes)
 
     # Parse .gitignore if enabled (middle priority)
-    gitignore_spec = None
+    gitignore_spec: pathspec.PathSpec | None = None
     if use_gitignore:
         from doc_manager_mcp.core import parse_gitignore
         gitignore_spec = parse_gitignore(project_path)

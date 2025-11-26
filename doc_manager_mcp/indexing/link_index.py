@@ -3,11 +3,10 @@
 This module provides a link index that enables fast link lookups without
 iterating through all markdown files or doing repeated file system operations.
 
-Performance improvement: O(M×L×M) → O(M×L) where M=files, L=links per file.
+Performance improvement: O(M*L*M) -> O(M*L) where M=files, L=links per file.
 """
 
 from pathlib import Path
-from typing import Dict, Optional
 
 
 class LinkIndex:
@@ -24,8 +23,8 @@ class LinkIndex:
 
     def __init__(self):
         """Initialize empty link index."""
-        self._index: Dict[str, Path] = {}
-        self._resolved_index: Dict[str, Path] = {}  # Reverse index: resolved absolute path -> file path
+        self._index: dict[str, Path] = {}
+        self._resolved_index: dict[str, Path] = {}  # Reverse index: resolved absolute path -> file path
         self._file_count: int = 0
 
     def add(self, file_path: Path, docs_root: Path):
@@ -69,7 +68,7 @@ class LinkIndex:
 
         self._file_count += 1
 
-    def resolve(self, link_url: str, source_context: Path, docs_root: Optional[Path] = None) -> Optional[Path]:
+    def resolve(self, link_url: str, source_context: Path, docs_root: Path | None = None) -> Path | None:
         """Resolve a link URL to a markdown file using the index.
 
         Args:
