@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,26 @@ from .symbols import validate_symbols
 from .syntax import validate_code_syntax
 
 
+@lru_cache(maxsize=3)
+def _load_repo_baseline(baseline_path_str: str) -> dict[str, Any] | None:
+    """Load repository baseline from disk (cached).
+
+    Args:
+        baseline_path_str: String path to baseline file
+
+    Returns:
+        Baseline dict or None if not found
+    """
+    baseline_path = Path(baseline_path_str)
+    if not baseline_path.exists():
+        return None
+
+    try:
+        return json.loads(baseline_path.read_text())
+    except Exception:
+        return None
+
+
 def _detect_changed_docs(
     docs_path: Path,
     project_path: Path,
@@ -43,12 +64,12 @@ def _detect_changed_docs(
     """
     baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
 
-    if not baseline_path.exists():
+    # Load baseline using cached function
+    baseline = _load_repo_baseline(str(baseline_path))
+    if baseline is None:
         return None
 
     try:
-        # Load baseline checksums
-        baseline = json.loads(baseline_path.read_text())
         baseline_checksums = baseline.get("files", {})
 
         # Get all current markdown files

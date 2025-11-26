@@ -4,6 +4,7 @@ import asyncio
 import json
 import sys
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -33,9 +34,17 @@ from doc_manager_mcp.indexing.path_index import build_path_index
 from doc_manager_mcp.models import MapChangesInput
 
 
-def _load_baseline(project_path: Path) -> dict[str, Any] | None:
-    """Load baseline checksums from memory."""
-    baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
+@lru_cache(maxsize=3)
+def _load_baseline_cached(baseline_path_str: str) -> dict[str, Any] | None:
+    """Load baseline checksums from memory (cached).
+
+    Args:
+        baseline_path_str: String path to baseline file (for caching)
+
+    Returns:
+        Baseline dict or None if not found
+    """
+    baseline_path = Path(baseline_path_str)
     if not baseline_path.exists():
         return None
 
@@ -45,6 +54,12 @@ def _load_baseline(project_path: Path) -> dict[str, Any] | None:
     except Exception as e:
         print(f"Warning: Failed to load baseline from {baseline_path}: {e}", file=sys.stderr)
         return None
+
+
+def _load_baseline(project_path: Path) -> dict[str, Any] | None:
+    """Load baseline checksums from memory."""
+    baseline_path = project_path / ".doc-manager" / "memory" / "repo-baseline.json"
+    return _load_baseline_cached(str(baseline_path))
 
 
 def _get_changed_files_from_checksums(project_path: Path, baseline: dict[str, Any]) -> list[dict[str, str]]:
