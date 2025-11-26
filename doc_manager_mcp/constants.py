@@ -24,6 +24,54 @@ OPERATION_TIMEOUT = 60  # Operation timeout in seconds
 # Supported documentation platforms
 SUPPORTED_PLATFORMS = ["hugo", "docusaurus", "mkdocs", "sphinx", "vitepress", "jekyll", "gitbook"]
 
+# Platform detection markers (configurable)
+PLATFORM_MARKERS = {
+    "hugo": {
+        "root_configs": ["hugo.toml", "hugo.yaml", "config.toml"],
+        "subdir_configs": ["hugo.yaml", "hugo.toml", "config.toml"],
+        "dependencies": {"go.mod": ["hugo"]},
+    },
+    "docusaurus": {
+        "root_configs": ["docusaurus.config.js", "docusaurus.config.ts"],
+        "subdir_configs": ["docusaurus.config.js", "docusaurus.config.ts"],
+        "dependencies": {"package.json": ["docusaurus", "@docusaurus/core"]},
+    },
+    "mkdocs": {
+        "root_configs": ["mkdocs.yml"],
+        "subdir_configs": ["mkdocs.yml"],
+        "dependencies": {"requirements.txt": ["mkdocs"]},
+    },
+    "sphinx": {
+        "root_configs": ["docs/conf.py", "doc/conf.py"],
+        "subdir_configs": ["conf.py"],
+        "dependencies": {"requirements.txt": ["sphinx"], "setup.py": ["sphinx", "setuptools"]},
+    },
+    "vitepress": {
+        "root_configs": [".vitepress/config.js", ".vitepress/config.ts"],
+        "subdir_configs": [".vitepress/config.js", ".vitepress/config.ts"],
+        "dependencies": {"package.json": ["vitepress"]},
+    },
+    "jekyll": {
+        "root_configs": ["_config.yml"],
+        "subdir_configs": ["_config.yml"],
+        "dependencies": {},
+    },
+}
+
+# Common documentation directories to search
+DOC_DIRECTORIES = ["docsite", "docs", "documentation", "website", "site"]
+
+# Language-based platform recommendations
+LANGUAGE_PLATFORM_RECOMMENDATIONS = {
+    "Go": ("hugo", "Hugo is written in Go and popular in Go ecosystem"),
+    "JavaScript/TypeScript": ("docusaurus", "Docusaurus is React-based and popular in JavaScript ecosystem"),
+    "Node.js": ("docusaurus", "Docusaurus is React-based and popular in JavaScript ecosystem"),
+    "Python": ("mkdocs", "MkDocs is Python-based and popular in Python ecosystem"),
+}
+
+# Default platform recommendation
+DEFAULT_PLATFORM_RECOMMENDATION = ("hugo", "Hugo is fast, language-agnostic, and widely adopted")
+
 # Quality assessment criteria
 QUALITY_CRITERIA = [
     "relevance", "accuracy", "purposefulness", "uniqueness",
