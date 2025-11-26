@@ -1,0 +1,131 @@
+# Quality Assessment Thresholds Configuration
+# This file documents the heuristics and thresholds used by doc-manager's quality assessment
+
+# Overall Score Calculation
+# ========================
+# The overall score is calculated by averaging individual criterion scores
+# and applying these thresholds:
+overall_score_thresholds:
+  excellent: 3.5  # Average score >= 3.5
+  good: 2.5       # Average score >= 2.5
+  fair: 1.5       # Average score >= 1.5
+  poor: 0.0       # Average score < 1.5
+
+# Score Value Mappings
+# ====================
+# Each criterion returns one of these scores, mapped to numeric values:
+score_values:
+  excellent: 4
+  good: 3
+  fair: 2
+  poor: 1
+
+# Documentation Coverage Thresholds
+# =================================
+# Coverage percentage is mapped to a score using these thresholds:
+coverage_thresholds:
+  excellent: 75    # >= 75% coverage
+  good: 50         # >= 50% coverage
+  fair: 30         # >= 30% coverage
+  poor: 0          # < 30% coverage
+
+# Individual Criterion Thresholds
+# ================================
+
+# 1. RELEVANCE
+# Assesses if documentation addresses current user needs
+relevance:
+  deprecated_references:
+    warning_threshold: 5   # Show warning if > 5 deprecated references
+    fair_threshold: 10     # Score becomes "fair" if > 10 deprecated references
+  migration_doc_weight: 0.1  # Weight for deprecation mentions in migration docs
+  required_files:
+    - README.md  # Warns if not present
+
+# 2. ACCURACY
+# Assesses if documentation reflects actual codebase state
+accuracy:
+  broken_links:
+    warning_threshold: 3   # Show warning if > 3 broken links
+    fair_threshold: 10     # Score becomes "fair" if > 10 broken links
+  missing_assets:
+    warning_threshold: 2   # Show warning if > 2 missing assets
+    fair_threshold: 5      # Score becomes "fair" if > 5 missing assets
+  outdated_content:
+    stale_days: 180        # Content is "stale" if not updated in 180 days
+    warning_threshold: 5   # Warn if > 5 files are stale
+
+# 3. PURPOSEFULNESS
+# Assesses if documentation has clear goals and target audience
+purposefulness:
+  missing_description_threshold: 30  # Warn if > 30% of files lack descriptions
+  placeholder_content:
+    patterns:
+      - "TODO"
+      - "FIXME"
+      - "TBD"
+      - "Coming soon"
+    warning_threshold: 3  # Warn if > 3 placeholders found
+
+# 4. UNIQUENESS
+# Assesses for redundant or conflicting information
+uniqueness:
+  content_similarity:
+    high_similarity_threshold: 0.8  # > 80% similar = likely duplicate
+    warning_threshold: 3            # Warn if > 3 highly similar file pairs
+  conflicting_information:
+    warning_threshold: 2  # Warn if > 2 conflicts detected
+
+# 5. CONSISTENCY
+# Assesses alignment of terminology, formatting, and style
+consistency:
+  heading_case:
+    inconsistency_threshold: 0.3  # > 30% inconsistent = warning
+  list_formatting:
+    inconsistency_threshold: 0.3  # > 30% inconsistent = warning
+  terminology:
+    variant_threshold: 3  # > 3 variants of same term = warning
+
+# 6. CLARITY
+# Assesses precision of language and navigation
+clarity:
+  readability:
+    flesch_reading_ease:
+      excellent: 60  # Flesch score >= 60 (plain English)
+      good: 50
+      fair: 40
+      poor: 0
+  navigation:
+    max_depth: 4           # Warn if > 4 levels deep
+    orphaned_docs_threshold: 2  # Warn if > 2 orphaned docs
+
+# 7. STRUCTURE
+# Assesses logical organization and appropriate depth
+structure:
+  heading_depth:
+    max_recommended: 4     # H1-H4 recommended, H5-H6 discouraged
+    warning_threshold: 3   # Warn if > 3 files exceed max depth
+  file_organization:
+    max_files_per_dir: 15  # Warn if > 15 files in one directory
+    min_sections: 2        # Warn if file has < 2 sections (H2+)
+
+# Quality Criteria Weights
+# ========================
+# All criteria have equal weight (1.0) in overall score calculation
+# This can be customized in future versions for project-specific needs
+criterion_weights:
+  relevance: 1.0
+  accuracy: 1.0
+  purposefulness: 1.0
+  uniqueness: 1.0
+  consistency: 1.0
+  clarity: 1.0
+  structure: 1.0
+
+# Notes:
+# ------
+# - All thresholds are currently hardcoded in the implementation
+# - This file serves as documentation of current behavior
+# - Future versions may support loading custom thresholds from this file
+# - Thresholds were calibrated based on common documentation patterns
+# - Adjust thresholds based on your project's specific needs
