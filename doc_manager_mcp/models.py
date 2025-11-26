@@ -335,6 +335,10 @@ class ValidateDocsInput(BaseModel):
         default=False,
         description="Include root README.md in validation (Bug #4 fix: sync discrepancy)"
     )
+    incremental: bool = Field(
+        default=False,
+        description="Only validate files that changed since last baseline (5-10x faster)"
+    )
 
 class MapChangesInput(BaseModel):
     """Input for mapping code changes to documentation."""

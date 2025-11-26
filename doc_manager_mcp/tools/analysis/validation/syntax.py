@@ -14,16 +14,18 @@ from .helpers import validate_code_examples
 def validate_code_syntax(
     docs_path: Path,
     project_path: Path,
-    include_root_readme: bool = False
+    include_root_readme: bool = False,
+    markdown_files: list[Path] | None = None
 ) -> list[dict[str, Any]]:
     """Validate code example syntax using TreeSitter (semantic validation)."""
     issues = []
-    markdown_files = find_markdown_files(
-        docs_path,
-        project_path=project_path,
-        validate_boundaries=False,
-        include_root_readme=include_root_readme
-    )
+    if markdown_files is None:
+        markdown_files = find_markdown_files(
+            docs_path,
+            project_path=project_path,
+            validate_boundaries=False,
+            include_root_readme=include_root_readme
+        )
 
     for md_file in markdown_files:
         try:

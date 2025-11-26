@@ -143,16 +143,29 @@ def check_broken_links(
     docs_path: Path,
     project_path: Path,
     include_root_readme: bool = False,
-    markdown_cache: MarkdownCache | None = None
+    markdown_cache: MarkdownCache | None = None,
+    markdown_files: list[Path] | None = None
 ) -> list[dict[str, Any]]:
-    """Check for broken internal and external links using link index for performance."""
+    """Check for broken internal and external links using link index for performance.
+
+    Args:
+        docs_path: Path to documentation directory
+        project_path: Project root path
+        include_root_readme: Include root README.md
+        markdown_cache: Optional markdown cache for performance
+        markdown_files: Optional pre-filtered list of files to validate (for incremental mode)
+
+    Returns:
+        List of link validation issues
+    """
     issues = []
-    markdown_files = find_markdown_files(
-        docs_path,
-        project_path=project_path,
-        validate_boundaries=False,
-        include_root_readme=include_root_readme
-    )
+    if markdown_files is None:
+        markdown_files = find_markdown_files(
+            docs_path,
+            project_path=project_path,
+            validate_boundaries=False,
+            include_root_readme=include_root_readme
+        )
 
     # Build link index once for O(1) lookups instead of O(M) file system checks
     link_index = build_link_index(docs_path)

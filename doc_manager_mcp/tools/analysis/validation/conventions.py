@@ -15,7 +15,8 @@ def validate_conventions(
     docs_path: Path,
     project_path: Path,
     conventions,
-    include_root_readme: bool = False
+    include_root_readme: bool = False,
+    markdown_files: list[Path] | None = None
 ) -> list[dict[str, Any]]:
     """Validate documentation files against conventions.
 
@@ -24,17 +25,19 @@ def validate_conventions(
         project_path: Path to project root
         conventions: DocumentationConventions object
         include_root_readme: Whether to include root README.md
+        markdown_files: Optional pre-filtered list of files (for incremental mode)
 
     Returns:
         List of convention violations
     """
     issues = []
-    markdown_files = find_markdown_files(
-        docs_path,
-        project_path=project_path,
-        validate_boundaries=False,
-        include_root_readme=include_root_readme
-    )
+    if markdown_files is None:
+        markdown_files = find_markdown_files(
+            docs_path,
+            project_path=project_path,
+            validate_boundaries=False,
+            include_root_readme=include_root_readme
+        )
 
     for md_file in markdown_files:
         try:

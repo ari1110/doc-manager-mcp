@@ -17,16 +17,18 @@ def validate_symbols(
     docs_path: Path,
     project_path: Path,
     include_root_readme: bool = False,
-    symbol_index=None
+    symbol_index=None,
+    markdown_files: list[Path] | None = None
 ) -> list[dict[str, Any]]:
     """Validate that documented symbols exist in codebase."""
     issues = []
-    markdown_files = find_markdown_files(
-        docs_path,
-        project_path=project_path,
-        validate_boundaries=False,
-        include_root_readme=include_root_readme
-    )
+    if markdown_files is None:
+        markdown_files = find_markdown_files(
+            docs_path,
+            project_path=project_path,
+            validate_boundaries=False,
+            include_root_readme=include_root_readme
+        )
 
     # Build symbol index once if not provided
     if symbol_index is None:

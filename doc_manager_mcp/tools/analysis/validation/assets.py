@@ -58,16 +58,18 @@ def validate_assets(
     docs_path: Path,
     project_path: Path,
     include_root_readme: bool = False,
-    markdown_cache: MarkdownCache | None = None
+    markdown_cache: MarkdownCache | None = None,
+    markdown_files: list[Path] | None = None
 ) -> list[dict[str, Any]]:
     """Validate asset links and alt text."""
     issues = []
-    markdown_files = find_markdown_files(
-        docs_path,
-        project_path=project_path,
-        validate_boundaries=False,
-        include_root_readme=include_root_readme
-    )
+    if markdown_files is None:
+        markdown_files = find_markdown_files(
+            docs_path,
+            project_path=project_path,
+            validate_boundaries=False,
+            include_root_readme=include_root_readme
+        )
 
     for md_file in markdown_files:
         try:
