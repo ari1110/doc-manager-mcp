@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-27T00:33:33.967019",
+  "generated_at": "2025-11-27T01:00:11.380571",
   "doc_to_code": {
     "getting-started/installation.md": [
       "doc_manager_mcp/server.py",
@@ -31,16 +31,23 @@
       "doc_manager_mcp/tools/state/init.py",
       "doc_manager_mcp/tools/state/update_baseline.py"
     ],
-    "reference/tools/docmgr_assess_quality.md": [],
+    "reference/tools/docmgr_assess_quality.md": [
+      "doc_manager_mcp/server.py"
+    ],
     "reference/tools/docmgr_detect_changes.md": [
       "doc_manager_mcp/server.py",
+      "doc_manager_mcp/tools/analysis/detect_changes.py",
       "doc_manager_mcp/tools/state/init.py"
     ],
     "reference/tools/docmgr_detect_platform.md": [
+      "doc_manager_mcp/server.py",
       "doc_manager_mcp/tools/state/init.py"
     ],
-    "reference/tools/docmgr_init.md": [],
+    "reference/tools/docmgr_init.md": [
+      "doc_manager_mcp/tools/state/init.py"
+    ],
     "reference/tools/docmgr_migrate.md": [
+      "doc_manager_mcp/server.py",
       "doc_manager_mcp/tools/workflows/migrate_helpers.py"
     ],
     "reference/tools/docmgr_sync.md": [
@@ -49,9 +56,11 @@
       "doc_manager_mcp/tools/state/update_baseline.py"
     ],
     "reference/tools/docmgr_update_baseline.md": [
-      "doc_manager_mcp/tools/state/init.py"
+      "doc_manager_mcp/tools/state/init.py",
+      "doc_manager_mcp/tools/state/update_baseline.py"
     ],
     "reference/tools/docmgr_validate_docs.md": [
+      "doc_manager_mcp/server.py",
       "doc_manager_mcp/tools/analysis/validation/symbols.py",
       "doc_manager_mcp/tools/analysis/validation/syntax.py"
     ],
@@ -79,8 +88,12 @@
       "guides/troubleshooting.md",
       "guides/workflows.md",
       "reference/file-formats.md",
+      "reference/tools/docmgr_assess_quality.md",
       "reference/tools/docmgr_detect_changes.md",
+      "reference/tools/docmgr_detect_platform.md",
+      "reference/tools/docmgr_migrate.md",
       "reference/tools/docmgr_sync.md",
+      "reference/tools/docmgr_validate_docs.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -88,6 +101,7 @@
       "getting-started/installation.md",
       "guides/troubleshooting.md",
       "reference/file-formats.md",
+      "reference/tools/docmgr_detect_changes.md",
       "reference/tools/docmgr_sync.md",
       "README.md"
     ],
@@ -99,6 +113,7 @@
       "reference/file-formats.md",
       "reference/tools/docmgr_detect_changes.md",
       "reference/tools/docmgr_detect_platform.md",
+      "reference/tools/docmgr_init.md",
       "reference/tools/docmgr_update_baseline.md",
       "reference/tools.md",
       "README.md"
@@ -109,6 +124,7 @@
       "guides/workflows.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
+      "reference/tools/docmgr_update_baseline.md",
       "README.md"
     ],
     "doc_manager_mcp/tools/workflows/migrate_helpers.py": [
@@ -142,6 +158,7 @@
       "reference/file-formats.md",
       "reference/tools/docmgr_detect_changes.md",
       "reference/tools/docmgr_detect_platform.md",
+      "reference/tools/docmgr_init.md",
       "reference/tools/docmgr_update_baseline.md",
       "reference/tools.md",
       "README.md"
@@ -150,6 +167,7 @@
       "getting-started/installation.md",
       "guides/troubleshooting.md",
       "reference/file-formats.md",
+      "reference/tools/docmgr_detect_changes.md",
       "reference/tools/docmgr_sync.md",
       "README.md"
     ],
@@ -157,6 +175,7 @@
       "getting-started/installation.md",
       "guides/platforms.md",
       "guides/troubleshooting.md",
+      "reference/tools/docmgr_detect_platform.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -165,6 +184,7 @@
       "guides/troubleshooting.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
+      "reference/tools/docmgr_validate_docs.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -172,6 +192,7 @@
       "getting-started/installation.md",
       "guides/workflows.md",
       "reference/file-formats.md",
+      "reference/tools/docmgr_assess_quality.md",
       "reference/tools/docmgr_sync.md",
       "reference/tools.md",
       "README.md"
@@ -182,6 +203,7 @@
       "guides/workflows.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
+      "reference/tools/docmgr_update_baseline.md",
       "README.md"
     ],
     "docmgr_sync()": [
@@ -189,12 +211,14 @@
       "guides/workflows.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_detect_changes.md",
+      "reference/tools/docmgr_sync.md",
       "reference/tools.md",
       "README.md"
     ],
     "docmgr_migrate()": [
       "getting-started/installation.md",
       "guides/troubleshooting.md",
+      "reference/tools/docmgr_migrate.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -382,6 +406,7 @@
       "reference/file-formats.md",
       "reference/tools/docmgr_detect_changes.md",
       "reference/tools/docmgr_detect_platform.md",
+      "reference/tools/docmgr_init.md",
       "reference/tools/docmgr_update_baseline.md",
       "reference/tools.md",
       "README.md"
@@ -390,6 +415,7 @@
       "getting-started/installation.md",
       "guides/troubleshooting.md",
       "reference/file-formats.md",
+      "reference/tools/docmgr_detect_changes.md",
       "reference/tools/docmgr_sync.md",
       "README.md"
     ],
@@ -397,6 +423,7 @@
       "getting-started/installation.md",
       "guides/platforms.md",
       "guides/troubleshooting.md",
+      "reference/tools/docmgr_detect_platform.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -405,6 +432,7 @@
       "guides/troubleshooting.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
+      "reference/tools/docmgr_validate_docs.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -412,6 +440,7 @@
       "getting-started/installation.md",
       "guides/workflows.md",
       "reference/file-formats.md",
+      "reference/tools/docmgr_assess_quality.md",
       "reference/tools/docmgr_sync.md",
       "reference/tools.md",
       "README.md"
@@ -422,6 +451,7 @@
       "guides/workflows.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
+      "reference/tools/docmgr_update_baseline.md",
       "README.md"
     ],
     "docmgr_sync()": [
@@ -429,12 +459,14 @@
       "guides/workflows.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_detect_changes.md",
+      "reference/tools/docmgr_sync.md",
       "reference/tools.md",
       "README.md"
     ],
     "docmgr_migrate()": [
       "getting-started/installation.md",
       "guides/troubleshooting.md",
+      "reference/tools/docmgr_migrate.md",
       "reference/tools.md",
       "README.md"
     ],
@@ -1686,6 +1718,14 @@
         "doc_file": "reference/file-formats.md"
       },
       {
+        "reference": "docmgr_assess_quality()",
+        "doc_file": "reference/tools/docmgr_assess_quality.md"
+      },
+      {
+        "reference": "docmgr_detect_changes()",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
         "reference": "docmgr_sync()",
         "doc_file": "reference/tools/docmgr_detect_changes.md"
       },
@@ -1694,16 +1734,32 @@
         "doc_file": "reference/tools/docmgr_detect_changes.md"
       },
       {
+        "reference": "docmgr_detect_platform()",
+        "doc_file": "reference/tools/docmgr_detect_platform.md"
+      },
+      {
         "reference": "docmgr_init()",
         "doc_file": "reference/tools/docmgr_detect_platform.md"
       },
       {
+        "reference": "docmgr_init()",
+        "doc_file": "reference/tools/docmgr_init.md"
+      },
+      {
+        "reference": "docmgr_migrate()",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
         "reference": "rewrite_links()",
         "doc_file": "reference/tools/docmgr_migrate.md"
       },
       {
         "reference": "rewrite_links()",
         "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "docmgr_sync()",
+        "doc_file": "reference/tools/docmgr_sync.md"
       },
       {
         "reference": "docmgr_detect_changes()",
@@ -1736,10 +1792,18 @@
       {
         "reference": "docmgr_update_baseline()",
         "doc_file": "reference/tools/docmgr_sync.md"
+      },
+      {
+        "reference": "docmgr_update_baseline()",
+        "doc_file": "reference/tools/docmgr_update_baseline.md"
       },
       {
         "reference": "docmgr_init()",
         "doc_file": "reference/tools/docmgr_update_baseline.md"
+      },
+      {
+        "reference": "docmgr_validate_docs()",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
       },
       {
         "reference": "validate_code_syntax()",
@@ -1851,6 +1915,22 @@
       },
       {
         "reference": "docmgr_migrate()",
+        "doc_file": "README.md"
+      },
+      {
+        "reference": "docmgr_init()",
+        "doc_file": "README.md"
+      },
+      {
+        "reference": "docmgr_detect_changes()",
+        "doc_file": "README.md"
+      },
+      {
+        "reference": "docmgr_update_baseline()",
+        "doc_file": "README.md"
+      },
+      {
+        "reference": "docmgr_sync()",
         "doc_file": "README.md"
       },
       {
