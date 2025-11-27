@@ -314,14 +314,11 @@ def test_nested_classes_extraction(fixture_dir: Path):
     assert len(classes) == expected["classes"]
     assert len(methods) == expected["methods"]
 
-    # Verify nested class parent attribution (informational - not critical for deduplication fix)
+    # Verify nested class parent attribution
     inner_class = [s for s in classes if s.name == "Inner"]
     if inner_class:
-        # Note: Nested class parent attribution is a future enhancement
-        # For now, we verify the class is extracted but parent may be None
         assert inner_class[0].name == "Inner", "Nested class should be extracted"
-        # TODO: Future enhancement - set parent for nested classes
-        # assert inner_class[0].parent == "Outer", "Nested class should have parent set"
+        assert inner_class[0].parent == "Outer", "Nested class should have parent set"
 
 
 def test_nested_functions_extraction(fixture_dir: Path):

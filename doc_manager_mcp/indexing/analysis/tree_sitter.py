@@ -357,7 +357,7 @@ class SymbolIndexer:
                         continue
 
                     # Check if current class is within other class's range
-                    if other_start < current_start and current_end < other_end:
+                    if other_start < current_start and current_end <= other_end:
                         # This is a potential parent - choose the closest (smallest range)
                         parent_range = other_end - other_start
                         if parent_range < smallest_parent_range:
