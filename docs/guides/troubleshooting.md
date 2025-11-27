@@ -2,17 +2,63 @@
 
 Common issues and solutions for doc-manager.
 
-## Configuration issues
+## Installation issues
 
-### Empty symbol baseline
+### TreeSitter not available
 
-**Symptom**: `.doc-manager/memory/symbol-baseline.json` contains `"index": {}` (empty symbols)
+**Symptom**: "TreeSitter not available" warning message
 
-**Cause**: Source patterns in `.doc-manager.yml` are not glob patterns or don't match any files.
+**Cause**: TreeSitter language pack not installed.
 
 **Solution**:
 
-1. Check `.doc-manager.yml` has correct glob patterns:
+```bash
+pip install tree-sitter tree-sitter-language-pack
+```
+
+### Permission errors on Windows
+
+**Symptom**: Permission denied errors during installation
+
+**Cause**: Installation requires elevated permissions.
+
+**Solution**:
+
+Try running your terminal as administrator or use:
+
+```bash
+pip install --user doc-manager-mcp
+```
+
+### Import errors
+
+**Symptom**: `ImportError` or `ModuleNotFoundError` when running tools
+
+**Cause**: Python version incompatibility.
+
+**Solution**:
+
+Ensure your Python version is 3.10 or higher:
+
+```bash
+python --version
+```
+
+If below 3.10, upgrade Python before installing doc-manager.
+
+---
+
+## Configuration issues
+
+### Symbols not being extracted
+
+**Symptom**: `symbol-baseline.json` is empty or has very few symbols
+
+**Cause**: Source patterns in `.doc-manager.yml` don't match your files or aren't glob patterns.
+
+**Solution**:
+
+1. Verify `sources` uses **glob patterns**, not directory names:
 
 ```yaml
 sources:
@@ -28,25 +74,31 @@ sources:
   - "*.py"                  # ✗ Wrong - only matches root directory
 ```
 
-2. Verify patterns match your files:
+2. Check patterns match your files: test with `ls src/**/*.py`
+3. Ensure no exclude patterns are blocking your sources
+4. Regenerate baselines after fixing patterns
 
-```bash
-# Test pattern matching
-ls src/**/*.py  # Should list your source files
+### Too many files tracked
+
+**Symptom**: `repo-baseline.json` tracks thousands of unwanted files
+
+**Cause**: Exclude patterns not configured properly.
+
+**Solution**:
+
+1. Add specific exclude patterns in `.doc-manager.yml`:
+
+```yaml
+exclude:
+  - "node_modules/**"
+  - "vendor/**"
+  - "**/__pycache__/**"
+  - ".venv/**"
+  - "dist/**"
 ```
 
-3. Regenerate baselines:
-
-```json
-{
-  "tool": "docmgr_update_baseline",
-  "arguments": {
-    "project_path": "/path/to/project"
-  }
-}
-```
-
-See [Configuration reference](../reference/file-formats.md#doc-manageryml) for details.
+2. Make source patterns more restrictive
+3. Check `repo-baseline.json` to see what's being tracked after changes
 
 ### Platform not detected
 

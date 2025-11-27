@@ -265,16 +265,12 @@ The `.doc-manager.yml` file should be committed to version control, but the `.do
 
 ## Troubleshooting
 
-### Symbols not being extracted
+Having configuration issues? See the [Troubleshooting guide](../guides/troubleshooting.md#configuration-issues) for solutions to:
 
-If `symbol-baseline.json` is empty:
-1. Verify `sources` uses **glob patterns**, not directory names
-2. Check patterns match your files: test with `ls src/**/*.py`
-3. Ensure no exclude patterns are blocking your sources
+- Symbols not being extracted
+- Too many files tracked
+- Platform not detected
+- Config file not found
+- Empty symbol baseline
 
-### Too many files tracked
-
-If tracking too many files:
-1. Add specific exclude patterns
-2. Make source patterns more restrictive
-3. Check `repo-baseline.json` to see what's being tracked
+For complete troubleshooting, see the [full guide](../guides/troubleshooting.md).

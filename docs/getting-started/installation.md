@@ -72,26 +72,11 @@ Verify the installation by checking the tools are available in your MCP client. 
 
 ## Troubleshooting
 
-### TreeSitter not available
+Having installation issues? See the [Troubleshooting guide](../guides/troubleshooting.md#installation-issues) for solutions to:
 
-If you see "TreeSitter not available" errors:
+- TreeSitter not available
+- Permission errors on Windows
+- Import errors
+- Python version compatibility
 
-```bash
-pip install tree-sitter tree-sitter-language-pack
-```
-
-### Permission errors on Windows
-
-If you encounter permission errors, try running your terminal as administrator or use:
-
-```bash
-pip install --user doc-manager-mcp
-```
-
-### Import errors
-
-If you see import errors, ensure your Python version is 3.10 or higher:
-
-```bash
-python --version
-```
+For other issues, check the [complete troubleshooting guide](../guides/troubleshooting.md).
