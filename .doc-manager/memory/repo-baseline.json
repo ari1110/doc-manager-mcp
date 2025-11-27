@@ -5,10 +5,10 @@
   "docs_exist": true,
   "docs_path": "docs",
   "metadata": {
-    "git_commit": "df9c946c210f4490a5615416eaecd4b110c37f3c",
+    "git_commit": "326087d79fe98cf1c4dd8e3578743051575550b6",
     "git_branch": "main"
   },
-  "timestamp": "2025-11-27T01:00:10.875805",
+  "timestamp": "2025-11-27T01:05:24.498024",
   "version": "1.0.0",
   "file_count": 138,
   "files": {
@@ -26,7 +26,7 @@
     "docs/getting-started/installation.md": "e3010a3d52410faea10b937ebf0acaf856833efea4f60d28be74bb6403326db4",
     "docs/getting-started/quick-start.md": "89bfc7999c3074afe582c6bb6853dda34150c3ede8b9a6a397717c2dcfd41be3",
     "docs/guides/platforms.md": "9b84cc15e1ae97dfff9bb527a3426b5c6b9c05d5a561611239f1e358a74305b4",
-    "docs/guides/troubleshooting.md": "b9a29105769307ed68f54093623773e4a8895fe261f77130e488a2a52421c860",
+    "docs/guides/troubleshooting.md": "e2c26a8d718c78e4a1622010c7eaed12d56bb778e8a9cda12335e2a90e777f51",
     "docs/guides/workflows.md": "bd247e527cdb9c4a32ecae5fb1a967fb8b80063a6d06472e56ea3ab829bb9645",
     "docs/reference/configuration.md": "5908ab877a5ab124779243b33ad24155d9f57ccfdbab0e07aaeb64796cafddbd",
     "docs/reference/file-formats.md": "749116960aba450c9019dde099bfb05765fc27e77b6c8bf92bf5495a2571e07c",
@@ -58,7 +58,7 @@
     "doc_manager_mcp/core/responses.py": "d7619ca8ad1c37cf1738efe64a5033a4499ba666c8d0c41f5d7071c972036c8a",
     "doc_manager_mcp/core/security.py": "16ded07b30a300ec9d5d785678a700146f7b3e549680c0e5fd3070f78961d865",
     "doc_manager_mcp/core/__init__.py": "750764ec05c69d6a2bb6c77d45a00581f7cdfff8f92e3ed46465c0fee01fdf29",
-    "doc_manager_mcp/indexing/link_index.py": "cf586c115c19ea5fd98b2c267340ba13d8b9047e4e564d87ddcb8c6013b1b6d3",
+    "doc_manager_mcp/indexing/link_index.py": "3c0584f33bbbcad154a272ba436a95f77dee902dc2840ba447b7c2c76d38aa25",
     "doc_manager_mcp/indexing/path_index.py": "23fd0b84ce3f26dd0a47fb5f81457f18c277aa65373dbdff97850e1e2b060b1b",
     "doc_manager_mcp/indexing/__init__.py": "76d228ad76c1c4b1946cceceb9902b89e56d89a382e4d48de1950419fabff603",
     "doc_manager_mcp/indexing/analysis/code_validator.py": "a074083815abb330c5a12ac419d45ec7bb9f4d9b2bdfdda4c0441e9d1aeaba70",

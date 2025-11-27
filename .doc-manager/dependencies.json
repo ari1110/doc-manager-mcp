@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-27T01:00:11.380571",
+  "generated_at": "2025-11-27T01:05:25.085218",
   "doc_to_code": {
     "getting-started/installation.md": [
       "doc_manager_mcp/server.py",

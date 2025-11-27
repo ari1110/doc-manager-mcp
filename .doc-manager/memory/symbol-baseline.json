@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "created_at": "2025-11-27T05:28:45.696884+00:00",
-  "updated_at": "2025-11-27T06:00:10.999406+00:00",
+  "updated_at": "2025-11-27T06:05:24.668051+00:00",
   "project_root": "R:\\mcp-servers\\doc-manager",
   "symbols": {
     "DocumentationPlatform": [
@@ -1047,7 +1047,7 @@
         "name": "__len__",
         "type": "method",
         "file": "doc_manager_mcp/indexing/link_index.py",
-        "line": 165,
+        "line": 202,
         "column": 4,
         "signature": "def __len__(self) -> int",
         "parent": "LinkIndex",
@@ -1069,7 +1069,7 @@
         "name": "__contains__",
         "type": "method",
         "file": "doc_manager_mcp/indexing/link_index.py",
-        "line": 169,
+        "line": 206,
         "column": 4,
         "signature": "def __contains__(self, key",
         "parent": "LinkIndex",
@@ -1377,7 +1377,7 @@
         "name": "build_link_index",
         "type": "function",
         "file": "doc_manager_mcp/indexing/link_index.py",
-        "line": 174,
+        "line": 211,
         "column": 0,
         "signature": "def build_link_index(docs_root",
         "parent": null,
