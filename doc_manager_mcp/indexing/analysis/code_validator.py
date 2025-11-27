@@ -66,7 +66,7 @@ class CodeValidator:
 
         # Check for syntax errors
         if tree.root_node.has_error:
-            errors = self._find_error_nodes(tree.root_node, code)
+            errors = self._find_error_nodes(tree.root_node, source_bytes)
             return {
                 "valid": False,
                 "errors": errors,
@@ -79,22 +79,29 @@ class CodeValidator:
             "warning": None
         }
 
-    def _find_error_nodes(self, node: Any, source: str) -> list[dict[str, Any]]:
+    def _find_error_nodes(self, node: Any, source: bytes) -> list[dict[str, Any]]:
         """Recursively find all ERROR nodes in the syntax tree.
 
         Args:
-            node: TreeSitter node to search
-            source: Original source code for context
+            node: TreeSitter node to search with byte offset positions
+            source: Original source code as bytes (required for correct byte offset slicing)
 
         Returns:
             List of error dicts with keys: type, line, column, text, message
+
+        Note:
+            Tree-sitter returns byte offsets, not character indices.
+            Must use bytes for slicing, then decode to string.
         """
         errors = []
 
         # Check if this node is an error
         if node.type == "ERROR" or node.is_missing:
-            # Extract error context
-            error_text = source[node.start_byte:node.end_byte] if node.start_byte < len(source.encode("utf8")) else ""
+            # Extract error context using byte offsets
+            try:
+                error_text = source[node.start_byte:node.end_byte].decode("utf8")
+            except (UnicodeDecodeError, IndexError):
+                error_text = ""
 
             # Build error message
             if node.is_missing:
