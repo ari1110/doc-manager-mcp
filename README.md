@@ -2,60 +2,62 @@
 
 An MCP (Model Context Protocol) server for comprehensive documentation lifecycle management. Automates documentation creation, maintenance, quality assessment, and synchronization for software projects.
 
-**Version:** 1.1.0
-**Architecture:** 7-tool design with clear separation of concerns
+**Version:** 2.0.0
 
 ## Features
 
-### 7-Tool Architecture
+- **Automatic change detection** - Track code changes and affected documentation
+- **Link validation** - Find broken links and missing assets
+- **Quality assessment** - Evaluate docs against 7 quality criteria
+- **Symbol tracking** - TreeSitter-based code symbol extraction
+- **Dependency mapping** - Automatic code-to-docs relationships
+- **Platform detection** - Auto-detect MkDocs, Sphinx, Hugo, Docusaurus, etc.
+- **Documentation migration** - Restructure docs with git history preservation
 
-The server provides **7 core tools** organized into 4 tiers:
-
-### Tier 1: Setup & Initialization
-- **`docmgr_init`** - Unified initialization (replaces: `initialize_config`, `initialize_memory`, `bootstrap`)
-  - Mode `existing`: Initialize for projects with existing docs
-  - Mode `bootstrap`: Create fresh documentation structure
-
-### Tier 2: Analysis & Read-Only Operations
-- **`docmgr_detect_changes`** - Pure read-only change detection (never writes baselines)
-- **`docmgr_detect_platform`** - Identify/recommend documentation platforms
-- **`docmgr_validate_docs`** - Check for broken links, missing assets, invalid code snippets
-- **`docmgr_assess_quality`** - Evaluate docs against 7 quality criteria
-
-### Tier 3: State Management
-- **`docmgr_update_baseline`** - Atomically update all 3 baselines (repo, symbols, dependencies)
-- **`docmgr_sync`** - Orchestrate change detection + validation + quality + baseline updates
-
-### Tier 4: Workflows & Orchestration
-- **`docmgr_migrate`** - Restructure/migrate documentation
-
-### Key Improvements (v1.1.0)
-
-✨ **Unified Initialization** - Single entry point (`docmgr_init`) with modes
-🔒 **Read-Only Guarantees** - `docmgr_detect_changes` never modifies baselines
-⚛️ **Atomic Updates** - `docmgr_update_baseline` updates all baselines together
-🔄 **Mode-Based Sync** - `docmgr_sync` supports `check` (read-only) and `resync` (update baselines)
-📊 **Semantic Analysis** - TreeSitter-based code symbol tracking
-🗺️ **Dependency Tracking** - Automatic code-to-docs mapping
 
 ## Installation
 
-```bash
-# Using pip
-pip install doc-manager-mcp
+### From source (development)
 
-# Or from source
+```bash
 git clone https://github.com/yourusername/doc-manager
 cd doc-manager
 pip install -e .
 ```
 
+### As MCP server
+
+Add to your MCP settings file (e.g., `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "doc-manager": {
+      "command": "uvx",
+      "args": ["--from", "doc-manager-mcp", "doc-manager"]
+    }
+  }
+}
+```
+
+Or for local development:
+
+```json
+{
+  "mcpServers": {
+    "doc-manager": {
+      "command": "uvx",
+      "args": ["--from", "/path/to/doc-manager", "doc-manager"]
+    }
+  }
+}
+```
+
 ## Quick Start
 
-### 1. Initialize for Existing Project
+### 1. Initialize for existing project
 
-```python
-# For projects that already have documentation
+```json
 {
   "tool": "docmgr_init",
   "arguments": {
@@ -66,30 +68,11 @@ pip install -e .
 }
 ```
 
-This creates:
-- `.doc-manager.yml` configuration
-- `.doc-manager/memory/` baselines (repo, symbols)
-- `.doc-manager/dependencies.json` code-to-docs mappings
+Creates `.doc-manager.yml`, baselines, and code-to-docs mappings.
 
-### 2. Bootstrap New Documentation
+### 2. Detect changes (read-only)
 
-```python
-# For projects without documentation
-{
-  "tool": "docmgr_init",
-  "arguments": {
-    "project_path": "/path/to/project",
-    "mode": "bootstrap",
-    "docs_path": "docs"
-  }
-}
-```
-
-This creates documentation structure + config + baselines.
-
-### 3. Detect Changes (Read-Only)
-
-```python
+```json
 {
   "tool": "docmgr_detect_changes",
   "arguments": {
@@ -100,22 +83,11 @@ This creates documentation structure + config + baselines.
 }
 ```
 
-**Key feature:** NEVER writes to baselines (pure read-only).
+Never writes to baselines.
 
-### 4. Sync Documentation
+### 3. Sync documentation
 
-```python
-# Check mode (read-only analysis)
-{
-  "tool": "docmgr_sync",
-  "arguments": {
-    "project_path": "/path/to/project",
-    "mode": "check",
-    "docs_path": "docs"
-  }
-}
-
-# Resync mode (analysis + update baselines)
+```json
 {
   "tool": "docmgr_sync",
   "arguments": {
@@ -126,245 +98,33 @@ This creates documentation structure + config + baselines.
 }
 ```
 
-### 5. Update Baselines
+Modes: `check` (read-only) or `resync` (update baselines).
 
-```python
-# After updating docs, refresh all baselines
-{
-  "tool": "docmgr_update_baseline",
-  "arguments": {
-    "project_path": "/path/to/project",
-    "docs_path": "docs"
-  }
-}
+## Available Tools
+
+- **`docmgr_init`** - Initialize doc-manager for a project (modes: `existing`, `bootstrap`)
+- **`docmgr_detect_changes`** - Detect code/doc changes (read-only, never writes baselines)
+- **`docmgr_detect_platform`** - Auto-detect documentation platform (MkDocs, Sphinx, Hugo, etc.)
+- **`docmgr_validate_docs`** - Check for broken links, missing assets, invalid code snippets
+- **`docmgr_assess_quality`** - Evaluate documentation against 7 quality criteria
+- **`docmgr_update_baseline`** - Update all baselines atomically (repo, symbols, dependencies)
+- **`docmgr_sync`** - Orchestrate change detection + validation + quality + baseline updates
+- **`docmgr_migrate`** - Restructure/migrate documentation with git history preservation
+
+See [Tools Reference](docs/reference/tools.md) for complete API documentation.
+
+## Architecture
+
+### Baseline System
+
+Doc-manager maintains 3 baseline files in `.doc-manager/memory/`:
+
+1. `repo-baseline.json` - File checksums and metadata
+2. `symbol-baseline.json` - TreeSitter code symbols (functions, classes)
+3. `dependencies.json` - Code-to-docs dependency mappings
+
+Workflow:
 ```
-
-Updates 3 files atomically:
-- `repo-baseline.json` (file checksums)
-- `symbol-baseline.json` (code symbols via TreeSitter)
-- `dependencies.json` (code-to-docs mappings)
-
-## Tool reference
-
-### Initialize documentation manager
-
-**Tool:** `docmgr_init` (Tier 1)
-**Replaces:** `docmgr_initialize_config`, `docmgr_initialize_memory`, `docmgr_bootstrap`
-
-**Parameters:**
-- `project_path` (required): Absolute path to project root
-- `mode` (required): `"existing"` or `"bootstrap"`
-- `platform` (optional): Documentation platform (auto-detected if omitted)
-- `exclude_patterns` (optional): Additional patterns to exclude
-- `docs_path` (optional): Documentation directory (default: `"docs"`)
-- `sources` (optional): Source directories to track
-
-**Example:**
-```json
-{
-  "project_path": "/home/user/myproject",
-  "mode": "existing",
-  "docs_path": "documentation"
-}
-```
-
-### Detect changes
-
-**Tool:** `docmgr_detect_changes` (Tier 2)
-**Key Guarantee:** NEVER writes to baselines
-
-**Parameters:**
-- `project_path` (required): Absolute path to project root
-- `mode` (optional): `"checksum"` (default) or `"git_diff"`
-- `since_commit` (optional): Git commit SHA for `git_diff` mode
-- `include_semantic` (optional): Include TreeSitter symbol analysis (default: `false`)
-
-**Example:**
-```json
-{
-  "project_path": "/home/user/myproject",
-  "mode": "checksum",
-  "include_semantic": true
-}
-```
-
-**Returns:**
-```json
-{
-  "status": "success",
-  "changes_detected": true,
-  "total_changes": 3,
-  "changed_files": [
-    {"file": "src/main.py", "category": "source"},
-    {"file": "src/utils.py", "category": "source"}
-  ],
-  "affected_documentation": ["docs/api.md"],
-  "semantic_changes": [...],
-  "note": "Read-only detection - baselines NOT updated"
-}
-```
-
-### Update baseline
-
-**Tool:** `docmgr_update_baseline` (Tier 3)
-
-**Parameters:**
-- `project_path` (required): Absolute path to project root
-- `docs_path` (optional): Documentation directory
-
-**Example:**
-```json
-{
-  "project_path": "/home/user/myproject",
-  "docs_path": "docs"
-}
-```
-
-### Synchronize documentation
-
-**Tool:** `docmgr_sync` (Tier 4)
-
-**Parameters:**
-- `project_path` (required): Absolute path to project root
-- `mode` (required): `"check"` (read-only) or `"resync"` (update baselines)
-- `docs_path` (optional): Documentation directory
-
-**Modes:**
-- `check`: Detects changes, validates docs, assesses quality (read-only)
-- `resync`: Does everything `check` does + updates baselines atomically
-
-**Example:**
-```json
-{
-  "project_path": "/home/user/myproject",
-  "mode": "resync",
-  "docs_path": "docs"
-}
-```
-
-### Other Tools
-
-- **`docmgr_detect_platform`** - Auto-detect documentation platform
-- **`docmgr_validate_docs`** - Check links, assets, code snippets
-- **`docmgr_assess_quality`** - Evaluate against 7 quality criteria
-- **`docmgr_migrate`** - Restructure documentation
-
-See [Tools Reference](docs/reference/tools.md) for complete documentation.
-
-## Migration from v1.0.x
-
-### Deprecated Tools (v1.1.0)
-
-The following tools were **removed in v2.0.0**:
-
-| Removed Tool | Use Instead | Notes |
-|----------------|-------------|-------|
-| `docmgr_initialize_config` | `docmgr_init` with `mode="existing"` | Unified initialization |
-| `docmgr_initialize_memory` | `docmgr_init` with `mode="existing"` | Unified initialization |
-| `docmgr_bootstrap` | `docmgr_init` with `mode="bootstrap"` | Unified initialization |
-| `docmgr_map_changes` | `docmgr_detect_changes` or `docmgr_sync` | Read-only detection |
-
-### Migration Steps (v1.0.x → v2.0.0)
-
-1. **Replace initialization calls:**
-   ```python
-   # OLD (removed in v2.0)
-   await docmgr_initialize_config(...)
-   await docmgr_initialize_memory(...)
-
-   # NEW (v2.0.0)
-   await docmgr_init(project_path="...", mode="existing")
-   ```
-
-2. **Replace change detection:**
-   ```python
-   # OLD (removed in v2.0 - wrote to baselines)
-   await docmgr_map_changes(...)
-
-   # NEW (v2.0.0 - read-only)
-   await docmgr_detect_changes(...)
-   ```
-
-3. **Use explicit baseline updates:**
-   ```python
-   # After updating docs (v2.0.0)
-   await docmgr_update_baseline(project_path="...", docs_path="docs")
-   ```
-
-4. **Use mode-based sync:**
-   ```python
-   # Read-only analysis
-   await docmgr_sync(project_path="...", mode="check")
-
-   # Analysis + update baselines
-   await docmgr_sync(project_path="...", mode="resync")
-   ```
-
-## Project Structure
-
-```text
-doc-manager/
-├── doc_manager_mcp/
-│   ├── server.py              # Main MCP server
-│   ├── constants.py           # Enums and constants
-│   ├── models.py              # Pydantic input models
-│   ├── utils.py               # Utility functions
-│   ├── tools/
-│   │   ├── init.py            # Unified initialization (NEW)
-│   │   ├── detect_changes.py # Read-only change detection (NEW)
-│   │   ├── update_baseline.py# Baseline management (NEW)
-│   │   ├── workflows.py       # Sync, migrate, bootstrap
-│   │   ├── validation.py      # Link/asset validation
-│   │   ├── quality.py         # Quality assessment
-│   │   ├── platform.py        # Platform detection
-│   │   ├── dependencies.py    # Dependency tracking
-│   │   ├── config.py          # Config management (deprecated)
-│   │   ├── memory.py          # Memory system (deprecated)
-│   │   └── changes.py         # map_changes (deprecated)
-│   └── indexing/
-│       ├── tree_sitter.py     # Code symbol indexing
-│       ├── semantic_diff.py   # Symbol comparison
-│       └── baseline.py        # Baseline management
-├── tests/
-│   ├── unit/                  # Unit tests
-│   └── integration/           # Integration tests
-├── specs/                     # Technical specifications
-├── pyproject.toml
-└── README.md
-```
-
-## Configuration
-
-Example `.doc-manager.yml`:
-
-```yaml
-platform: mkdocs
-exclude:
-  - '**/node_modules'
-  - '**/dist'
-  - '**/.venv'
-  - '**/__pycache__'
-docs_path: docs
-sources:
-  - src
-  - lib
-metadata:
-  language: Python
-  created: '2025-01-19T20:00:00'
-  version: '1.1.0'
-```
-
-## Memory System
-
-### Baselines
-
-1. **`repo-baseline.json`** - File checksums and metadata
-2. **`symbol-baseline.json`** - TreeSitter code symbols (functions, classes, etc.)
-3. **`dependencies.json`** - Code-to-docs dependency mappings
-
-### Baseline Workflow
-
-```text
 1. docmgr_init              → Create initial baselines
 2. (make code changes)
 3. docmgr_detect_changes    → Detect changes (read-only)
@@ -372,27 +132,44 @@ metadata:
 5. docmgr_update_baseline   → Refresh baselines
 ```
 
-Or use `docmgr_sync` with `mode="resync"` for steps 3-5 combined.
+Or use `docmgr_sync mode="resync"` to combine steps 3-5.
+
+## Configuration
+
+Example `.doc-manager.yml`:
+
+```yaml
+platform: mkdocs
+use_gitignore: true
+exclude:
+  - "tests/**"
+sources:
+  - "src/**/*.py"
+docs_path: docs
+metadata:
+  language: Python
+  created: '2025-01-19T20:00:00'
+  version: '2.0.0'
+```
+
+See [Configuration Reference](docs/reference/configuration.md) for all options.
 
 ## Development
 
-### Running Tests
+### Running tests
 
 ```bash
-# Run all tests
-pytest
+# All tests
+uv run pytest
 
-# Run unit tests only
-pytest tests/unit/
+# Unit tests only
+uv run pytest tests/unit/
 
-# Run integration tests
-pytest tests/integration/
-
-# Run with coverage
-pytest --cov=doc_manager_mcp
+# With coverage
+uv run pytest --cov=doc_manager_mcp
 ```
 
-### Running the Server
+### Running the server locally
 
 ```bash
 # Install in development mode
@@ -400,30 +177,38 @@ pip install -e .
 
 # Run server (stdio transport)
 doc-manager
+
+# Or with uv
+uvx --from . doc-manager
 ```
 
-### Adding New Tools
+### Linting
 
-1. Create tool implementation in `doc_manager_mcp/tools/`
-2. Define Pydantic input model in `doc_manager_mcp/models.py`
-3. Register tool in `doc_manager_mcp/server.py` with `@mcp.tool` decorator
+```bash
+# Ruff (linter + formatter)
+uv run ruff check .
+uv run ruff format .
+
+# Pyright (type checker)
+uv run pyright
+```
+
+### Adding new tools
+
+1. Create implementation in `doc_manager_mcp/tools/`
+2. Define Pydantic model in `doc_manager_mcp/models.py`
+3. Register tool in `doc_manager_mcp/server.py` with `@mcp.tool`
 4. Add tests in `tests/unit/` and `tests/integration/`
-5. Update this README and API reference
+5. Update documentation
+
+## Documentation
+
+- [Getting Started](docs/getting-started/installation.md)
+- [Tools Reference](docs/reference/tools.md)
+- [Configuration](docs/reference/configuration.md)
+- [Troubleshooting](docs/guides/troubleshooting.md)
+- [Technical Specs](specs/)
 
 ## License
 
-MIT License - See LICENSE file for details
-
-## Contributing
-
-Contributions welcome! Please:
-1. Follow the 7-tool architecture principles
-2. Maintain clear separation of concerns (tiers 1-4)
-3. Add tests for new functionality
-4. Update documentation
-
-## Support
-
-- **Issues:** [GitHub Issues](https://github.com/yourusername/doc-manager/issues)
-- **Spec Docs:** See `specs/` directory for technical specifications
-- **Tools Reference:** See [docs/reference/tools.md](docs/reference/tools.md)
+MIT License
