@@ -2,7 +2,7 @@
 
 An MCP (Model Context Protocol) server for comprehensive documentation lifecycle management. Automates documentation creation, maintenance, quality assessment, and synchronization for software projects.
 
-**Version:** 1.0.0
+**Version:** 1.0.1
 
 ## Features
 
