@@ -1,9 +1,22 @@
 [project]
 name = "doc-manager-mcp"
-version = "1.0.1"
+version = "1.0.2"
 description = "MCP server for comprehensive documentation lifecycle management"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "mcp>=1.0.0",
     "pydantic>=2.0.0",
