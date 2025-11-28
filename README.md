@@ -55,6 +55,57 @@ Then configure your MCP client:
 }
 ```
 
+## Claude Code Plugin
+
+For Claude Code users, a plugin is available that provides a streamlined documentation workflow with specialized agents and commands.
+
+### Installation
+
+```bash
+# Install the plugin from the repository
+claude plugin install /path/to/doc-manager-mcp/claude-plugin
+```
+
+Or if published to a marketplace:
+```bash
+claude plugin install doc-manager@marketplace-name
+```
+
+### What's Included
+
+**Agents**:
+- `@doc-expert` - Documentation lifecycle orchestrator (setup, analysis, quality assessment)
+- `@doc-writer` - Content writer and updater (creates/edits documentation)
+
+**Slash Commands**:
+- `/doc-status` - Quick health check
+- `/doc-sync` - Full sync workflow (detect → update → validate → assess)
+- `/doc-quality` - Quality assessment with actionable findings
+
+**Skill**:
+- `doc-management` - Gentle reminders about documentation status
+
+### Quick Usage
+
+```bash
+# Setup documentation management
+@doc-expert Set up documentation management for this project
+
+# Check status
+/doc-status
+
+# Sync after code changes
+/doc-sync
+
+# Assess quality before release
+/doc-quality
+
+# Update specific documentation
+@doc-writer Update the API documentation for the new authentication endpoints
+```
+
+The plugin provides a feedback loop where @doc-expert analyzes changes, @doc-writer creates content, and @doc-expert validates quality before updating baselines.
+
 ## Quick Start
 
 ### 1. Initialize for existing project

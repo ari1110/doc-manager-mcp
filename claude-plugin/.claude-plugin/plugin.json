@@ -1,0 +1,16 @@
+{
+  "name": "doc-manager",
+  "version": "1.0.0",
+  "description": "Documentation lifecycle management integration for Claude Code. Provides automated documentation sync, validation, quality assessment, and maintenance workflows through the doc-manager MCP server.",
+  "author": "doc-manager contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/doc-manager.git"
+  },
+  "keywords": ["documentation", "docs", "sync", "validation", "quality", "mcp", "doc-management"],
+  "agents": "./agents",
+  "skills": "./skills",
+  "commands": "./commands",
+  "mcpServers": ["./.mcp.json"]
+}
