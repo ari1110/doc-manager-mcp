@@ -32,7 +32,7 @@ uv.lock
 # IDEs
 .vscode/
 .idea/
-.claude/settings.local.json
+.claude/
 *.swp
 *.swo
 *~
@@ -54,3 +54,10 @@ test-registry.json
 
 # cache's
 .*_cache/
+
+# Development and internal files
+CLAUDE.md
+benchmarks/
+internal_docs/
+temp_mermaid/
+specs/
