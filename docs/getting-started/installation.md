@@ -18,8 +18,8 @@ pip install doc-manager-mcp
 ### Method 2: Install from source
 
 ```bash
-git clone https://github.com/yourusername/doc-manager
-cd doc-manager
+git clone https://github.com/ari1110/doc-manager-mcp
+cd doc-manager-mcp
 pip install -e .
 ```
 
@@ -38,7 +38,7 @@ To use Documentation Manager as an MCP server, add it to your MCP settings file:
   "mcpServers": {
     "doc-manager": {
       "command": "uvx",
-      "args": ["--from", "doc-manager-mcp", "doc-manager"]
+      "args": ["doc-manager-mcp"]
     }
   }
 }
@@ -51,7 +51,7 @@ Or for local development:
   "mcpServers": {
     "doc-manager": {
       "command": "uvx",
-      "args": ["--from", "/path/to/doc-manager", "doc-manager"]
+      "args": ["--from", "/path/to/doc-manager-mcp", "doc-manager-mcp"]
     }
   }
 }
