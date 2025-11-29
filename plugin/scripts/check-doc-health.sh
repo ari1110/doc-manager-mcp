@@ -60,16 +60,12 @@ fi
 
 # Silent check - only output if significant drift (10+ files OR 7+ days)
 if [ "$CHANGED_COUNT" -ge 10 ] || [ "$DAYS_SINCE_SYNC" -ge 7 ]; then
-    # Output JSON in Claude Code's SessionStart hook format
-    # This injects additionalContext into Claude's session
-    cat << EOF
-{
-    "hookSpecificOutput": {
-        "hookEventName": "SessionStart",
-        "additionalContext": "📋 Documentation drift detected: $CHANGED_COUNT files changed since last sync ($DAYS_SINCE_SYNC days ago). Run /doc-status to check sync status."
-    }
-}
-EOF
+    # Build context message
+    CONTEXT_MSG="Documentation drift detected: $CHANGED_COUNT files changed since last sync ($DAYS_SINCE_SYNC days ago). Run /doc-status to check sync status."
+
+    # Output compact JSON to stdout (Claude Code SessionStart hook format)
+    # Using printf for single-line output without trailing newline issues
+    printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$CONTEXT_MSG"
 fi
 
 # Exit successfully (silent if no significant drift)
