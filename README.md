@@ -63,82 +63,60 @@ See [Installation Guide](docs/getting-started/installation.md) for local develop
 
 ## Claude Code Plugin
 
-For Claude Code users, a plugin is available that provides a streamlined documentation workflow with specialized agents and commands.
+For Claude Code users, the plugin adds specialized agents and quick commands for an interactive documentation workflow.
 
-### Installation
-
-```bash
-# Install the plugin from the repository
-claude plugin install /path/to/doc-manager-mcp/claude-plugin
-```
-
-Or if published to a marketplace:
-```bash
-claude plugin install doc-manager@marketplace-name
-```
-
-### What's Included
-
-**Agents**:
-- `@doc-expert` - Documentation lifecycle orchestrator (setup, analysis, quality assessment)
-- `@doc-writer` - Content writer and updater (creates/edits documentation)
-
-**Slash Commands**:
-- `/doc-status` - Quick health check
-- `/doc-sync` - Full sync workflow (detect → update → validate → assess)
-- `/doc-quality` - Quality assessment with actionable findings
-
-**Skill**:
-- `doc-management` - Gentle reminders about documentation status
-
-### Quick Usage
+**Installation:**
 
 ```bash
-# Setup documentation management
-@doc-expert Set up documentation management for this project
+# 1. Add the marketplace
+/plugin marketplace add ari1110/doc-manager-mcp
 
-# Check status
-/doc-status
-
-# Sync after code changes
-/doc-sync
-
-# Assess quality before release
-/doc-quality
-
-# Update specific documentation
-@doc-writer Update the API documentation for the new authentication endpoints
+# 2. Install the plugin (includes MCP server config)
+/plugin install doc-management@doc-manager-suite
 ```
 
-The plugin provides a feedback loop where @doc-expert analyzes changes, @doc-writer creates content, and @doc-expert validates quality before updating baselines.
+**What you get:**
+- `@doc-expert` - Documentation expert who analyzes state and directs next steps
+- `@doc-writer` - Content specialist who creates/updates docs
+- `/doc-status`, `/doc-sync`, `/doc-quality` - Quick commands for common workflows
+
+**Example workflow:**
+
+```text
+You: "Set up documentation management"
+Claude: [Invokes @doc-expert to detect platform and initialize]
+
+You: "/doc-sync"
+Claude: [Detects changes, updates docs via @doc-writer, validates, updates baselines]
+
+You: "Check quality before release"
+Claude: [Runs quality assessment and shows actionable findings]
+```
+
+See the [Claude Code Plugin guide](docs/guides/claude-code-plugin.md) for details.
 
 ## Quick Start
 
-Initialize for your project:
+**With Claude Code plugin:**
 
-```json
-{
-  "tool": "docmgr_init",
-  "arguments": {
-    "project_path": "/path/to/project",
-    "mode": "existing"
-  }
-}
+```text
+You: "Set up documentation management for this project"
+Claude: [Uses @doc-expert to detect platform and initialize]
+
+You: "/doc-sync"
+Claude: [Detects changes, shows what needs updating]
 ```
 
-Then sync documentation changes:
+**With any MCP client:**
 
-```json
-{
-  "tool": "docmgr_sync",
-  "arguments": {
-    "project_path": "/path/to/project",
-    "mode": "check"
-  }
-}
-```
+Ask your AI assistant to:
+- Initialize documentation management for your project
+- Check documentation sync status
+- Validate documentation quality
 
-See [Quick Start Guide](docs/getting-started/quick-start.md) for step-by-step instructions and workflow details.
+Your AI client will use the appropriate tools (`docmgr_init`, `docmgr_sync`, etc.) automatically.
+
+See [Quick Start Guide](docs/getting-started/quick-start.md) for detailed workflows.
 
 ## Available Tools
 

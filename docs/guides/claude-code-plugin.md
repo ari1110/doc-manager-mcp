@@ -59,11 +59,11 @@ It suggests, it doesn't demand. You control when heavy workflows run.
 ## Installation
 
 ```bash
-claude mcp add doc-manager-mcp --project -- uvx doc-manager-mcp
-claude plugin install doc-management --project
+/plugin marketplace add ari1110/doc-manager-mcp
+/plugin install doc-management@doc-manager-suite
 ```
 
-The `--project` flag scopes the plugin to the current project (recommended - keeps the plugin focused on projects that need it).
+The plugin automatically configures the doc-manager MCP server.
 
 ## Example workflow
 

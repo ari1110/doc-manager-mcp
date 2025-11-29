@@ -30,14 +30,16 @@ That's it! The MCP client will automatically download and run the server when ne
 For Claude Code users, the plugin adds specialized agents, quick commands, and contextual awareness:
 
 ```bash
-# Add the MCP server (project-scoped)
-claude mcp add doc-manager-mcp --project -- uvx doc-manager-mcp
+# 1. Add the marketplace
+/plugin marketplace add ari1110/doc-manager-mcp
 
-# Install the plugin (project-scoped)
-claude plugin install doc-management --project
+# 2. Install the plugin (includes MCP server config)
+/plugin install doc-management@doc-manager-suite
 ```
 
-The `--project` flag keeps the plugin scoped to projects that need it. See the [Claude Code Plugin guide](../guides/claude-code-plugin.md) for what the plugin enables.
+The plugin automatically configures the MCP server.
+
+See the [Claude Code Plugin guide](../guides/claude-code-plugin.md) for what the plugin enables.
 
 ## Alternative installation methods
 

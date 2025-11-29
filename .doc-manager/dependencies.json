@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-28T22:22:40.861461",
+  "generated_at": "2025-11-28T22:40:59.504634",
   "doc_to_code": {
     "getting-started/installation.md": [
       "doc_manager_mcp/server.py",
@@ -1295,9 +1295,6 @@
     ".mcp.json": [
       "README.md"
     ],
-    "doc-management": [
-      "README.md"
-    ],
     "doc_manager_mcp/models.py": [
       "README.md"
     ],
@@ -2147,6 +2144,14 @@
       {
         "reference": "docmgr_validate_docs()",
         "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "docmgr_init()",
+        "doc_file": "README.md"
+      },
+      {
+        "reference": "docmgr_sync()",
+        "doc_file": "README.md"
       },
       {
         "reference": "docmgr_init()",
@@ -3621,10 +3626,6 @@
       {
         "reference": "false",
         "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "doc-management",
-        "doc_file": "README.md"
       },
       {
         "reference": "existing",
