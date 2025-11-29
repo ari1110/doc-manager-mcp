@@ -2,6 +2,8 @@
 
 Get up and running with Documentation Manager MCP server in 5 minutes.
 
+> **Using Claude Code?** Consider the [plugin](../guides/claude-code-plugin.md) which adds agents and quick commands for an interactive workflow.
+
 ## Step 1: Add to MCP client
 
 Add to your MCP settings file (e.g., `claude_desktop_config.json`):
@@ -106,6 +108,7 @@ This updates all baselines atomically to match the current codebase.
 
 ## Next steps
 
+- [Claude Code Plugin](../guides/claude-code-plugin.md) - Agents and commands for interactive use
 - [Workflows Guide](../guides/workflows.md) - Learn about common workflows
 - [Configuration Reference](../reference/configuration.md) - Detailed config options
 - [Tools Reference](../reference/tools.md) - Complete API documentation

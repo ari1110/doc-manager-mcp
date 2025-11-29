@@ -9,9 +9,9 @@ exclude:
   - ".claude**/**"
   - ".doc-manager/**"
   - "internal_docs/**"
-  - "doc-management/**"
 sources:
   - "doc_manager_mcp/**/*.py"
+  - "doc-management/**"
 docs_path: docs
 use_gitignore: true
 metadata:

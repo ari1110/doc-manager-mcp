@@ -1,8 +1,7 @@
 {
   "name": "doc-manager-suite",
   "owner": {
-    "name": "ari1110",
-    "email": "devtools@company.com"
+    "name": "ari1110"
   },
   "plugins": [
     {

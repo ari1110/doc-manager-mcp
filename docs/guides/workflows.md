@@ -2,6 +2,8 @@
 
 Common workflows and patterns for using doc-manager effectively.
 
+> **Using Claude Code?** The [plugin](claude-code-plugin.md) provides agents and quick commands (`/doc-status`, `/doc-sync`, `/doc-quality`) that handle these workflows for you. The patterns below are for direct MCP tool usage in automation, CI/CD, or other clients.
+
 ## Initial setup workflow
 
 Set up doc-manager in a new or existing project.
@@ -497,6 +499,7 @@ Skip it when:
 
 ## See also
 
+- [Claude Code Plugin](claude-code-plugin.md) - Agents and commands for interactive use
 - [Tools reference](../reference/tools.md) - Detailed tool documentation
 - [File formats](../reference/file-formats.md) - Configuration and baseline files
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions

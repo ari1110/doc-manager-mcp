@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-28T19:58:00.147165",
+  "generated_at": "2025-11-28T22:09:56.707717",
   "doc_to_code": {
     "getting-started/installation.md": [
       "doc_manager_mcp/server.py",
@@ -8,6 +8,7 @@
       "doc_manager_mcp/tools/state/update_baseline.py"
     ],
     "getting-started/quick-start.md": [],
+    "guides/claude-code-plugin.md": [],
     "guides/platforms.md": [
       "doc_manager_mcp/server.py"
     ],
@@ -86,6 +87,7 @@
       "doc_manager_mcp/tools/workflows/migrate_helpers.py"
     ],
     "README.md": [
+      "doc-management/.mcp.json",
       "doc_manager_mcp/models.py",
       "doc_manager_mcp/server.py",
       "doc_manager_mcp/tools/analysis/detect_changes.py",
@@ -163,6 +165,9 @@
       "reference/api/models.md",
       "reference/tools/docmgr_migrate.md",
       "reference/tools.md"
+    ],
+    "doc-management/.mcp.json": [
+      "README.md"
     ]
   },
   "unmatched_references": {
@@ -239,6 +244,9 @@
       "reference/tools/docmgr_migrate.md",
       "reference/tools.md",
       "README.md"
+    ],
+    "quick": [
+      "guides/claude-code-plugin.md"
     ],
     "index.md": [
       "guides/platforms.md"
@@ -604,6 +612,9 @@
       "reference/tools/docmgr_validate_docs.md",
       "reference/tools.md",
       "README.md"
+    ],
+    "quick": [
+      "guides/claude-code-plugin.md"
     ],
     "mkdocs.yml": [
       "guides/platforms.md",
@@ -1281,6 +1292,9 @@
       "reference/tools.md",
       "README.md"
     ],
+    ".mcp.json": [
+      "README.md"
+    ],
     "doc-management": [
       "README.md"
     ],
@@ -1757,6 +1771,10 @@
         "doc_file": "reference/tools.md"
       },
       {
+        "reference": ".mcp.json",
+        "doc_file": "README.md"
+      },
+      {
         "reference": "claude_desktop_config.json",
         "doc_file": "README.md"
       },
@@ -2161,6 +2179,12 @@
       {
         "reference": "docmgr_migrate()",
         "doc_file": "README.md"
+      }
+    ],
+    "semantic_command": [
+      {
+        "reference": "quick",
+        "doc_file": "guides/claude-code-plugin.md"
       }
     ],
     "config_key": [

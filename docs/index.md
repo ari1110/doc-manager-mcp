@@ -49,6 +49,10 @@ The server provides 8 tools organized into 4 tiers:
 
 This creates a complete documentation structure with configuration, baselines, and templates.
 
+## Claude Code plugin
+
+For Claude Code users, the **doc-management plugin** adds specialized agents, quick commands, and contextual awareness on top of the MCP tools. See the [Claude Code Plugin guide](guides/claude-code-plugin.md) for what it enables.
+
 ## Documentation sections
 
 ### Getting started
