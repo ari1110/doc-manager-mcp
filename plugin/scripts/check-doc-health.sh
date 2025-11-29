@@ -36,10 +36,25 @@ CHANGED_COUNT=0
 
 # Try to detect changes using git if available
 if command -v git &> /dev/null && [ -d "$PROJECT_DIR/.git" ]; then
-    # Get files changed since baseline timestamp
+    cd "$PROJECT_DIR" || exit 0
+
+    # Get baseline date in git-friendly format
     BASELINE_DATE=$(date -d "@$BASELINE_MTIME" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || date -r "$BASELINE_MTIME" "+%Y-%m-%d %H:%M:%S" 2>/dev/null)
+
+    # Count unique files changed since baseline:
+    # 1. Files in commits since baseline date (git log --since)
+    # 2. Uncommitted changes (staged + unstaged)
     if [ -n "$BASELINE_DATE" ]; then
-        CHANGED_COUNT=$(git diff --name-only --since="$BASELINE_DATE" 2>/dev/null | wc -l)
+        CHANGED_COUNT=$(
+            {
+                # Files changed in commits since baseline
+                git log --since="$BASELINE_DATE" --name-only --pretty=format: 2>/dev/null
+                # Uncommitted staged changes
+                git diff --cached --name-only 2>/dev/null
+                # Uncommitted unstaged changes
+                git diff --name-only 2>/dev/null
+            } | grep -v '^$' | sort -u | wc -l
+        )
     fi
 fi
 
