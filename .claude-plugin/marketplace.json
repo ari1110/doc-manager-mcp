@@ -1,5 +1,6 @@
 {
   "name": "doc-manager-suite",
+  "description": "Documentation lifecycle management integration for Claude Code. Proactive health monitoring, quality assessment, and intelligent agent coordination.",
   "owner": {
     "name": "ari1110"
   },
@@ -7,7 +8,7 @@
     {
       "name": "doc-manager",
       "source": "./plugin",
-      "description": "Documentation lifecycle management integration for Claude Code. Proactive health monitoring, quality assessment, and intelligent agent coordination.",
+      "description": "Plugin for documentation lifecycle management with health monitoring, sync workflows, quality assessment, and agent coordination.",
       "version": "1.1.0",
       "author": {
         "name": "ari1110"
