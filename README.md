@@ -19,7 +19,26 @@ An MCP (Model Context Protocol) server for comprehensive documentation lifecycle
 
 ## Installation
 
-Add to your MCP settings file (e.g., `claude_desktop_config.json`):
+### Claude Code (Recommended)
+
+Add to your **project-level** `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "doc-manager": {
+      "command": "uvx",
+      "args": ["doc-manager-mcp"]
+    }
+  }
+}
+```
+
+> **⚠️ Important**: Only add this MCP server at the **project level**. Do not add it to user-level or global MCP configuration. The doc-manager tracks project-specific baselines and documentation state that should not be shared across projects.
+
+### Claude Desktop
+
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
