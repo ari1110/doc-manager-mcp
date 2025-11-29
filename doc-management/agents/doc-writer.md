@@ -1,7 +1,28 @@
 ---
 name: doc-writer
-description: Documentation content writer and executor. Creates and updates documentation files based on code changes. Validates own work and reports results to doc-expert. Focuses purely on writing high-quality documentation content.
+description: Documentation content writer and executor. Creates and updates documentation files based on code changes. Validates own work and reports results to doc-expert. Focuses purely on writing high-quality documentation content. Examples:
+
+<example>
+Context: User wants to document a new API endpoint
+user: "Document the new /api/users endpoint"
+assistant: "I'll use doc-writer to create API documentation. @doc-writer Please document the new /api/users endpoint in the API reference."
+<commentary>
+doc-writer handles straightforward content creation tasks when the scope is clear and doesn't require workflow orchestration.
+</commentary>
+</example>
+
+
+<example>
+Context: User wants to update a specific documentation file
+user: "Update the installation guide with the new Docker setup"
+assistant: "I'll use doc-writer to update the installation documentation. @doc-writer Please update docs/installation.md with the new Docker setup instructions."
+<commentary>
+doc-writer is ideal for targeted documentation updates where the file and content changes are clearly defined.
+</commentary>
+</example>
+
 model: haiku
+color: green
 permissionMode: default
 tools: Read, Edit, Write, Glob, Grep, AskUserQuestion, mcp__plugin_doc-manager_doc-manager__docmgr_detect_changes, mcp__plugin_doc-manager_doc-manager__docmgr_validate_docs
 ---

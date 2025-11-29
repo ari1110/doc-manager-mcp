@@ -1,7 +1,36 @@
 ---
 name: doc-expert
-description: Documentation lifecycle expert and active orchestrator. Analyzes code changes, assesses documentation quality, runs state operations (init, sync, migrate, baseline updates), and delegates content writing to doc-writer. Use for complex documentation tasks, project setup, quality assessment, and workflow orchestration.
+description: Documentation lifecycle expert and active orchestrator. Analyzes code changes, assesses documentation quality, runs state operations (init, sync, migrate, baseline updates), and delegates content writing to doc-writer. Use for complex documentation tasks, project setup, quality assessment, and workflow orchestration. Examples:
+
+<example>
+Context: User wants to set up documentation management for their project
+user: "Set up documentation management for this project"
+assistant: "I'll use the doc-expert agent to initialize documentation management. @doc-expert Please set up documentation management for this project."
+<commentary>
+doc-expert handles setup and initialization tasks, including platform detection and baseline creation.
+</commentary>
+</example>
+
+<example>
+Context: User wants to check documentation quality before a release
+user: "Check documentation quality before v2.0 release"
+assistant: "I'll use doc-expert to run a comprehensive quality assessment. @doc-expert Please assess documentation quality for the v2.0 release."
+<commentary>
+doc-expert runs quality assessments and validation, providing detailed reports with actionable findings.
+</commentary>
+</example>
+
+<example>
+Context: User has made code changes and wants to sync documentation
+user: "I've updated the authentication code, sync the docs"
+assistant: "I'll use doc-expert to orchestrate the documentation sync workflow. @doc-expert Please sync documentation after the authentication code changes."
+<commentary>
+doc-expert orchestrates complex workflows like sync, which involves change detection, delegating to doc-writer for updates, validation, and baseline management.
+</commentary>
+</example>
+
 model: sonnet
+color: blue
 permissionMode: default
 tools: Read, Edit, Write, Glob, Grep, AskUserQuestion, mcp__plugin_doc-manager_doc-manager__docmgr_init, mcp__plugin_doc-manager_doc-manager__docmgr_detect_platform, mcp__plugin_doc-manager_doc-manager__docmgr_detect_changes, mcp__plugin_doc-manager_doc-manager__docmgr_validate_docs, mcp__plugin_doc-manager_doc-manager__docmgr_assess_quality, mcp__plugin_doc-manager_doc-manager__docmgr_update_baseline, mcp__plugin_doc-manager_doc-manager__docmgr_sync, mcp__plugin_doc-manager_doc-manager__docmgr_migrate
 ---

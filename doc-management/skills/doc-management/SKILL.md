@@ -1,6 +1,6 @@
 ---
 name: doc-management
-description: Documentation lifecycle management for software projects. Provides status awareness, sync workflows, validation, and quality assessment through the doc-manager MCP server. Gently reminds about documentation health without auto-running heavy workflows. Activates when users mention documentation, docs, releases, or quality checks.
+description: This skill should be used when the user asks to "check docs", "sync documentation", "validate docs", "assess quality", "setup documentation", or mentions "release", "deploy", "merge", or "quality checks". Provides gentle reminders about documentation health through the doc-manager MCP server without auto-running heavy workflows.
 ---
 
 # Doc-Management Skill
