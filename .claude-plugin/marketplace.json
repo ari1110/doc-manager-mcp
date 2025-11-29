@@ -1,6 +1,6 @@
 {
   "name": "doc-manager-suite",
-  "description": "Documentation lifecycle management integration for Claude Code. Proactive health monitoring, quality assessment, and intelligent agent coordination.",
+  "metadata.description": "Documentation lifecycle management integration for Claude Code. Proactive health monitoring, quality assessment, and intelligent agent coordination.",
   "owner": {
     "name": "ari1110"
   },
