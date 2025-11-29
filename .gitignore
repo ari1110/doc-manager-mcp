@@ -45,7 +45,7 @@ Thumbs.db
 *.log
 
 # Secrets and credentials (T010 - FR-004, FR-005)
-# .mcp.json
+/.mcp.json
 .env
 *.env.local
 
