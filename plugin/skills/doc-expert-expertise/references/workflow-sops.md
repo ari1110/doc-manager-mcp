@@ -343,3 +343,170 @@ Step 5: Report Completion
 | /doc-sync | Sync docs with code |
 | /doc-quality | Quality assessment |
 ```
+
+---
+
+## WF6: Config Tuning
+
+**Purpose**: Optimize doc-manager configuration for project needs.
+
+**When to Use**: After setup when accuracy is low, when project type doesn't match strategy, when adding new source directories, when framework symbols inflate coverage.
+
+### Procedure
+
+```
+Step 1: Assess Current State
+├── Run: docmgr_assess_quality
+├── Capture: api_coverage percentage, undocumented symbols count
+├── Read: .doc-manager.yml to check current config
+└── Note: any existing api_coverage settings
+
+Step 2: Identify Project Type
+├── Check pyproject.toml/package.json for dependencies
+├── Look for indicators:
+│   ├── MCP Server → mcp dependency, FastMCP imports
+│   ├── Library → __all__ exports, pip installable
+│   ├── CLI → argparse/click/typer
+│   └── Application → framework configs
+└── Classify: library | mcp_server | cli | application
+
+Step 3: Analyze Coverage Issues
+├── If coverage is low (<50%):
+│   ├── Check if framework symbols are included
+│   ├── Identify which preset would help
+│   └── Check if strategy matches project type
+├── If coverage is 0%:
+│   ├── Check if all_only strategy + no __all__
+│   └── Determine if this is correct for project type
+└── List specific symbols inflating count
+
+Step 4: Recommend Changes
+├── Strategy recommendation based on project type:
+│   ├── Library → all_then_underscore
+│   ├── MCP Server → all_only
+│   ├── CLI → all_only or underscore_only
+│   └── Application → all_only
+├── Preset recommendation based on dependencies:
+│   ├── pydantic in deps → suggest pydantic preset
+│   ├── django in deps → suggest django preset
+│   ├── pytest in deps → suggest pytest preset
+│   └── etc.
+└── Present options to user with rationale
+
+Step 5: Apply Changes
+├── If user approves → Edit .doc-manager.yml
+├── Update api_coverage section:
+│   ├── strategy: recommended_strategy
+│   ├── preset: recommended_preset
+│   └── exclude_symbols: [custom patterns if needed]
+└── Run: docmgr_update_baseline
+
+Step 6: Verify Improvement
+├── Run: docmgr_assess_quality again
+├── Compare: old coverage vs new coverage
+├── Check: undocumented symbols list makes sense
+└── Report: improvement summary
+```
+
+### Config Tuning Report Template
+
+```markdown
+## Config Tuning Results
+
+**Project Type**: MCP Server
+**Previous Coverage**: 26% (52/199 symbols)
+**New Coverage**: 0% (0/0 public symbols)
+
+### Changes Applied
+
+```yaml
+api_coverage:
+  preset: pydantic
+  strategy: all_only  # Changed from all_then_underscore
+```
+
+### Rationale
+
+This is an MCP server - users interact via MCP protocol, not Python imports.
+Using `all_only` strategy correctly reflects that there's no public Python API.
+
+### Symbols Now Excluded
+
+Framework symbols filtered by pydantic preset:
+- Config, model_config, validators (7 symbols)
+
+Internal symbols filtered by all_only strategy:
+- Functions not in __all__ (192 symbols)
+
+### Verification
+
+Quality assessment now accurately reflects documentation state.
+```
+
+### Common Tuning Scenarios
+
+#### Scenario A: Framework Symbols Inflating Count
+
+**Symptom**: 30% coverage, many Pydantic/Django/etc. symbols undocumented
+
+**Solution**:
+```yaml
+api_coverage:
+  preset: pydantic  # or django, fastapi, etc.
+```
+
+#### Scenario B: MCP Server Showing Internal APIs
+
+**Symptom**: 25% coverage on MCP server, internal functions listed
+
+**Solution**:
+```yaml
+api_coverage:
+  strategy: all_only
+```
+
+#### Scenario C: Test Symbols Included
+
+**Symptom**: test_* and Test* functions in undocumented list
+
+**Solution**:
+```yaml
+api_coverage:
+  preset: pytest
+  # OR add custom excludes:
+  exclude_symbols:
+    - "test_*"
+    - "Test*"
+```
+
+#### Scenario D: Multiple Frameworks
+
+**Symptom**: Using FastAPI + SQLAlchemy, need multiple presets
+
+**Solution**:
+```yaml
+api_coverage:
+  preset: fastapi  # Base preset
+  exclude_symbols:
+    # Additional SQLAlchemy patterns
+    - "metadata"
+    - "__table__"
+    - "__tablename__"
+```
+
+### Troubleshooting
+
+**Coverage didn't change after config update**:
+1. Ensure `docmgr_update_baseline` was run
+2. Check that pattern syntax is correct (fnmatch, not regex)
+3. Verify preset name is spelled correctly
+
+**Coverage is now 0% unexpectedly**:
+1. Check if `all_only` strategy is set
+2. Verify if `__all__` is defined in modules
+3. For libraries, consider switching to `all_then_underscore`
+
+**Preset not filtering expected symbols**:
+1. Check exact symbol names vs preset patterns
+2. Some patterns use wildcards (test_*), some are exact (Config)
+3. Consider adding custom exclude_symbols for edge cases

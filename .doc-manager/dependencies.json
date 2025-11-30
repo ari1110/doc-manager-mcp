@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-30T01:54:16.235779",
+  "generated_at": "2025-11-30T12:50:56.074600",
   "doc_to_code": {
     "getting-started/installation.md": [
       "doc_manager_mcp/server.py",
@@ -40,6 +40,9 @@
       "doc_manager_mcp/tools/analysis/validation/symbols.py",
       "doc_manager_mcp/tools/analysis/validation/syntax.py",
       "doc_manager_mcp/tools/workflows/migrate_helpers.py"
+    ],
+    "reference/api-coverage.md": [
+      "doc_manager_mcp/tools/state/update_baseline.py"
     ],
     "reference/configuration.md": [
       "doc_manager_mcp/tools/state/init.py"
@@ -144,6 +147,7 @@
       "guides/troubleshooting.md",
       "guides/workflows.md",
       "reference/api/enums.md",
+      "reference/api-coverage.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
       "reference/tools/docmgr_update_baseline.md",
@@ -232,6 +236,7 @@
       "guides/troubleshooting.md",
       "guides/workflows.md",
       "reference/api/enums.md",
+      "reference/api-coverage.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
       "reference/tools/docmgr_update_baseline.md",
@@ -291,7 +296,9 @@
       "reference/file-formats.md"
     ],
     "api_coverage": [
-      "guides/troubleshooting.md"
+      "guides/troubleshooting.md",
+      "reference/api-coverage.md",
+      "reference/configuration.md"
     ],
     "preserve_history": [
       "guides/troubleshooting.md",
@@ -520,6 +527,77 @@
     "semantic_changes": [
       "reference/api/models.md"
     ],
+    "Config": [
+      "reference/api-coverage.md"
+    ],
+    "Meta": [
+      "reference/api-coverage.md"
+    ],
+    "all_then_underscore": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "__all__": [
+      "reference/api-coverage.md"
+    ],
+    "all_only": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "underscore_only": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "model_config": [
+      "reference/api-coverage.md"
+    ],
+    "model_validator": [
+      "reference/api-coverage.md"
+    ],
+    "field_validator": [
+      "reference/api-coverage.md"
+    ],
+    "root_validator": [
+      "reference/api-coverage.md"
+    ],
+    "DoesNotExist": [
+      "reference/api-coverage.md"
+    ],
+    "MultipleObjectsReturned": [
+      "reference/api-coverage.md"
+    ],
+    "__table__": [
+      "reference/api-coverage.md"
+    ],
+    "__tablename__": [
+      "reference/api-coverage.md"
+    ],
+    "__mapper__": [
+      "reference/api-coverage.md"
+    ],
+    "Serialize": [
+      "reference/api-coverage.md"
+    ],
+    "Deserialize": [
+      "reference/api-coverage.md"
+    ],
+    "exclude_symbols": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "include_symbols": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "test_foo": [
+      "reference/api-coverage.md"
+    ],
+    "test_bar": [
+      "reference/api-coverage.md"
+    ],
+    "test_": [
+      "reference/api-coverage.md"
+    ],
     "doc-manager-mcp": [
       "README.md"
     ]
@@ -587,6 +665,7 @@
       "guides/troubleshooting.md",
       "guides/workflows.md",
       "reference/api/enums.md",
+      "reference/api-coverage.md",
       "reference/file-formats.md",
       "reference/tools/docmgr_sync.md",
       "reference/tools/docmgr_update_baseline.md",
@@ -800,7 +879,9 @@
       "guides/troubleshooting.md"
     ],
     "api_coverage": [
-      "guides/troubleshooting.md"
+      "guides/troubleshooting.md",
+      "reference/api-coverage.md",
+      "reference/configuration.md"
     ],
     ".doc-manager/memory/doc-conventions.yml": [
       "guides/troubleshooting.md",
@@ -1204,6 +1285,168 @@
     "semantic_changes": [
       "reference/api/models.md"
     ],
+    "Config": [
+      "reference/api-coverage.md"
+    ],
+    "Meta": [
+      "reference/api-coverage.md"
+    ],
+    "strategy": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "all_then_underscore": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "__all__": [
+      "reference/api-coverage.md"
+    ],
+    "all_only": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "underscore_only": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "preset": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "pydantic": [
+      "reference/api-coverage.md"
+    ],
+    "model_config": [
+      "reference/api-coverage.md"
+    ],
+    "model_validator": [
+      "reference/api-coverage.md"
+    ],
+    "field_validator": [
+      "reference/api-coverage.md"
+    ],
+    "root_validator": [
+      "reference/api-coverage.md"
+    ],
+    "validator": [
+      "reference/api-coverage.md"
+    ],
+    "django": [
+      "reference/api-coverage.md"
+    ],
+    "DoesNotExist": [
+      "reference/api-coverage.md"
+    ],
+    "MultipleObjectsReturned": [
+      "reference/api-coverage.md"
+    ],
+    "fastapi": [
+      "reference/api-coverage.md"
+    ],
+    "pytest": [
+      "reference/api-coverage.md"
+    ],
+    "fixture": [
+      "reference/api-coverage.md"
+    ],
+    "conftest": [
+      "reference/api-coverage.md"
+    ],
+    "sqlalchemy": [
+      "reference/api-coverage.md"
+    ],
+    "metadata": [
+      "reference/api-coverage.md",
+      "reference/file-formats.md"
+    ],
+    "__table__": [
+      "reference/api-coverage.md"
+    ],
+    "__tablename__": [
+      "reference/api-coverage.md"
+    ],
+    "__mapper__": [
+      "reference/api-coverage.md"
+    ],
+    "registry": [
+      "reference/api-coverage.md"
+    ],
+    "jest": [
+      "reference/api-coverage.md"
+    ],
+    "describe": [
+      "reference/api-coverage.md"
+    ],
+    "it": [
+      "reference/api-coverage.md"
+    ],
+    "test": [
+      "reference/api-coverage.md",
+      "reference/file-formats.md"
+    ],
+    "expect": [
+      "reference/api-coverage.md"
+    ],
+    "vitest": [
+      "reference/api-coverage.md"
+    ],
+    "suite": [
+      "reference/api-coverage.md"
+    ],
+    "vi": [
+      "reference/api-coverage.md"
+    ],
+    "react": [
+      "reference/api-coverage.md"
+    ],
+    "vue": [
+      "reference/api-coverage.md"
+    ],
+    "go-test": [
+      "reference/api-coverage.md"
+    ],
+    "rust-test": [
+      "reference/api-coverage.md"
+    ],
+    "tests": [
+      "reference/api-coverage.md"
+    ],
+    "serde": [
+      "reference/api-coverage.md"
+    ],
+    "Serialize": [
+      "reference/api-coverage.md"
+    ],
+    "Deserialize": [
+      "reference/api-coverage.md"
+    ],
+    "exclude_symbols": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "include_symbols": [
+      "reference/api-coverage.md",
+      "reference/configuration.md"
+    ],
+    "test_foo": [
+      "reference/api-coverage.md"
+    ],
+    "test_bar": [
+      "reference/api-coverage.md"
+    ],
+    "file1": [
+      "reference/api-coverage.md"
+    ],
+    "file2": [
+      "reference/api-coverage.md"
+    ],
+    "file3": [
+      "reference/api-coverage.md"
+    ],
+    "test_": [
+      "reference/api-coverage.md"
+    ],
     "false": [
       "reference/configuration.md",
       "reference/file-formats.md",
@@ -1240,9 +1483,6 @@
     "files": [
       "reference/file-formats.md"
     ],
-    "metadata": [
-      "reference/file-formats.md"
-    ],
     "code": [
       "reference/file-formats.md"
     ],
@@ -1256,9 +1496,6 @@
       "reference/file-formats.md"
     ],
     "dependency": [
-      "reference/file-formats.md"
-    ],
-    "test": [
       "reference/file-formats.md"
     ],
     "infrastructure": [
@@ -1928,6 +2165,10 @@
         "doc_file": "reference/api/models.md"
       },
       {
+        "reference": "docmgr_update_baseline()",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
         "reference": "docmgr_init()",
         "doc_file": "reference/configuration.md"
       },
@@ -2516,7 +2757,167 @@
         "doc_file": "reference/api/models.md"
       },
       {
+        "reference": "api_coverage",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "underscore_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "model_config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "model_validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "field_validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "root_validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "model_config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__table__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__tablename__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__mapper__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "exclude_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "exclude_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test_foo",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test_bar",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test_",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
         "reference": "use_gitignore",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "underscore_only",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "exclude_symbols",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "include_symbols",
         "doc_file": "reference/configuration.md"
       },
       {
@@ -3198,6 +3599,142 @@
         "doc_file": "reference/api/models.md"
       },
       {
+        "reference": "strategy",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "preset",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "pydantic",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "django",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "fastapi",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "pytest",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "fixture",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "conftest",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "sqlalchemy",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "metadata",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "registry",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "jest",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "describe",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "it",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "expect",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "vitest",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "describe",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "it",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "suite",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "expect",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "vi",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "react",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "vue",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "go-test",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "rust-test",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "tests",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "serde",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "file1",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "file1",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "file2",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "file3",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
         "reference": "mkdocs",
         "doc_file": "reference/configuration.md"
       },
@@ -3239,6 +3776,14 @@
       },
       {
         "reference": "gitwildmatch",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "strategy",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "preset",
         "doc_file": "reference/configuration.md"
       },
       {
@@ -3834,6 +4379,54 @@
       {
         "reference": "TerminologyConventions",
         "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "Config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Meta",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Meta",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "DoesNotExist",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "MultipleObjectsReturned",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Serialize",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Deserialize",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "Config",
+        "doc_file": "reference/api-coverage.md"
       }
     ]
   },

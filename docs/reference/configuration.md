@@ -129,6 +129,30 @@ metadata:
   version: 1.0.0
 ```
 
+### API coverage
+
+- **Type**: object
+- **Default**: Not set (uses defaults)
+- **Required**: No
+- **Description**: Configure how public API symbols are detected for documentation coverage metrics
+
+The `api_coverage` section controls which code symbols (functions, classes, etc.) are considered "public" and should be documented. This affects the accuracy percentage shown in quality assessments.
+
+**Quick example:**
+```yaml
+api_coverage:
+  preset: pydantic      # Filter framework symbols
+  strategy: all_only    # Only count __all__ exports
+```
+
+**Key options:**
+- `strategy` - How to determine public symbols (`all_then_underscore`, `all_only`, `underscore_only`)
+- `preset` - Pre-configured exclusions for common frameworks (pydantic, django, jest, etc.)
+- `exclude_symbols` - Custom patterns to exclude
+- `include_symbols` - Force-include specific symbols
+
+For complete documentation of all options, presets, and examples, see [API Coverage Reference](api-coverage.md).
+
 ## Configuration examples
 
 ### Example 1: Python project with MkDocs

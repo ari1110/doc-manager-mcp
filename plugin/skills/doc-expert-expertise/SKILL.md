@@ -12,9 +12,11 @@ You have access to professional documentation management knowledge. Use these re
 | Topic | Reference | When to Use |
 |-------|-----------|-------------|
 | Quality criteria | [quality-framework.md](references/quality-framework.md) | Assessing documentation quality |
-| Workflows | [workflow-sops.md](references/workflow-sops.md) | Executing sync, setup, migration |
+| Workflows | [workflow-sops.md](references/workflow-sops.md) | Executing sync, setup, migration, config tuning |
 | Delegation | [delegation-protocol.md](references/delegation-protocol.md) | Working with doc-writer |
 | Releases | [release-checklist.md](references/release-checklist.md) | Pre-release audits |
+| Configuration | [config-reference.md](references/config-reference.md) | Setting up or tuning .doc-manager.yml |
+| Conventions | [conventions-reference.md](references/conventions-reference.md) | Setting up doc-conventions.yml |
 
 ## Quality Framework Overview
 
@@ -40,6 +42,8 @@ See [quality-framework.md](references/quality-framework.md) for scoring rubrics 
 **Release Gate**: sync(check) → assess_quality → recommendation
 
 **Setup**: detect_platform → confirm → init → report
+
+**Config Tuning**: assess_quality → identify project type → recommend strategy/presets → apply → verify
 
 See [workflow-sops.md](references/workflow-sops.md) for detailed procedures.
 
