@@ -4,9 +4,15 @@ This module provides configurable symbol filtering for API documentation coverag
 metrics, following industry standards from Sphinx autodoc, mkdocstrings, and pdoc.
 
 Key features:
-- Presets for common frameworks (Pydantic, Django, FastAPI, pytest)
+- Presets for common frameworks across multiple languages
 - Custom pattern-based symbol exclusion/inclusion
 - fnmatch (shell-style) pattern matching
+
+Supported presets by language:
+- Python: pydantic, django, fastapi, pytest, sqlalchemy
+- JavaScript/TypeScript: jest, vitest, react, vue
+- Go: go-test
+- Rust: rust-test, serde
 """
 
 from fnmatch import fnmatch
@@ -16,6 +22,9 @@ from pydantic import BaseModel, Field
 
 # Built-in presets for common frameworks
 API_COVERAGE_PRESETS: dict[str, dict[str, list[str]]] = {
+    # ===================
+    # Python Frameworks
+    # ===================
     "pydantic": {
         "exclude_symbols": [
             "Config",
@@ -48,10 +57,107 @@ API_COVERAGE_PRESETS: dict[str, dict[str, list[str]]] = {
             "conftest",
         ]
     },
+    "sqlalchemy": {
+        "exclude_symbols": [
+            "metadata",
+            "__table__",
+            "__tablename__",
+            "__mapper__",
+            "_sa_*",
+            "registry",
+        ]
+    },
+    # ===========================
+    # JavaScript/TypeScript
+    # ===========================
+    "jest": {
+        "exclude_symbols": [
+            "describe",
+            "it",
+            "test",
+            "beforeEach",
+            "afterEach",
+            "beforeAll",
+            "afterAll",
+            "expect",
+        ]
+    },
+    "vitest": {
+        "exclude_symbols": [
+            "describe",
+            "it",
+            "test",
+            "suite",
+            "beforeEach",
+            "afterEach",
+            "beforeAll",
+            "afterAll",
+            "expect",
+            "vi",
+        ]
+    },
+    "react": {
+        "exclude_symbols": [
+            "_render*",
+            "UNSAFE_*",
+            "__*",
+            "$$typeof",
+        ]
+    },
+    "vue": {
+        "exclude_symbols": [
+            "$_*",
+            "__v*",
+            "_c",
+            "_h",
+            "_s",
+            "_v",
+            "_e",
+            "_m",
+            "_l",
+        ]
+    },
+    # ===================
+    # Go Frameworks
+    # ===================
+    "go-test": {
+        "exclude_symbols": [
+            "Test*",
+            "Benchmark*",
+            "Example*",
+            "Fuzz*",
+        ]
+    },
+    # ===================
+    # Rust Frameworks
+    # ===================
+    "rust-test": {
+        "exclude_symbols": [
+            "tests",
+            "test_*",
+            "bench_*",
+        ]
+    },
+    "serde": {
+        "exclude_symbols": [
+            "Serialize",
+            "Deserialize",
+            "__serde_*",
+        ]
+    },
 }
 
 # Valid preset names
-PresetName = Literal["pydantic", "django", "fastapi", "pytest"]
+PresetName = Literal[
+    # Python
+    "pydantic", "django", "fastapi", "pytest", "sqlalchemy",
+    # JavaScript/TypeScript
+    "jest", "vitest", "react", "vue",
+    # Go
+    "go-test",
+    # Rust
+    "rust-test", "serde",
+]
 
 # Valid strategy names
 StrategyName = Literal["all_then_underscore", "all_only", "underscore_only"]
@@ -76,7 +182,7 @@ class ApiCoverageConfig(BaseModel):
     )
     preset: PresetName | None = Field(
         default=None,
-        description="Preset for common frameworks (pydantic, django, fastapi, pytest)"
+        description="Preset for common frameworks (see API_COVERAGE_PRESETS for full list)"
     )
     exclude_symbols: list[str] = Field(
         default_factory=list,

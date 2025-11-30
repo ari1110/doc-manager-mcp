@@ -512,3 +512,67 @@ class TestPresetsExist:
         patterns = API_COVERAGE_PRESETS["pytest"]["exclude_symbols"]
         assert "test_*" in patterns
         assert "Test*" in patterns
+
+    def test_sqlalchemy_preset_exists(self):
+        """SQLAlchemy preset is defined with expected patterns."""
+        assert "sqlalchemy" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["sqlalchemy"]["exclude_symbols"]
+        assert "metadata" in patterns
+        assert "__table__" in patterns
+        assert "_sa_*" in patterns
+
+    def test_jest_preset_exists(self):
+        """Jest preset is defined with expected patterns."""
+        assert "jest" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["jest"]["exclude_symbols"]
+        assert "describe" in patterns
+        assert "it" in patterns
+        assert "test" in patterns
+        assert "expect" in patterns
+
+    def test_vitest_preset_exists(self):
+        """Vitest preset is defined with expected patterns."""
+        assert "vitest" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["vitest"]["exclude_symbols"]
+        assert "describe" in patterns
+        assert "vi" in patterns
+        assert "suite" in patterns
+
+    def test_react_preset_exists(self):
+        """React preset is defined with expected patterns."""
+        assert "react" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["react"]["exclude_symbols"]
+        assert "UNSAFE_*" in patterns
+        assert "$$typeof" in patterns
+
+    def test_vue_preset_exists(self):
+        """Vue preset is defined with expected patterns."""
+        assert "vue" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["vue"]["exclude_symbols"]
+        assert "$_*" in patterns
+        assert "__v*" in patterns
+
+    def test_go_test_preset_exists(self):
+        """Go test preset is defined with expected patterns."""
+        assert "go-test" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["go-test"]["exclude_symbols"]
+        assert "Test*" in patterns
+        assert "Benchmark*" in patterns
+        assert "Example*" in patterns
+        assert "Fuzz*" in patterns
+
+    def test_rust_test_preset_exists(self):
+        """Rust test preset is defined with expected patterns."""
+        assert "rust-test" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["rust-test"]["exclude_symbols"]
+        assert "tests" in patterns
+        assert "test_*" in patterns
+        assert "bench_*" in patterns
+
+    def test_serde_preset_exists(self):
+        """Serde preset is defined with expected patterns."""
+        assert "serde" in API_COVERAGE_PRESETS
+        patterns = API_COVERAGE_PRESETS["serde"]["exclude_symbols"]
+        assert "Serialize" in patterns
+        assert "Deserialize" in patterns
+        assert "__serde_*" in patterns
