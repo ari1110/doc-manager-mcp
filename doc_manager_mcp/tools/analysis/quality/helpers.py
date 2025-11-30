@@ -3,8 +3,28 @@
 from pathlib import Path
 from typing import Any
 
-from doc_manager_mcp.core import extract_module_all, is_public_symbol
+from doc_manager_mcp.core import (
+    ApiCoverageConfig,
+    extract_module_all,
+    is_public_symbol,
+    load_config,
+)
 from doc_manager_mcp.indexing.parsers.markdown import MarkdownParser
+
+
+def _load_api_coverage_config(project_path: Path) -> ApiCoverageConfig:
+    """Load API coverage config from .doc-manager.yml or return defaults.
+
+    Args:
+        project_path: Root directory of the project
+
+    Returns:
+        ApiCoverageConfig with resolved settings
+    """
+    config = load_config(project_path)
+    if config and 'api_coverage' in config:
+        return ApiCoverageConfig(**config['api_coverage'])
+    return ApiCoverageConfig()  # Return defaults
 
 
 def check_list_formatting_consistency(
@@ -330,10 +350,8 @@ def detect_undocumented_apis(
     """Detect public APIs without documentation.
 
     Compares codebase public symbols against documented references.
-    Uses industry-standard conventions from Sphinx, mkdocstrings, and pdoc:
-    - __all__ takes precedence when defined
-    - Underscore convention as fallback
-    - Excludes known internal patterns (Pydantic validators, etc.)
+    Uses configurable conventions from .doc-manager.yml api_coverage section,
+    following industry standards from Sphinx, mkdocstrings, and pdoc.
 
     Args:
         project_path: Root directory of the project
@@ -347,6 +365,12 @@ def detect_undocumented_apis(
     from ....indexing import SymbolIndexer
     from ....indexing.parsers.markdown import MarkdownParser
 
+    # Load API coverage config
+    api_config = _load_api_coverage_config(project_path)
+    exclude_patterns = api_config.get_resolved_exclude_patterns()
+    include_patterns = api_config.include_symbols
+    strategy = api_config.strategy
+
     # Step 1: Get all symbols from codebase
     try:
         indexer = SymbolIndexer()
@@ -358,7 +382,6 @@ def detect_undocumented_apis(
         return []
 
     # Step 1b: Extract __all__ from Python modules for accurate public API detection
-    # Group symbols by file and extract __all__ for each Python module
     module_all_cache: dict[str, set[str] | None] = {}
 
     def get_module_all(file_path: str) -> set[str] | None:
@@ -371,11 +394,17 @@ def detect_undocumented_apis(
                 module_all_cache[file_path] = None
         return module_all_cache[file_path]
 
-    # Filter to only public symbols using industry-standard conventions
+    # Filter to only public symbols using configurable conventions
     public_symbols = []
     for symbol in all_symbols:
         module_all = get_module_all(symbol.file)
-        if is_public_symbol(symbol, module_all):
+        if is_public_symbol(
+            symbol,
+            module_all=module_all,
+            exclude_patterns=exclude_patterns,
+            include_patterns=include_patterns,
+            strategy=strategy,
+        ):
             public_symbols.append(symbol)
 
     # Step 2: Scan documentation for symbol references
@@ -441,10 +470,8 @@ def calculate_documentation_coverage(
 ) -> dict[str, Any]:
     """Calculate percentage of documented symbols.
 
-    Uses industry-standard conventions from Sphinx, mkdocstrings, and pdoc:
-    - __all__ takes precedence when defined
-    - Underscore convention as fallback
-    - Excludes known internal patterns (Pydantic validators, etc.)
+    Uses configurable conventions from .doc-manager.yml api_coverage section,
+    following industry standards from Sphinx, mkdocstrings, and pdoc.
 
     Args:
         project_path: Path to project root
@@ -458,6 +485,12 @@ def calculate_documentation_coverage(
 
     from ....indexing import SymbolIndexer
     from ....indexing.parsers.markdown import MarkdownParser
+
+    # Load API coverage config
+    api_config = _load_api_coverage_config(project_path)
+    exclude_patterns = api_config.get_resolved_exclude_patterns()
+    include_patterns = api_config.include_symbols
+    strategy = api_config.strategy
 
     # Index all symbols in the project
     try:
@@ -487,11 +520,17 @@ def calculate_documentation_coverage(
                 module_all_cache[file_path] = None
         return module_all_cache[file_path]
 
-    # Filter to only public symbols using industry-standard conventions
+    # Filter to only public symbols using configurable conventions
     public_symbols = []
     for symbol in all_symbols:
         module_all = get_module_all(symbol.file)
-        if is_public_symbol(symbol, module_all):
+        if is_public_symbol(
+            symbol,
+            module_all=module_all,
+            exclude_patterns=exclude_patterns,
+            include_patterns=include_patterns,
+            strategy=strategy,
+        ):
             public_symbols.append(symbol)
 
     if not public_symbols:

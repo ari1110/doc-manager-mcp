@@ -32,6 +32,14 @@ def load_config(project_path: Path) -> dict[str, Any] | None:
                 if config.get('sources') is None:
                     config['sources'] = []
 
+                # Normalize api_coverage section
+                if config.get('api_coverage'):
+                    api_coverage = config['api_coverage']
+                    if api_coverage.get('exclude_symbols') is None:
+                        api_coverage['exclude_symbols'] = []
+                    if api_coverage.get('include_symbols') is None:
+                        api_coverage['include_symbols'] = []
+
             return config
     except Exception:
         return None
@@ -137,6 +145,30 @@ def save_config(project_path: Path, config: dict[str, Any]) -> bool:
             f.write("#   doc_mappings:\n")
             f.write("#     cli: 'documentation/commands.md'  # Uses documentation/ instead of docs/\n")
             f.write("#     api: 'wiki/API-Reference.md'      # Uses wiki/ directory\n")
+            f.write("\n")
+            f.write("# API Coverage Configuration\n")
+            f.write("# --------------------------\n")
+            f.write("# Configure how public symbols are detected for API coverage metrics.\n")
+            f.write("# Follows industry standards from Sphinx autodoc and mkdocstrings.\n")
+            f.write("# Example:\n")
+            f.write("#   api_coverage:\n")
+            f.write("#     strategy: 'all_then_underscore'  # Options: all_then_underscore, all_only, underscore_only\n")
+            f.write("#     preset: 'pydantic'               # Options: pydantic, django, fastapi, pytest\n")
+            f.write("#     exclude_symbols:                 # Additional patterns (fnmatch syntax)\n")
+            f.write("#       - 'my_internal_*'\n")
+            f.write("#     include_symbols:                 # Force-include these (overrides exclusions)\n")
+            f.write("#       - 'MySpecialClass'\n")
+            f.write("#\n")
+            f.write("# Strategy options:\n")
+            f.write("#   - all_then_underscore: Use __all__ if defined, else underscore convention (default)\n")
+            f.write("#   - all_only: Only symbols in __all__ are public (strict)\n")
+            f.write("#   - underscore_only: Only use underscore convention, ignore __all__\n")
+            f.write("#\n")
+            f.write("# Preset excludes common framework internals:\n")
+            f.write("#   - pydantic: Config, model_config, validators, validate_*\n")
+            f.write("#   - django: Meta, DoesNotExist, MultipleObjectsReturned\n")
+            f.write("#   - fastapi: Config, model_config\n")
+            f.write("#   - pytest: test_*, Test*, fixture, conftest\n")
 
         return True
     except Exception:

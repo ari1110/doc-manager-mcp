@@ -1,6 +1,7 @@
 """Core utilities for doc-manager MCP server.
 
 This package contains focused modules for different utility categories:
+- api_coverage: API coverage configuration and symbol filtering
 - checksums: File checksum calculations
 - git: Git command execution
 - paths: Path resolution and validation
@@ -12,6 +13,14 @@ This package contains focused modules for different utility categories:
 - responses: Response formatting and limits
 - security: Security utilities (file locking)
 """
+
+# API coverage configuration
+from .api_coverage import (
+    API_COVERAGE_PRESETS,
+    ApiCoverageConfig,
+    get_default_config,
+    matches_any_pattern,
+)
 
 # Checksums
 from .checksums import calculate_checksum
@@ -43,8 +52,6 @@ from .patterns import matches_exclude_pattern
 
 # Project detection
 from .project import (
-    PYTHON_INTERNAL_PATTERNS,
-    PYTHON_INTERNAL_PREFIXES,
     detect_platform_quick,
     detect_project_language,
     extract_module_all,
@@ -64,8 +71,8 @@ from .responses import enforce_response_limit, safe_json_dumps
 from .security import file_lock
 
 __all__ = [
-    "PYTHON_INTERNAL_PATTERNS",
-    "PYTHON_INTERNAL_PREFIXES",
+    "API_COVERAGE_PRESETS",
+    "ApiCoverageConfig",
     "ResourceLimits",
     "calculate_checksum",
     "detect_platform_quick",
@@ -76,12 +83,14 @@ __all__ = [
     "find_docs_directory",
     "find_markdown_files",
     "get_convention_summary",
+    "get_default_config",
     "get_doc_relative_path",
     "get_gitignore_patterns",
     "handle_error",
     "is_public_symbol",
     "load_config",
     "load_conventions",
+    "matches_any_pattern",
     "matches_exclude_pattern",
     "operation_timeout",
     "parse_gitignore",

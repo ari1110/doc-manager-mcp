@@ -186,92 +186,96 @@ def find_markdown_files(
     return sorted(markdown_files)
 
 
-# Python internal symbol patterns (framework-generated, not part of public API)
-# These match industry standards from Sphinx, mkdocstrings, and pdoc
-PYTHON_INTERNAL_PATTERNS: set[str] = {
-    # Pydantic validators (auto-generated, internal implementation)
-    "model_validator",
-    "field_validator",
-    "root_validator",
-    "validator",
-    # Pydantic config classes
-    "Config",
-    "model_config",
-    # Common internal class names
-    "Meta",
-    # Test fixtures and helpers
-    "conftest",
-    "fixture",
-}
-
-# Python internal name prefixes (beyond single underscore)
-PYTHON_INTERNAL_PREFIXES: tuple[str, ...] = (
-    "test_",  # Test functions
-    "Test",   # Test classes
-)
-
-
-def is_public_symbol(symbol: Any, module_all: set[str] | None = None) -> bool:
+def is_public_symbol(
+    symbol: Any,
+    module_all: set[str] | None = None,
+    exclude_patterns: list[str] | None = None,
+    include_patterns: list[str] | None = None,
+    strategy: str = "all_then_underscore",
+) -> bool:
     """Determine if a symbol is public based on language-specific conventions.
 
-    Follows industry standards from Sphinx autodoc, mkdocstrings/Griffe, and pdoc:
+    Follows industry standards from Sphinx autodoc, mkdocstrings/Griffe, and pdoc.
+    Supports configurable pattern-based filtering via fnmatch.
 
-    1. If module defines __all__, only symbols in __all__ are public (Python)
-    2. Names starting with underscore are private
-    3. Known internal patterns (Pydantic validators, etc.) are excluded
+    Resolution order:
+    1. Check include_patterns - if matches, symbol IS public (override)
+    2. Check exclude_patterns - if matches, symbol is NOT public
+    3. Apply strategy (__all__ check, underscore convention)
 
     Args:
         symbol: Symbol object with 'name', 'file', and optionally 'parent' attributes
-        module_all: Optional set of names from module's __all__ (takes precedence)
+        module_all: Optional set of names from module's __all__
+        exclude_patterns: fnmatch patterns for symbols to exclude
+        include_patterns: fnmatch patterns for symbols to force-include
+        strategy: How to determine public symbols:
+            - "all_then_underscore": Use __all__ if defined, else underscore convention
+            - "all_only": Only symbols in __all__ are public
+            - "underscore_only": Only use underscore convention, ignore __all__
 
     Returns:
         True if symbol is public, False otherwise
 
     Language-specific rules:
         - Go: exported names start with uppercase
-        - Python: __all__ > underscore convention > internal pattern exclusion
+        - Python: configurable strategy + pattern filtering
         - JavaScript/TypeScript: public if no leading underscore
     """
+    from fnmatch import fnmatch
+
     if not symbol.name:
         return False
+
+    name = symbol.name
 
     # Language-specific public conventions
     if symbol.file.endswith('.go'):
         # Go: exported names start with uppercase
-        return symbol.name[0].isupper()
+        return name[0].isupper()
 
     elif symbol.file.endswith('.py'):
-        # Python: multi-tier approach following industry standards
+        # Python: configurable approach
 
-        # Tier 1: If __all__ is provided, it's authoritative
-        if module_all is not None:
-            return symbol.name in module_all
+        # Step 1: Check include patterns (force-include override)
+        if include_patterns:
+            if any(fnmatch(name, pattern) for pattern in include_patterns):
+                return True
 
-        # Tier 2: Underscore convention (standard Python)
-        if symbol.name.startswith('_'):
-            return False
+        # Step 2: Check exclude patterns
+        if exclude_patterns:
+            if any(fnmatch(name, pattern) for pattern in exclude_patterns):
+                return False
 
-        # Tier 3: Exclude known internal patterns
-        if symbol.name in PYTHON_INTERNAL_PATTERNS:
-            return False
+        # Step 3: Apply strategy
+        if strategy == "all_only":
+            # Strict: only symbols in __all__ are public
+            if module_all is not None:
+                return name in module_all
+            return False  # No __all__ means nothing is public
 
-        # Tier 4: Exclude internal prefixes (tests, etc.)
-        if symbol.name.startswith(PYTHON_INTERNAL_PREFIXES):
-            return False
+        elif strategy == "underscore_only":
+            # Ignore __all__, just use underscore convention
+            return not name.startswith('_')
 
-        # Tier 5: Exclude nested classes that are typically internal
-        # (e.g., Pydantic model's Config class is already in PYTHON_INTERNAL_PATTERNS)
-        if hasattr(symbol, 'parent') and symbol.parent:
-            # Methods/nested classes inherit parent's public status
-            # but certain patterns are always internal
-            if symbol.name in {'__init__', '__new__', '__del__'}:
-                return False  # Dunder methods not part of API coverage
+        else:  # "all_then_underscore" (default)
+            # If __all__ is provided, it's authoritative
+            if module_all is not None:
+                return name in module_all
 
-        return True
+            # Fallback: underscore convention
+            if name.startswith('_'):
+                return False
+
+            # Exclude dunder methods from API coverage
+            if hasattr(symbol, 'parent') and symbol.parent:
+                if name in {'__init__', '__new__', '__del__'}:
+                    return False
+
+            return True
 
     elif symbol.file.endswith(('.js', '.ts', '.jsx', '.tsx')):
         # JavaScript/TypeScript: public if no leading underscore
-        return not symbol.name.startswith('_')
+        return not name.startswith('_')
 
     # Default: consider public for unknown languages
     return True
