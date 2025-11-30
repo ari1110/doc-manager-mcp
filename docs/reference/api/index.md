@@ -1,4 +1,4 @@
-# API Reference
+# API reference
 
 Python API reference for the doc-manager MCP server implementation.
 
@@ -8,7 +8,7 @@ This section documents the Python Pydantic models and enumerations used by the d
 
 ## Sections
 
-### [Models Reference](./models.md)
+### [Models reference](./models.md)
 
 Complete reference for all Pydantic model classes:
 
@@ -38,7 +38,7 @@ Each model includes:
 - Validation rules
 - Usage examples
 
-### [Enums Reference](./enums.md)
+### [Enums reference](./enums.md)
 
 Complete reference for all enumeration types:
 
@@ -66,9 +66,9 @@ Each enum includes:
 
 ---
 
-## Quick Reference
+## Quick reference
 
-### Input Model Fields by Tool
+### Input model fields by tool
 
 **DocmgrInitInput** (docmgr_init):
 ```text
@@ -110,7 +110,7 @@ project_path (required), mode, docs_path
 project_path (required)
 ```
 
-### Common Patterns
+### Common patterns
 
 **Creating an input model**:
 ```python
@@ -145,9 +145,9 @@ except ValidationError as e:
 
 ---
 
-## Validation Rules
+## Validation rules
 
-### Path Validation
+### Path validation
 
 All path fields enforce strict validation:
 
@@ -156,7 +156,7 @@ All path fields enforce strict validation:
 - **Type validation**: Must be directories where applicable
 - **Security**: No path traversal sequences (`..`) allowed
 
-### Glob Pattern Validation
+### Glob pattern validation
 
 Pattern lists enforce limits to prevent ReDoS:
 
@@ -178,9 +178,9 @@ Input validation prevents common attack vectors:
 
 ---
 
-## Integration Examples
+## Integration examples
 
-### With MCP Server
+### With MCP server
 
 ```python
 from doc_manager_mcp.models import DocmgrDetectChangesInput
@@ -203,7 +203,7 @@ except ValidationError as e:
     return {"status": "error", "details": e.errors()}
 ```
 
-### With Claude Code Plugin
+### With Claude Code plugin
 
 ```python
 from doc_manager_mcp.models import AssessQualityInput
@@ -221,7 +221,7 @@ assessment = AssessQualityInput(
 
 ---
 
-## See Also
+## See also
 
 - [Tools Reference](../tools.md) - Tool descriptions and usage
 - [Configuration Reference](../configuration.md) - .doc-manager.yml schema

@@ -1,4 +1,4 @@
-# Enums Reference
+# Enums reference
 
 **Module:** `doc_manager_mcp.constants`
 
@@ -29,7 +29,7 @@ All values are strings and can be used interchangeably with string literals.
 | `gitbook` | `DocumentationPlatform.GITBOOK` | Documentation platform with version control. Good for team collaboration |
 | `unknown` | `DocumentationPlatform.UNKNOWN` | Platform could not be detected automatically |
 
-### When to use
+### When to use each platform
 
 **Hugo** - For language-agnostic projects, Go projects, or when maximum performance is critical
 
@@ -45,7 +45,7 @@ All values are strings and can be used interchangeably with string literals.
 
 **Gitbook** - For team-collaborative documentation, or when you need built-in versioning and publishing
 
-### Usage Examples
+### Usage examples
 
 ```python
 from doc_manager_mcp.constants import DocumentationPlatform
@@ -74,7 +74,7 @@ init = DocmgrInitInput(
 )
 ```
 
-### Platform Detection
+### Platform detection
 
 When `platform` parameter is `None`, doc-manager will auto-detect based on:
 
@@ -100,7 +100,7 @@ When `platform` parameter is `None`, doc-manager will auto-detect based on:
 
 4. **Default** - If no platform detected: Hugo (fast, language-agnostic)
 
-### Platform Configuration
+### Platform configuration
 
 Each platform has detection markers defined in `PLATFORM_MARKERS`:
 
@@ -144,7 +144,7 @@ Represents the 7 dimensions used to evaluate documentation quality.
 | `clarity` | `QualityCriterion.CLARITY` | Content is clear and accessible. Language is precise, sentences are clear, complex concepts are well-explained with examples |
 | `structure` | `QualityCriterion.STRUCTURE` | Organization is logical and navigable. Information hierarchy makes sense, navigation is clear, related topics grouped together |
 
-### Assessment Scores
+### Assessment scores
 
 Each criterion is typically scored on a scale:
 
@@ -153,7 +153,7 @@ Each criterion is typically scored on a scale:
 - **Good** (4-6): Generally meets criterion with minor issues
 - **Excellent** (6-10): Fully meets criterion, excellent quality
 
-### When to use each criterion
+### When to use
 
 **Relevance** - If documentation doesn't address user needs, nothing else matters. Assess whether:
 - Content matches user personas
@@ -190,7 +190,7 @@ Each criterion is typically scored on a scale:
 - Navigation is intuitive
 - Table of contents reflects actual content
 
-### Usage Examples
+### Usage examples
 
 ```python
 from doc_manager_mcp.constants import QualityCriterion
@@ -218,7 +218,7 @@ for criterion in QUALITY_CRITERIA:
     print(f"Assessing: {criterion}")
 ```
 
-### Typical Assessment Order
+### Typical assessment order
 
 A suggested order for quality assessment:
 
@@ -249,7 +249,7 @@ Determines how doc-manager identifies which files have changed.
 | `checksum` | `ChangeDetectionMode.CHECKSUM` | Compare current file checksums against baseline (`repo-baseline.json`). Detects file modifications, additions, deletions. No git history required. Faster for projects with many files |
 | `git_diff` | `ChangeDetectionMode.GIT_DIFF` | Compare current state against specific git commit. Requires `since_commit` parameter. Uses git diff information. Better for CI/CD integration |
 
-### Checksum Mode
+### Checksum mode
 
 **When to use**: When you want to compare against last recorded state
 
@@ -283,7 +283,7 @@ detect = DocmgrDetectChangesInput(
 )
 ```
 
-### Git Diff Mode
+### Git diff mode
 
 **When to use**: When you want to compare against a specific git commit (CI/CD pipelines)
 
@@ -324,7 +324,7 @@ detect = DocmgrDetectChangesInput(
 )
 ```
 
-### Common Mistake: Mode Parameter Format
+### Common mistake: mode parameter format
 
 When specifying mode as a string, use underscore, not hyphen:
 
@@ -343,7 +343,7 @@ ValueError: Invalid mode: 'git-diff'. Did you mean 'git_diff'?
 Valid modes: 'checksum', 'git_diff'
 ```
 
-### Choosing Between Modes
+### Choosing between modes
 
 **Use Checksum if**:
 - You have established baselines with `docmgr_init`
@@ -363,7 +363,7 @@ Valid modes: 'checksum', 'git_diff'
 
 Related constants available in `doc_manager_mcp.constants`:
 
-### Resource Limits
+### Resource limits
 
 ```python
 MAX_FILES = 10_000          # Maximum files to process per operation
@@ -372,7 +372,7 @@ OPERATION_TIMEOUT = 60      # Operation timeout in seconds
 CHARACTER_LIMIT = 25000     # Maximum response size in characters
 ```
 
-### Quality Assessment
+### Quality assessment
 
 ```python
 QUALITY_CRITERIA = [
@@ -386,7 +386,7 @@ QUALITY_CRITERIA = [
 ]
 ```
 
-### Supported Platforms
+### Supported platforms
 
 ```python
 SUPPORTED_PLATFORMS = [
@@ -400,7 +400,7 @@ SUPPORTED_PLATFORMS = [
 ]
 ```
 
-### Default Directories
+### Default directories
 
 ```python
 DOC_DIRECTORIES = [
@@ -414,9 +414,9 @@ DOC_DIRECTORIES = [
 
 ---
 
-## Usage Patterns
+## Usage patterns
 
-### Type-safe Enum Usage
+### Type-safe enum usage
 
 ```python
 from doc_manager_mcp.constants import DocumentationPlatform, ChangeDetectionMode
@@ -432,7 +432,7 @@ except ValueError as e:
     print(f"Invalid platform: {e}")
 ```
 
-### Iterating Enums
+### Iterating enums
 
 ```python
 from doc_manager_mcp.constants import DocumentationPlatform, QualityCriterion
@@ -449,7 +449,7 @@ for criterion in QUALITY_CRITERIA:
     print(f"Criterion: {criterion}")
 ```
 
-### String Conversion
+### String conversion
 
 ```python
 from doc_manager_mcp.constants import DocumentationPlatform

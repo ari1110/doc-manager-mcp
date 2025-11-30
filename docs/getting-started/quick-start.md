@@ -2,7 +2,7 @@
 
 Get started with doc-manager in your project.
 
-## With Claude Code Plugin
+## With Claude Code plugin
 
 If you're using the [Claude Code plugin](../guides/claude-code-plugin.md), the workflow is conversational:
 
@@ -26,7 +26,7 @@ See the [plugin guide](../guides/claude-code-plugin.md) for details.
 
 ---
 
-## With Standalone MCP Server
+## With standalone MCP server
 
 If you're using Claude Desktop or another MCP client, ask your AI assistant in natural language:
 
@@ -64,7 +64,7 @@ exclude:
 
 ---
 
-## Understanding the Workflow
+## Understanding the workflow
 
 Doc-manager tracks your codebase with three baseline files in `.doc-manager/memory/`:
 
