@@ -26,7 +26,7 @@ from pathlib import Path
 
 from doc_manager_mcp.core.security import file_lock
 
-from .tree_sitter import Symbol, SymbolType
+from .tree_sitter import ConfigField, Symbol, SymbolType
 
 
 @dataclass
@@ -57,6 +57,40 @@ class SemanticChange:
     old_signature: str | None
     new_signature: str | None
     severity: str
+
+
+@dataclass
+class ConfigFieldChange:
+    """Represents a change detected in a config field.
+
+    Used to track field-level changes in configuration models for
+    precise documentation updates by AI agents.
+
+    Attributes:
+        field_name: Name of the config field
+        parent_symbol: Name of the parent class/struct
+        change_type: Type of change - "added", "removed", "type_changed", "default_changed"
+        file: File path relative to project root
+        line: Line number of the field (None if removed)
+        old_type: Previous type annotation (None if newly added)
+        new_type: New type annotation (None if removed)
+        old_default: Previous default value (None if newly added)
+        new_default: New default value (None if removed)
+        severity: Impact - "breaking" (removed/type incompatible) or "non-breaking"
+        documentation_action: Suggested doc action (e.g., "add_field_doc", "update_field_doc")
+    """
+
+    field_name: str
+    parent_symbol: str
+    change_type: str  # added, removed, type_changed, default_changed
+    file: str
+    line: int | None
+    old_type: str | None
+    new_type: str | None
+    old_default: str | None
+    new_default: str | None
+    severity: str  # breaking, non-breaking
+    documentation_action: str
 
 
 def load_symbol_baseline(baseline_path: Path) -> dict[str, list[Symbol]] | None:
@@ -93,6 +127,24 @@ def load_symbol_baseline(baseline_path: Path) -> dict[str, list[Symbol]] | None:
             symbols = []
             for sym_dict in symbol_dicts:
                 try:
+                    # Convert config_fields if present (v1.1+)
+                    config_fields = None
+                    if sym_dict.get("config_fields"):
+                        config_fields = []
+                        for cf_dict in sym_dict["config_fields"]:
+                            config_fields.append(ConfigField(
+                                name=cf_dict["name"],
+                                parent_symbol=cf_dict["parent_symbol"],
+                                field_type=cf_dict.get("field_type"),
+                                default_value=cf_dict.get("default_value"),
+                                file=cf_dict["file"],
+                                line=cf_dict["line"],
+                                column=cf_dict.get("column", 0),
+                                tags=cf_dict.get("tags"),
+                                is_optional=cf_dict.get("is_optional", False),
+                                doc=cf_dict.get("doc"),
+                            ))
+
                     # Convert type string back to SymbolType enum
                     symbol = Symbol(
                         name=sym_dict["name"],
@@ -103,6 +155,7 @@ def load_symbol_baseline(baseline_path: Path) -> dict[str, list[Symbol]] | None:
                         signature=sym_dict.get("signature"),
                         parent=sym_dict.get("parent"),
                         doc=sym_dict.get("doc"),
+                        config_fields=config_fields,
                     )
                     symbols.append(symbol)
                 except (KeyError, ValueError, TypeError):
@@ -163,8 +216,9 @@ def save_symbol_baseline(
     # Convert Symbol objects to JSON-serializable dicts
     symbols_dict = {}
     for file_path, symbol_list in symbols.items():
-        symbols_dict[file_path] = [
-            {
+        serialized_symbols = []
+        for sym in symbol_list:
+            sym_dict = {
                 "name": sym.name,
                 "type": sym.type.value,
                 "file": sym.file,
@@ -174,12 +228,29 @@ def save_symbol_baseline(
                 "parent": sym.parent,
                 "doc": sym.doc,
             }
-            for sym in symbol_list
-        ]
+            # Serialize config_fields if present (v1.1 feature)
+            if sym.config_fields:
+                sym_dict["config_fields"] = [
+                    {
+                        "name": cf.name,
+                        "parent_symbol": cf.parent_symbol,
+                        "field_type": cf.field_type,
+                        "default_value": cf.default_value,
+                        "file": cf.file,
+                        "line": cf.line,
+                        "column": cf.column,
+                        "tags": cf.tags,
+                        "is_optional": cf.is_optional,
+                        "doc": cf.doc,
+                    }
+                    for cf in sym.config_fields
+                ]
+            serialized_symbols.append(sym_dict)
+        symbols_dict[file_path] = serialized_symbols
 
     # Build JSON structure with metadata
     baseline_data = {
-        "version": "1.0",
+        "version": "1.1",  # Bumped for config_fields support
         "created_at": created_at,
         "updated_at": now,
         "project_root": str(baseline_path.parent.parent.parent.absolute()),
@@ -341,6 +412,189 @@ def compare_symbols(
     ))
 
     return changes
+
+
+def compare_config_fields(
+    old_symbols: dict[str, list[Symbol]],
+    new_symbols: dict[str, list[Symbol]]
+) -> list[ConfigFieldChange]:
+    """Compare config fields between two symbol baselines.
+
+    Analyzes differences in config model fields to identify:
+    - Added fields (non-breaking)
+    - Removed fields (breaking)
+    - Type changes (breaking if incompatible)
+    - Default value changes (non-breaking)
+    - Optional → Required changes (breaking)
+
+    Args:
+        old_symbols: Previous baseline (file path -> list of Symbol objects)
+        new_symbols: Current codebase symbols (file path -> list of Symbol objects)
+
+    Returns:
+        List of ConfigFieldChange objects sorted by severity (breaking first)
+
+    Severity Rules:
+        - Field added: non-breaking (new configs need it, old ones work)
+        - Field removed: breaking (existing configs may use it)
+        - Type changed (incompatible): breaking
+        - Type changed (compatible widening): non-breaking
+        - Default changed: non-breaking
+        - Optional → Required: breaking
+        - Required → Optional: non-breaking
+    """
+    changes: list[ConfigFieldChange] = []
+
+    # Build lookup tables for config fields
+    # Key: (parent_symbol, field_name, file_path) -> ConfigField
+    old_fields: dict[tuple[str, str, str], ConfigField] = {}
+    new_fields: dict[tuple[str, str, str], ConfigField] = {}
+
+    for file_path, symbol_list in old_symbols.items():
+        for sym in symbol_list:
+            if sym.config_fields:
+                for cf in sym.config_fields:
+                    old_fields[(sym.name, cf.name, file_path)] = cf
+
+    for file_path, symbol_list in new_symbols.items():
+        for sym in symbol_list:
+            if sym.config_fields:
+                for cf in sym.config_fields:
+                    new_fields[(sym.name, cf.name, file_path)] = cf
+
+    # Detect added and modified fields
+    for (parent, field_name, file_path), new_cf in new_fields.items():
+        if (parent, field_name, file_path) not in old_fields:
+            # Field added
+            changes.append(ConfigFieldChange(
+                field_name=field_name,
+                parent_symbol=parent,
+                change_type="added",
+                file=file_path,
+                line=new_cf.line,
+                old_type=None,
+                new_type=new_cf.field_type,
+                old_default=None,
+                new_default=new_cf.default_value,
+                severity="non-breaking",
+                documentation_action="add_field_doc",
+            ))
+        else:
+            # Field exists in both - check for modifications
+            old_cf = old_fields[(parent, field_name, file_path)]
+
+            # Check type change
+            if old_cf.field_type != new_cf.field_type:
+                # Determine if type change is breaking
+                severity = _is_type_change_breaking(old_cf.field_type, new_cf.field_type)
+                changes.append(ConfigFieldChange(
+                    field_name=field_name,
+                    parent_symbol=parent,
+                    change_type="type_changed",
+                    file=file_path,
+                    line=new_cf.line,
+                    old_type=old_cf.field_type,
+                    new_type=new_cf.field_type,
+                    old_default=old_cf.default_value,
+                    new_default=new_cf.default_value,
+                    severity=severity,
+                    documentation_action="update_field_doc",
+                ))
+            # Check default value change
+            elif old_cf.default_value != new_cf.default_value:
+                changes.append(ConfigFieldChange(
+                    field_name=field_name,
+                    parent_symbol=parent,
+                    change_type="default_changed",
+                    file=file_path,
+                    line=new_cf.line,
+                    old_type=old_cf.field_type,
+                    new_type=new_cf.field_type,
+                    old_default=old_cf.default_value,
+                    new_default=new_cf.default_value,
+                    severity="non-breaking",
+                    documentation_action="update_field_doc",
+                ))
+            # Check optional → required change
+            elif old_cf.is_optional and not new_cf.is_optional:
+                changes.append(ConfigFieldChange(
+                    field_name=field_name,
+                    parent_symbol=parent,
+                    change_type="type_changed",
+                    file=file_path,
+                    line=new_cf.line,
+                    old_type=f"{old_cf.field_type} (optional)",
+                    new_type=f"{new_cf.field_type} (required)",
+                    old_default=old_cf.default_value,
+                    new_default=new_cf.default_value,
+                    severity="breaking",
+                    documentation_action="update_field_doc",
+                ))
+
+    # Detect removed fields
+    for (parent, field_name, file_path), old_cf in old_fields.items():
+        if (parent, field_name, file_path) not in new_fields:
+            # Field removed
+            changes.append(ConfigFieldChange(
+                field_name=field_name,
+                parent_symbol=parent,
+                change_type="removed",
+                file=file_path,
+                line=None,
+                old_type=old_cf.field_type,
+                new_type=None,
+                old_default=old_cf.default_value,
+                new_default=None,
+                severity="breaking",
+                documentation_action="remove_field_doc",
+            ))
+
+    # Sort changes: breaking first, then by file, then by parent, then by field
+    changes.sort(key=lambda c: (
+        0 if c.severity == "breaking" else 1,
+        c.file,
+        c.parent_symbol,
+        c.field_name,
+    ))
+
+    return changes
+
+
+def _is_type_change_breaking(old_type: str | None, new_type: str | None) -> str:
+    """Determine if a type change is breaking or non-breaking.
+
+    Type changes are generally considered breaking unless they are
+    "widening" changes that accept more inputs.
+
+    Args:
+        old_type: Previous type annotation
+        new_type: New type annotation
+
+    Returns:
+        "breaking" or "non-breaking"
+    """
+    if not old_type or not new_type:
+        return "breaking"
+
+    # Common widening patterns (non-breaking)
+    # str -> str | None (accepting None is widening)
+    # int -> int | str (accepting more types is widening)
+    # Required -> Optional (accepting None is widening)
+
+    # If new type includes old type and adds Optional/None, it's widening
+    if "None" in new_type and "None" not in old_type:
+        # Check if base type is same
+        old_base = old_type.replace(" | None", "").replace("Optional[", "").rstrip("]")
+        new_base = new_type.replace(" | None", "").replace("Optional[", "").rstrip("]")
+        if old_base in new_base or new_base.startswith(old_base):
+            return "non-breaking"
+
+    # If types are identical, non-breaking
+    if old_type == new_type:
+        return "non-breaking"
+
+    # Default: assume breaking for safety
+    return "breaking"
 
 
 def _is_public_api(symbol: Symbol) -> bool:
