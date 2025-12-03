@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-11-30T12:50:56.074600",
+  "generated_at": "2025-12-03T18:11:28.377976",
   "doc_to_code": {
     "getting-started/installation.md": [
       "doc_manager_mcp/server.py",
@@ -13,6 +13,7 @@
       "doc_manager_mcp/tools/state/init.py"
     ],
     "guides/claude-code-plugin.md": [],
+    "guides/config-tracking.md": [],
     "guides/platforms.md": [
       "doc_manager_mcp/server.py"
     ],
@@ -260,6 +261,14 @@
     ],
     "quick": [
       "guides/claude-code-plugin.md"
+    ],
+    "type_changed": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
+    ],
+    "default_changed": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
     ],
     "index.md": [
       "guides/platforms.md"
@@ -689,6 +698,7 @@
     ],
     ".doc-manager.yml": [
       "getting-started/quick-start.md",
+      "guides/config-tracking.md",
       "guides/troubleshooting.md",
       "guides/workflows.md",
       "reference/configuration.md",
@@ -703,6 +713,68 @@
     ],
     "quick": [
       "guides/claude-code-plugin.md"
+    ],
+    "str": [
+      "guides/config-tracking.md",
+      "reference/api/models.md"
+    ],
+    "int": [
+      "guides/config-tracking.md",
+      "reference/api/models.md"
+    ],
+    "added": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
+    ],
+    "removed": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
+    ],
+    "type_changed": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
+    ],
+    "default_changed": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
+    ],
+    "critical": [
+      "guides/config-tracking.md",
+      "reference/tools/docmgr_detect_changes.md"
+    ],
+    "high": [
+      "guides/config-tracking.md",
+      "guides/platforms.md",
+      "reference/tools/docmgr_detect_changes.md",
+      "reference/tools/docmgr_detect_platform.md"
+    ],
+    "medium": [
+      "guides/config-tracking.md",
+      "guides/platforms.md",
+      "reference/tools/docmgr_detect_changes.md",
+      "reference/tools/docmgr_detect_platform.md"
+    ],
+    "low": [
+      "guides/config-tracking.md",
+      "guides/platforms.md",
+      "reference/tools/docmgr_detect_changes.md",
+      "reference/tools/docmgr_detect_platform.md"
+    ],
+    "pydantic": [
+      "guides/config-tracking.md",
+      "reference/api-coverage.md"
+    ],
+    "go": [
+      "guides/config-tracking.md",
+      "guides/troubleshooting.md"
+    ],
+    "typescript": [
+      "guides/config-tracking.md",
+      "guides/troubleshooting.md"
+    ],
+    "rust": [
+      "guides/config-tracking.md",
+      "guides/troubleshooting.md"
     ],
     "mkdocs.yml": [
       "guides/platforms.md",
@@ -777,18 +849,6 @@
       "reference/tools/docmgr_detect_platform.md"
     ],
     "book.json": [
-      "guides/platforms.md",
-      "reference/tools/docmgr_detect_platform.md"
-    ],
-    "high": [
-      "guides/platforms.md",
-      "reference/tools/docmgr_detect_platform.md"
-    ],
-    "medium": [
-      "guides/platforms.md",
-      "reference/tools/docmgr_detect_platform.md"
-    ],
-    "low": [
       "guides/platforms.md",
       "reference/tools/docmgr_detect_platform.md"
     ],
@@ -867,15 +927,6 @@
       "guides/troubleshooting.md"
     ],
     "json": [
-      "guides/troubleshooting.md"
-    ],
-    "typescript": [
-      "guides/troubleshooting.md"
-    ],
-    "go": [
-      "guides/troubleshooting.md"
-    ],
-    "rust": [
       "guides/troubleshooting.md"
     ],
     "api_coverage": [
@@ -1124,9 +1175,6 @@
       "reference/tools/docmgr_validate_docs.md",
       "reference/tools.md"
     ],
-    "str": [
-      "reference/api/models.md"
-    ],
     "mode": [
       "reference/api/models.md",
       "reference/tools/docmgr_detect_changes.md",
@@ -1273,9 +1321,6 @@
     "total_changes": [
       "reference/api/models.md"
     ],
-    "int": [
-      "reference/api/models.md"
-    ],
     "changed_files": [
       "reference/api/models.md"
     ],
@@ -1313,9 +1358,6 @@
     "preset": [
       "reference/api-coverage.md",
       "reference/configuration.md"
-    ],
-    "pydantic": [
-      "reference/api-coverage.md"
     ],
     "model_config": [
       "reference/api-coverage.md"
@@ -1557,6 +1599,14 @@
       {
         "reference": ".doc-manager.yml",
         "doc_file": "getting-started/quick-start.md"
+      },
+      {
+        "reference": ".doc-manager.yml",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": ".doc-manager.yml",
+        "doc_file": "guides/config-tracking.md"
       },
       {
         "reference": "mkdocs.yml",
@@ -2443,765 +2493,55 @@
         "doc_file": "guides/claude-code-plugin.md"
       }
     ],
-    "config_key": [
-      {
-        "reference": "index.md",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "config.toml",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "hugo.toml",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "config.toml",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "config.toml",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "hugo.toml",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "_index.md",
-        "doc_file": "guides/platforms.md"
-      },
-      {
-        "reference": "config.toml",
-        "doc_file": "guides/troubleshooting.md"
-      },
-      {
-        "reference": "hugo.toml",
-        "doc_file": "guides/troubleshooting.md"
-      },
-      {
-        "reference": "doc_to_code",
-        "doc_file": "guides/troubleshooting.md"
-      },
-      {
-        "reference": "code_to_doc",
-        "doc_file": "guides/troubleshooting.md"
-      },
-      {
-        "reference": "api_coverage",
-        "doc_file": "guides/troubleshooting.md"
-      },
-      {
-        "reference": "preserve_history",
-        "doc_file": "guides/troubleshooting.md"
-      },
-      {
-        "reference": "affected_docs",
-        "doc_file": "guides/workflows.md"
-      },
-      {
-        "reference": "doc_to_code",
-        "doc_file": "guides/workflows.md"
-      },
-      {
-        "reference": "code_to_doc",
-        "doc_file": "guides/workflows.md"
-      },
-      {
-        "reference": "asset_to_docs",
-        "doc_file": "guides/workflows.md"
-      },
-      {
-        "reference": "unmatched_references",
-        "doc_file": "guides/workflows.md"
-      },
-      {
-        "reference": "doc_manager_mcp.constants",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "doc_manager_mcp.constants",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "hugo.toml",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "config.toml",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "go.mod",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "requirements.txt",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "requirements.txt",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "doc_manager_mcp.constants",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "doc_manager_mcp.constants",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "git_diff",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "doc_manager_mcp.constants",
-        "doc_file": "reference/api/enums.md"
-      },
-      {
-        "reference": "git_diff",
-        "doc_file": "reference/api/index.md"
-      },
-      {
-        "reference": "doc_manager_mcp.models",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "exclude_patterns",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "use_gitignore",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "exclude_patterns",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "git_diff",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "include_semantic",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "check_links",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "check_assets",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "check_snippets",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "source_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "target_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "target_platform",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "preserve_history",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "regenerate_toc",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "dry_run",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "analyzed_at",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "baseline_commit",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "baseline_created",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "changes_detected",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "total_changes",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "changed_files",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "affected_documentation",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "semantic_changes",
-        "doc_file": "reference/api/models.md"
-      },
-      {
-        "reference": "api_coverage",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "api_coverage",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_then_underscore",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__all__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_only",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__all__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "underscore_only",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__all__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_then_underscore",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_then_underscore",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_only",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_only",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_only",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "model_config",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "model_validator",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "field_validator",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "root_validator",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "model_config",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__table__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__tablename__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__mapper__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "exclude_symbols",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "include_symbols",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "api_coverage",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_only",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__all__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "all_then_underscore",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "__all__",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "include_symbols",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "exclude_symbols",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "include_symbols",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "test_foo",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "test_bar",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "test_",
-        "doc_file": "reference/api-coverage.md"
-      },
-      {
-        "reference": "use_gitignore",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "api_coverage",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "all_then_underscore",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "all_only",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "underscore_only",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "exclude_symbols",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "include_symbols",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "use_gitignore",
-        "doc_file": "reference/configuration.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "doc_to_code",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "code_to_doc",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "asset_to_docs",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "unmatched_references",
-        "doc_file": "reference/file-formats.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_assess_quality.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools/docmgr_assess_quality.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/tools/docmgr_assess_quality.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_detect_changes.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/tools/docmgr_detect_changes.md"
-      },
-      {
-        "reference": "include_semantic",
-        "doc_file": "reference/tools/docmgr_detect_changes.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools/docmgr_detect_changes.md"
-      },
-      {
-        "reference": "git_diff",
-        "doc_file": "reference/tools/docmgr_detect_changes.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_detect_platform.md"
-      },
-      {
-        "reference": "config.toml",
-        "doc_file": "reference/tools/docmgr_detect_platform.md"
-      },
-      {
-        "reference": "hugo.toml",
-        "doc_file": "reference/tools/docmgr_detect_platform.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_init.md"
-      },
-      {
-        "reference": "exclude_patterns",
-        "doc_file": "reference/tools/docmgr_init.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools/docmgr_init.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "source_path",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "target_path",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "target_platform",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "preserve_history",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "regenerate_toc",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "dry_run",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "preserve_history",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "regenerate_toc",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "dry_run",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "preserve_history",
-        "doc_file": "reference/tools/docmgr_migrate.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_sync.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools/docmgr_sync.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/tools/docmgr_sync.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_update_baseline.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools/docmgr_update_baseline.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools/docmgr_validate_docs.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools/docmgr_validate_docs.md"
-      },
-      {
-        "reference": "check_links",
-        "doc_file": "reference/tools/docmgr_validate_docs.md"
-      },
-      {
-        "reference": "check_assets",
-        "doc_file": "reference/tools/docmgr_validate_docs.md"
-      },
-      {
-        "reference": "check_snippets",
-        "doc_file": "reference/tools/docmgr_validate_docs.md"
-      },
-      {
-        "reference": "include_root_readme",
-        "doc_file": "reference/tools/docmgr_validate_docs.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "exclude_patterns",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "since_commit",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "include_semantic",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "git_diff",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "check_links",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "check_assets",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "check_snippets",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "docs_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "project_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "source_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "target_path",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "target_platform",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "preserve_history",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "regenerate_toc",
-        "doc_file": "reference/tools.md"
-      },
-      {
-        "reference": "dry_run",
-        "doc_file": "reference/tools.md"
-      }
-    ],
     "command": [
+      {
+        "reference": "str",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "int",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "added",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "removed",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "critical",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "high",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "medium",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "low",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "pydantic",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "go",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "typescript",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "rust",
+        "doc_file": "guides/config-tracking.md"
+      },
       {
         "reference": "high",
         "doc_file": "guides/platforms.md"
@@ -3923,6 +3263,30 @@
         "doc_file": "reference/tools/docmgr_detect_changes.md"
       },
       {
+        "reference": "added",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "removed",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "critical",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "high",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "medium",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "low",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
         "reference": "high",
         "doc_file": "reference/tools/docmgr_detect_platform.md"
       },
@@ -4181,6 +3545,780 @@
       {
         "reference": "doc-manager-mcp",
         "doc_file": "README.md"
+      }
+    ],
+    "config_key": [
+      {
+        "reference": "type_changed",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "default_changed",
+        "doc_file": "guides/config-tracking.md"
+      },
+      {
+        "reference": "index.md",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "config.toml",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "hugo.toml",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "config.toml",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "config.toml",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "hugo.toml",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "_index.md",
+        "doc_file": "guides/platforms.md"
+      },
+      {
+        "reference": "config.toml",
+        "doc_file": "guides/troubleshooting.md"
+      },
+      {
+        "reference": "hugo.toml",
+        "doc_file": "guides/troubleshooting.md"
+      },
+      {
+        "reference": "doc_to_code",
+        "doc_file": "guides/troubleshooting.md"
+      },
+      {
+        "reference": "code_to_doc",
+        "doc_file": "guides/troubleshooting.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "guides/troubleshooting.md"
+      },
+      {
+        "reference": "preserve_history",
+        "doc_file": "guides/troubleshooting.md"
+      },
+      {
+        "reference": "affected_docs",
+        "doc_file": "guides/workflows.md"
+      },
+      {
+        "reference": "doc_to_code",
+        "doc_file": "guides/workflows.md"
+      },
+      {
+        "reference": "code_to_doc",
+        "doc_file": "guides/workflows.md"
+      },
+      {
+        "reference": "asset_to_docs",
+        "doc_file": "guides/workflows.md"
+      },
+      {
+        "reference": "unmatched_references",
+        "doc_file": "guides/workflows.md"
+      },
+      {
+        "reference": "doc_manager_mcp.constants",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "doc_manager_mcp.constants",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "hugo.toml",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "config.toml",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "go.mod",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "requirements.txt",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "requirements.txt",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "doc_manager_mcp.constants",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "doc_manager_mcp.constants",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "git_diff",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "doc_manager_mcp.constants",
+        "doc_file": "reference/api/enums.md"
+      },
+      {
+        "reference": "git_diff",
+        "doc_file": "reference/api/index.md"
+      },
+      {
+        "reference": "doc_manager_mcp.models",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "exclude_patterns",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "use_gitignore",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "exclude_patterns",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "git_diff",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "include_semantic",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "check_links",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "check_assets",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "check_snippets",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "source_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "target_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "target_platform",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "preserve_history",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "regenerate_toc",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "dry_run",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "analyzed_at",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "baseline_commit",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "baseline_created",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "changes_detected",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "total_changes",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "changed_files",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "affected_documentation",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "semantic_changes",
+        "doc_file": "reference/api/models.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "underscore_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "model_config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "model_validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "field_validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "root_validator",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "model_config",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__table__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__tablename__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__mapper__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "exclude_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "__all__",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "exclude_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test_foo",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test_bar",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "test_",
+        "doc_file": "reference/api-coverage.md"
+      },
+      {
+        "reference": "use_gitignore",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "api_coverage",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "all_then_underscore",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "all_only",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "underscore_only",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "exclude_symbols",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "include_symbols",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "use_gitignore",
+        "doc_file": "reference/configuration.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "doc_to_code",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "code_to_doc",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "asset_to_docs",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "unmatched_references",
+        "doc_file": "reference/file-formats.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_assess_quality.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools/docmgr_assess_quality.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/tools/docmgr_assess_quality.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "include_semantic",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "git_diff",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "type_changed",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "default_changed",
+        "doc_file": "reference/tools/docmgr_detect_changes.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_detect_platform.md"
+      },
+      {
+        "reference": "config.toml",
+        "doc_file": "reference/tools/docmgr_detect_platform.md"
+      },
+      {
+        "reference": "hugo.toml",
+        "doc_file": "reference/tools/docmgr_detect_platform.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_init.md"
+      },
+      {
+        "reference": "exclude_patterns",
+        "doc_file": "reference/tools/docmgr_init.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools/docmgr_init.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "source_path",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "target_path",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "target_platform",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "preserve_history",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "regenerate_toc",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "dry_run",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "preserve_history",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "regenerate_toc",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "dry_run",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "preserve_history",
+        "doc_file": "reference/tools/docmgr_migrate.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_sync.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools/docmgr_sync.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/tools/docmgr_sync.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_update_baseline.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools/docmgr_update_baseline.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
+      },
+      {
+        "reference": "check_links",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
+      },
+      {
+        "reference": "check_assets",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
+      },
+      {
+        "reference": "check_snippets",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
+      },
+      {
+        "reference": "include_root_readme",
+        "doc_file": "reference/tools/docmgr_validate_docs.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "exclude_patterns",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "since_commit",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "include_semantic",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "git_diff",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "check_links",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "check_assets",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "check_snippets",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "docs_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "project_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "source_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "target_path",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "target_platform",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "preserve_history",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "regenerate_toc",
+        "doc_file": "reference/tools.md"
+      },
+      {
+        "reference": "dry_run",
+        "doc_file": "reference/tools.md"
       }
     ],
     "class": [

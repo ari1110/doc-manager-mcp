@@ -1,7 +1,7 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "created_at": "2025-11-27T05:28:45.696884+00:00",
-  "updated_at": "2025-11-30T17:50:54.796646+00:00",
+  "updated_at": "2025-12-03T23:11:26.900874+00:00",
   "project_root": "R:\\mcp-servers\\doc-manager",
   "symbols": {
     "DocumentationPlatform": [
@@ -49,7 +49,117 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 170,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory (e.g., '/home/user/my-project', 'C:\\\\Users\\\\user\\\\project')\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 176,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory (e.g., "
+          },
+          {
+            "name": "platform",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "DocumentationPlatform | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Documentation platform to use. If not specified, will be auto-detected. Options: hugo, docusaurus, mkdocs, sphinx, vitepress, jekyll, gitbook\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 181,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Documentation platform to use. If not specified, will be auto-detected. Options: hugo, docusaurus, mkdocs, sphinx, vitepress, jekyll, gitbook"
+          },
+          {
+            "name": "exclude_patterns",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "list[str] | None",
+            "default_value": "Field(\r\n        default_factory=list,  # Empty list - tools will merge with DEFAULT_EXCLUDE_PATTERNS\r\n        description=\"Glob patterns to exclude from documentation analysis\",\r\n        max_length=50\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 185,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Glob patterns to exclude from documentation analysis"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory (relative to project root). If not specified, will be auto-detected\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 190,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory (relative to project root). If not specified, will be auto-detected"
+          },
+          {
+            "name": "sources",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "list[str] | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Source file patterns to track for documentation (e.g., 'src/**/*.py')\",\r\n        max_length=50\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 195,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Source file patterns to track for documentation (e.g., "
+          },
+          {
+            "name": "include_root_readme",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Include root README.md in documentation operations (validation, quality assessment, change detection)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 200,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Include root README.md in documentation operations (validation, quality assessment, change detection)"
+          },
+          {
+            "name": "use_gitignore",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Automatically exclude files based on .gitignore patterns (opt-in). Priority: user excludes > gitignore > defaults\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 204,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Automatically exclude files based on .gitignore patterns (opt-in). Priority: user excludes > gitignore > defaults"
+          },
+          {
+            "name": "doc_mappings",
+            "parent_symbol": "InitializeConfigInput",
+            "field_type": "dict[str, str] | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Map change categories to documentation file paths (e.g., {'cli': 'docs/reference/commands.md', 'api': 'docs/reference/api.md'}). Supports non-standard layouts\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 208,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Map change categories to documentation file paths (e.g., {"
+          }
+        ]
       }
     ],
     "validate_project_path": [
@@ -189,7 +299,33 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "InitializeMemoryInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 239,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "InitializeMemoryInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 245,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          }
+        ]
       }
     ],
     "DetectPlatformInput": [
@@ -201,7 +337,33 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "DetectPlatformInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 259,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "DetectPlatformInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 265,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          }
+        ]
       }
     ],
     "AssessQualityInput": [
@@ -213,7 +375,69 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "AssessQualityInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 273,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "AssessQualityInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 279,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "AssessQualityInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory relative to project root (e.g., 'docs/', 'documentation/'). If not specified, will be auto-detected\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 284,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory relative to project root (e.g., "
+          },
+          {
+            "name": "criteria",
+            "parent_symbol": "AssessQualityInput",
+            "field_type": "list[QualityCriterion] | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Specific criteria to assess. If not specified, all 7 criteria will be assessed\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 288,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Specific criteria to assess. If not specified, all 7 criteria will be assessed"
+          },
+          {
+            "name": "include_root_readme",
+            "parent_symbol": "AssessQualityInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Include root README.md in quality assessment (Bug #4 fix: sync discrepancy)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 292,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Include root README.md in quality assessment (Bug #4 fix: sync discrepancy)"
+          }
+        ]
       }
     ],
     "ValidateDocsInput": [
@@ -225,7 +449,129 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 299,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 305,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory relative to project root\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 310,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory relative to project root"
+          },
+          {
+            "name": "check_links",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=True,\r\n        description=\"Check for broken internal and external links\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 314,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Check for broken internal and external links"
+          },
+          {
+            "name": "check_assets",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=True,\r\n        description=\"Validate asset links and alt text\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 318,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Validate asset links and alt text"
+          },
+          {
+            "name": "check_snippets",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=True,\r\n        description=\"Extract and validate code snippets\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 322,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Extract and validate code snippets"
+          },
+          {
+            "name": "validate_code_syntax",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Validate code example syntax using TreeSitter (semantic validation)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 326,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Validate code example syntax using TreeSitter (semantic validation)"
+          },
+          {
+            "name": "validate_symbols",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Validate that documented symbols (functions/classes) exist in codebase\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 330,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Validate that documented symbols (functions/classes) exist in codebase"
+          },
+          {
+            "name": "include_root_readme",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Include root README.md in validation (Bug #4 fix: sync discrepancy)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 334,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Include root README.md in validation (Bug #4 fix: sync discrepancy)"
+          },
+          {
+            "name": "incremental",
+            "parent_symbol": "ValidateDocsInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Only validate files that changed since last baseline (5-10x faster)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 338,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Only validate files that changed since last baseline (5-10x faster)"
+          }
+        ]
       }
     ],
     "MapChangesInput": [
@@ -237,7 +583,69 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "MapChangesInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 345,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "MapChangesInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 351,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "since_commit",
+            "parent_symbol": "MapChangesInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Git commit hash to compare from. If not specified, uses checksums from memory\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 356,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Git commit hash to compare from. If not specified, uses checksums from memory"
+          },
+          {
+            "name": "mode",
+            "parent_symbol": "MapChangesInput",
+            "field_type": "ChangeDetectionMode",
+            "default_value": "Field(\r\n        default=ChangeDetectionMode.CHECKSUM,\r\n        description=\"Change detection mode: 'checksum' for file hash comparison or 'git_diff' for git-based diff. Note: use underscore, not hyphen (git_diff, not git-diff)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 360,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Change detection mode: "
+          },
+          {
+            "name": "include_semantic",
+            "parent_symbol": "MapChangesInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Enable semantic code change detection (TreeSitter-based). Detects function signature changes, new classes, deleted methods, etc. Warning: May increase processing time for large codebases\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 364,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Enable semantic code change detection (TreeSitter-based). Detects function signature changes, new classes, deleted methods, etc. Warning: May increase processing time for large codebases"
+          }
+        ]
       }
     ],
     "validate_mode": [
@@ -285,7 +693,117 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 469,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "analyzed_at",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"ISO 8601 timestamp when the analysis was performed\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 475,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "ISO 8601 timestamp when the analysis was performed"
+          },
+          {
+            "name": "baseline_commit",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Git commit SHA used as baseline (null if using checksum mode)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 479,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Git commit SHA used as baseline (null if using checksum mode)"
+          },
+          {
+            "name": "baseline_created",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"ISO 8601 timestamp when baseline was created (null if git mode)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 483,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "ISO 8601 timestamp when baseline was created (null if git mode)"
+          },
+          {
+            "name": "changes_detected",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Whether any changes were detected\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 487,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Whether any changes were detected"
+          },
+          {
+            "name": "total_changes",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "int",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Total number of changed files detected\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 491,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Total number of changed files detected"
+          },
+          {
+            "name": "changed_files",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "list[dict[str, str]]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"List of files that changed with their paths and change types\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 495,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "List of files that changed with their paths and change types"
+          },
+          {
+            "name": "affected_documentation",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "list[dict[str, Any]]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"List of documentation files affected by the code changes\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 499,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "List of documentation files affected by the code changes"
+          },
+          {
+            "name": "semantic_changes",
+            "parent_symbol": "MapChangesOutput",
+            "field_type": "list[SemanticChange]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"Code-level semantic changes detected (function signatures, classes, methods). Only populated when include_semantic=True in the request\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 503,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Code-level semantic changes detected (function signatures, classes, methods). Only populated when include_semantic=True in the request"
+          }
+        ]
       }
     ],
     "TrackDependenciesInput": [
@@ -297,7 +815,45 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "TrackDependenciesInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 510,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "TrackDependenciesInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 516,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "TrackDependenciesInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory (relative to project root). If not specified, will be auto-detected\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 521,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory (relative to project root). If not specified, will be auto-detected"
+          }
+        ]
       }
     ],
     "BootstrapInput": [
@@ -309,7 +865,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "BootstrapInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 529,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "BootstrapInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 535,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "platform",
+            "parent_symbol": "BootstrapInput",
+            "field_type": "DocumentationPlatform | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Documentation platform to use. If not specified, will be auto-detected and recommended\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 540,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Documentation platform to use. If not specified, will be auto-detected and recommended"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "BootstrapInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        default=\"docs\",\r\n        description=\"Path where documentation should be created (relative to project root)\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 544,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Path where documentation should be created (relative to project root)"
+          }
+        ]
       }
     ],
     "MigrateInput": [
@@ -321,7 +927,117 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "MigrateInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 552,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "MigrateInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 558,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "source_path",
+            "parent_symbol": "MigrateInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Path to existing documentation directory (relative to project root)\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 563,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Path to existing documentation directory (relative to project root)"
+          },
+          {
+            "name": "target_path",
+            "parent_symbol": "MigrateInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        default=\"docs\",\r\n        description=\"Path where migrated documentation should be created (relative to project root)\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 568,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Path where migrated documentation should be created (relative to project root)"
+          },
+          {
+            "name": "target_platform",
+            "parent_symbol": "MigrateInput",
+            "field_type": "DocumentationPlatform | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Target platform for migration. If not specified, will preserve existing platform\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 573,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Target platform for migration. If not specified, will preserve existing platform"
+          },
+          {
+            "name": "preserve_history",
+            "parent_symbol": "MigrateInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=True,\r\n        description=\"Use git mv to preserve file history during migration\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 577,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Use git mv to preserve file history during migration"
+          },
+          {
+            "name": "rewrite_links",
+            "parent_symbol": "MigrateInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Automatically rewrite internal links when migrating documentation to new structure\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 581,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Automatically rewrite internal links when migrating documentation to new structure"
+          },
+          {
+            "name": "regenerate_toc",
+            "parent_symbol": "MigrateInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Regenerate table of contents for each migrated file using <!-- TOC --> markers\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 585,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Regenerate table of contents for each migrated file using <!-- TOC --> markers"
+          },
+          {
+            "name": "dry_run",
+            "parent_symbol": "MigrateInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Preview migration changes without modifying files. Shows what would be changed.\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 589,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Preview migration changes without modifying files. Shows what would be changed."
+          }
+        ]
       }
     ],
     "SyncInput": [
@@ -333,7 +1049,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "SyncInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 596,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "SyncInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 602,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "mode",
+            "parent_symbol": "SyncInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        default=\"check\",\r\n        description=\"Sync mode: 'check' (read-only analysis) or 'resync' (update baselines + analysis)\",\r\n        pattern=\"^(check|resync)$\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 607,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Sync mode: "
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "SyncInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory (relative to project root). If not specified, will be auto-detected\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 612,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory (relative to project root). If not specified, will be auto-detected"
+          }
+        ]
       }
     ],
     "DocmgrInitInput": [
@@ -345,7 +1111,117 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 632,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 638,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "mode",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        default=\"existing\",\r\n        description=\"Init mode: 'existing' (config+baselines+deps) or 'bootstrap' (+ doc templates)\",\r\n        pattern=\"^(existing|bootstrap)$\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 643,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Init mode: "
+          },
+          {
+            "name": "platform",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "DocumentationPlatform | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Documentation platform (mkdocs, docusaurus, etc.)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 648,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Documentation platform (mkdocs, docusaurus, etc.)"
+          },
+          {
+            "name": "exclude_patterns",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "list[str] | None",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"Glob patterns for files to exclude from documentation tracking\",\r\n        max_length=50\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 652,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Glob patterns for files to exclude from documentation tracking"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory (relative to project root)\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 657,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory (relative to project root)"
+          },
+          {
+            "name": "sources",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "list[str] | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Source file patterns to track (e.g., ['src/**/*.py'])\",\r\n        max_length=50\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 662,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Source file patterns to track (e.g., ["
+          },
+          {
+            "name": "include_root_readme",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Include root README.md in documentation operations (validation, quality assessment, change detection)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 667,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Include root README.md in documentation operations (validation, quality assessment, change detection)"
+          },
+          {
+            "name": "use_gitignore",
+            "parent_symbol": "DocmgrInitInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Automatically exclude files based on .gitignore patterns (opt-in). Priority: user excludes > gitignore > defaults\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 671,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Automatically exclude files based on .gitignore patterns (opt-in). Priority: user excludes > gitignore > defaults"
+          }
+        ]
       }
     ],
     "DocmgrDetectChangesInput": [
@@ -357,7 +1233,69 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "DocmgrDetectChangesInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 704,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "DocmgrDetectChangesInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 710,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "since_commit",
+            "parent_symbol": "DocmgrDetectChangesInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Git commit SHA to compare from (only for git_diff mode)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 715,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Git commit SHA to compare from (only for git_diff mode)"
+          },
+          {
+            "name": "mode",
+            "parent_symbol": "DocmgrDetectChangesInput",
+            "field_type": "ChangeDetectionMode",
+            "default_value": "Field(\r\n        default=ChangeDetectionMode.CHECKSUM,\r\n        description=\"Detection mode: 'checksum' (file checksums) or 'git_diff' (git changes)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 719,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Detection mode: "
+          },
+          {
+            "name": "include_semantic",
+            "parent_symbol": "DocmgrDetectChangesInput",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=False,\r\n        description=\"Include semantic diff analysis (TreeSitter AST comparison)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 723,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Include semantic diff analysis (TreeSitter AST comparison)"
+          }
+        ]
       }
     ],
     "DocmgrUpdateBaselineInput": [
@@ -369,7 +1307,45 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "DocmgrUpdateBaselineInput",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 742,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "project_path",
+            "parent_symbol": "DocmgrUpdateBaselineInput",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Absolute path to project root directory\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 748,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Absolute path to project root directory"
+          },
+          {
+            "name": "docs_path",
+            "parent_symbol": "DocmgrUpdateBaselineInput",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Path to documentation directory (relative to project root)\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 753,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Path to documentation directory (relative to project root)"
+          }
+        ]
       }
     ],
     "TerminologyRule": [
@@ -381,7 +1357,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "TerminologyRule",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 776,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "word",
+            "parent_symbol": "TerminologyRule",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Word or phrase to avoid\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 782,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Word or phrase to avoid"
+          },
+          {
+            "name": "reason",
+            "parent_symbol": "TerminologyRule",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Explanation of why this term should be avoided\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 787,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Explanation of why this term should be avoided"
+          },
+          {
+            "name": "exceptions",
+            "parent_symbol": "TerminologyRule",
+            "field_type": "list[str]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"Phrases that should not be flagged (e.g., 'just-in-time' when avoiding 'just')\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 791,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Phrases that should not be flagged (e.g., "
+          }
+        ]
       }
     ],
     "PreferredTerminology": [
@@ -393,7 +1419,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "PreferredTerminology",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 799,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "full_form",
+            "parent_symbol": "PreferredTerminology",
+            "field_type": "str",
+            "default_value": "Field(\r\n        ...,\r\n        description=\"Full form of the term (e.g., 'Model Context Protocol')\",\r\n        min_length=1\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 805,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Full form of the term (e.g., "
+          },
+          {
+            "name": "abbreviation",
+            "parent_symbol": "PreferredTerminology",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Abbreviated form (e.g., 'MCP')\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 810,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Abbreviated form (e.g., "
+          },
+          {
+            "name": "guidance",
+            "parent_symbol": "PreferredTerminology",
+            "field_type": "str | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Usage guidance (e.g., 'Spell out on first use, abbreviate after')\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 814,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Usage guidance (e.g., "
+          }
+        ]
       }
     ],
     "StyleConventions": [
@@ -405,7 +1481,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "StyleConventions",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 822,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "headings",
+            "parent_symbol": "StyleConventions",
+            "field_type": "HeadingConfig",
+            "default_value": "Field(\r\n        default_factory=HeadingConfig,\r\n        description=\"Heading style rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 867,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Heading style rules"
+          },
+          {
+            "name": "code",
+            "parent_symbol": "StyleConventions",
+            "field_type": "CodeConfig",
+            "default_value": "Field(\r\n        default_factory=CodeConfig,\r\n        description=\"Code formatting rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 871,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Code formatting rules"
+          },
+          {
+            "name": "voice",
+            "parent_symbol": "StyleConventions",
+            "field_type": "VoiceConfig",
+            "default_value": "Field(\r\n        default_factory=VoiceConfig,\r\n        description=\"Writing voice rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 875,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Writing voice rules"
+          }
+        ]
       }
     ],
     "HeadingConfig": [
@@ -417,7 +1543,45 @@
         "column": 4,
         "signature": null,
         "parent": "StyleConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "HeadingConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 830,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "case",
+            "parent_symbol": "HeadingConfig",
+            "field_type": "Literal[\"sentence_case\", \"title_case\", \"lower\", \"upper\"] | None",
+            "default_value": "Field(\r\n            default=None,\r\n            description=\"Required heading case style\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 832,
+            "column": 8,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Required heading case style"
+          },
+          {
+            "name": "consistency_required",
+            "parent_symbol": "HeadingConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=True,\r\n            description=\"Enforce consistent heading case throughout project\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 836,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Enforce consistent heading case throughout project"
+          }
+        ]
       }
     ],
     "CodeConfig": [
@@ -429,7 +1593,45 @@
         "column": 4,
         "signature": null,
         "parent": "StyleConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "CodeConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 843,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "inline_format",
+            "parent_symbol": "CodeConfig",
+            "field_type": "Literal[\"backticks\", \"html\"]",
+            "default_value": "Field(\r\n            default=\"backticks\",\r\n            description=\"Format for inline code references\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 845,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Format for inline code references"
+          },
+          {
+            "name": "block_language_required",
+            "parent_symbol": "CodeConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=True,\r\n            description=\"Require language specification in code blocks\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 849,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Require language specification in code blocks"
+          }
+        ]
       }
     ],
     "VoiceConfig": [
@@ -441,7 +1643,45 @@
         "column": 4,
         "signature": null,
         "parent": "StyleConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "VoiceConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 856,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "person",
+            "parent_symbol": "VoiceConfig",
+            "field_type": "Literal[\"first\", \"second\", \"third\"]",
+            "default_value": "Field(\r\n            default=\"second\",\r\n            description=\"Grammatical person for documentation\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 858,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Grammatical person for documentation"
+          },
+          {
+            "name": "active_voice_preferred",
+            "parent_symbol": "VoiceConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=True,\r\n            description=\"Prefer active voice over passive\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 862,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Prefer active voice over passive"
+          }
+        ]
       }
     ],
     "StructureConventions": [
@@ -453,7 +1693,69 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "StructureConventions",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 883,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "require_intro",
+            "parent_symbol": "StructureConventions",
+            "field_type": "bool",
+            "default_value": "Field(\r\n        default=True,\r\n        description=\"Require introductory paragraph before first heading\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 903,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Require introductory paragraph before first heading"
+          },
+          {
+            "name": "require_toc",
+            "parent_symbol": "StructureConventions",
+            "field_type": "TocConfig",
+            "default_value": "Field(\r\n        default_factory=TocConfig,\r\n        description=\"Table of contents requirements\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 907,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Table of contents requirements"
+          },
+          {
+            "name": "max_heading_depth",
+            "parent_symbol": "StructureConventions",
+            "field_type": "int | None",
+            "default_value": "Field(\r\n        default=3,\r\n        description=\"Maximum heading depth (1-6)\",\r\n        ge=1,\r\n        le=6\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 911,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Maximum heading depth (1-6)"
+          },
+          {
+            "name": "heading_hierarchy",
+            "parent_symbol": "StructureConventions",
+            "field_type": "Literal[\"strict\", \"relaxed\"]",
+            "default_value": "Field(\r\n        default=\"strict\",\r\n        description=\"Enforce strict heading hierarchy (no level skipping)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 917,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Enforce strict heading hierarchy (no level skipping)"
+          }
+        ]
       }
     ],
     "TocConfig": [
@@ -465,7 +1767,45 @@
         "column": 4,
         "signature": null,
         "parent": "StructureConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "TocConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 891,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "enabled",
+            "parent_symbol": "TocConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=True,\r\n            description=\"Whether to require TOC\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 893,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Whether to require TOC"
+          },
+          {
+            "name": "min_length",
+            "parent_symbol": "TocConfig",
+            "field_type": "int",
+            "default_value": "Field(\r\n            default=500,\r\n            description=\"Minimum document length (words) to require TOC\",\r\n            ge=0\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 897,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Minimum document length (words) to require TOC"
+          }
+        ]
       }
     ],
     "QualityConventions": [
@@ -477,7 +1817,81 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "QualityConventions",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 925,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "sentences",
+            "parent_symbol": "QualityConventions",
+            "field_type": "SentenceConfig",
+            "default_value": "Field(\r\n        default_factory=SentenceConfig,\r\n        description=\"Sentence length rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 983,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Sentence length rules"
+          },
+          {
+            "name": "paragraphs",
+            "parent_symbol": "QualityConventions",
+            "field_type": "ParagraphConfig",
+            "default_value": "Field(\r\n        default_factory=ParagraphConfig,\r\n        description=\"Paragraph length rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 987,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Paragraph length rules"
+          },
+          {
+            "name": "links",
+            "parent_symbol": "QualityConventions",
+            "field_type": "LinkConfig",
+            "default_value": "Field(\r\n        default_factory=LinkConfig,\r\n        description=\"Link validation rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 991,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Link validation rules"
+          },
+          {
+            "name": "images",
+            "parent_symbol": "QualityConventions",
+            "field_type": "ImageConfig",
+            "default_value": "Field(\r\n        default_factory=ImageConfig,\r\n        description=\"Image validation rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 995,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Image validation rules"
+          },
+          {
+            "name": "code",
+            "parent_symbol": "QualityConventions",
+            "field_type": "CodeQualityConfig",
+            "default_value": "Field(\r\n        default_factory=CodeQualityConfig,\r\n        description=\"Code quality validation rules\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 999,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Code quality validation rules"
+          }
+        ]
       }
     ],
     "SentenceConfig": [
@@ -489,7 +1903,45 @@
         "column": 4,
         "signature": null,
         "parent": "QualityConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "SentenceConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 933,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "max_length",
+            "parent_symbol": "SentenceConfig",
+            "field_type": "int | None",
+            "default_value": "Field(\r\n            default=25,\r\n            description=\"Maximum sentence length in words\",\r\n            ge=1\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 935,
+            "column": 8,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Maximum sentence length in words"
+          },
+          {
+            "name": "min_length",
+            "parent_symbol": "SentenceConfig",
+            "field_type": "int | None",
+            "default_value": "Field(\r\n            default=3,\r\n            description=\"Minimum sentence length in words\",\r\n            ge=1\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 940,
+            "column": 8,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Minimum sentence length in words"
+          }
+        ]
       }
     ],
     "ParagraphConfig": [
@@ -501,7 +1953,33 @@
         "column": 4,
         "signature": null,
         "parent": "QualityConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "ParagraphConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 948,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "max_length",
+            "parent_symbol": "ParagraphConfig",
+            "field_type": "int | None",
+            "default_value": "Field(\r\n            default=150,\r\n            description=\"Maximum paragraph length in words\",\r\n            ge=1\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 950,
+            "column": 8,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Maximum paragraph length in words"
+          }
+        ]
       }
     ],
     "LinkConfig": [
@@ -513,7 +1991,33 @@
         "column": 4,
         "signature": null,
         "parent": "QualityConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "LinkConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 958,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "validate_links",
+            "parent_symbol": "LinkConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=True,\r\n            description=\"Validate all links are reachable\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 960,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Validate all links are reachable"
+          }
+        ]
       }
     ],
     "ImageConfig": [
@@ -525,7 +2029,33 @@
         "column": 4,
         "signature": null,
         "parent": "QualityConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "ImageConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 967,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "require_alt_text",
+            "parent_symbol": "ImageConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=True,\r\n            description=\"All images must have descriptive alt text\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 969,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "All images must have descriptive alt text"
+          }
+        ]
       }
     ],
     "CodeQualityConfig": [
@@ -537,7 +2067,33 @@
         "column": 4,
         "signature": null,
         "parent": "QualityConventions",
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "CodeQualityConfig",
+            "field_type": null,
+            "default_value": "ConfigDict(extra='forbid')",
+            "file": "doc_manager_mcp/models.py",
+            "line": 976,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "validate_syntax",
+            "parent_symbol": "CodeQualityConfig",
+            "field_type": "bool",
+            "default_value": "Field(\r\n            default=False,\r\n            description=\"Validate code syntax (expensive, requires TreeSitter)\"\r\n        )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 978,
+            "column": 8,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Validate code syntax (expensive, requires TreeSitter)"
+          }
+        ]
       }
     ],
     "TerminologyConventions": [
@@ -549,7 +2105,45 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "TerminologyConventions",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1007,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "preferred",
+            "parent_symbol": "TerminologyConventions",
+            "field_type": "dict[str, PreferredTerminology]",
+            "default_value": "Field(\r\n        default_factory=dict,\r\n        description=\"Preferred terminology for consistency (detection only)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1013,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Preferred terminology for consistency (detection only)"
+          },
+          {
+            "name": "avoid",
+            "parent_symbol": "TerminologyConventions",
+            "field_type": "list[TerminologyRule]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"Words/phrases to avoid (flagged as warnings)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1017,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Words/phrases to avoid (flagged as warnings)"
+          }
+        ]
       }
     ],
     "DocumentationConventions": [
@@ -561,7 +2155,69 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "model_config",
+            "parent_symbol": "DocumentationConventions",
+            "field_type": null,
+            "default_value": "ConfigDict(\r\n        str_strip_whitespace=True,\r\n        validate_assignment=True,\r\n        extra='forbid'\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1028,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "style",
+            "parent_symbol": "DocumentationConventions",
+            "field_type": "StyleConventions",
+            "default_value": "Field(\r\n        default_factory=StyleConventions,\r\n        description=\"Style conventions (headings, code, voice)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1034,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Style conventions (headings, code, voice)"
+          },
+          {
+            "name": "structure",
+            "parent_symbol": "DocumentationConventions",
+            "field_type": "StructureConventions",
+            "default_value": "Field(\r\n        default_factory=StructureConventions,\r\n        description=\"Structure conventions (intro, TOC, hierarchy)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1038,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Structure conventions (intro, TOC, hierarchy)"
+          },
+          {
+            "name": "quality",
+            "parent_symbol": "DocumentationConventions",
+            "field_type": "QualityConventions",
+            "default_value": "Field(\r\n        default_factory=QualityConventions,\r\n        description=\"Quality conventions (sentences, links, images)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1042,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Quality conventions (sentences, links, images)"
+          },
+          {
+            "name": "terminology",
+            "parent_symbol": "DocumentationConventions",
+            "field_type": "TerminologyConventions",
+            "default_value": "Field(\r\n        default_factory=TerminologyConventions,\r\n        description=\"Terminology conventions (preferred terms, words to avoid)\"\r\n    )",
+            "file": "doc_manager_mcp/models.py",
+            "line": 1046,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Terminology conventions (preferred terms, words to avoid)"
+          }
+        ]
       }
     ],
     "_validate_project_path": [
@@ -720,6 +2376,270 @@
         "doc": null
       }
     ],
+    "ActionItem": [
+      {
+        "name": "ActionItem",
+        "type": "class",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 18,
+        "column": 0,
+        "signature": null,
+        "parent": null,
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "action_type",
+            "parent_symbol": "ActionItem",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 43,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "target_file",
+            "parent_symbol": "ActionItem",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 44,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "target_section",
+            "parent_symbol": "ActionItem",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 45,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "description",
+            "parent_symbol": "ActionItem",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 46,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "priority",
+            "parent_symbol": "ActionItem",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 47,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "source_change",
+            "parent_symbol": "ActionItem",
+            "field_type": "dict[str, Any]",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 48,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "suggested_content",
+            "parent_symbol": "ActionItem",
+            "field_type": "str | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/core/actions.py",
+            "line": 49,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          }
+        ]
+      }
+    ],
+    "ActionGenerator": [
+      {
+        "name": "ActionGenerator",
+        "type": "class",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 52,
+        "column": 0,
+        "signature": null,
+        "parent": null,
+        "doc": null
+      }
+    ],
+    "__init__": [
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 91,
+        "column": 4,
+        "signature": "def __init__(self, docs_path",
+        "parent": "ActionGenerator",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/core/markdown_cache.py",
+        "line": 49,
+        "column": 4,
+        "signature": "def __init__(self)",
+        "parent": "MarkdownCache",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/core/resources.py",
+        "line": 20,
+        "column": 4,
+        "signature": "def __init__(self, max_files",
+        "parent": "ResourceLimits",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/link_index.py",
+        "line": 24,
+        "column": 4,
+        "signature": "def __init__(self)",
+        "parent": "LinkIndex",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/path_index.py",
+        "line": 20,
+        "column": 4,
+        "signature": "def __init__(self)",
+        "parent": "PathIndex",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/code_validator.py",
+        "line": 28,
+        "column": 4,
+        "signature": "def __init__(self)",
+        "parent": "CodeValidator",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 108,
+        "column": 4,
+        "signature": "def __init__(self)",
+        "parent": "SymbolIndexer",
+        "doc": null
+      },
+      {
+        "name": "__init__",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/parsers/markdown.py",
+        "line": 29,
+        "column": 4,
+        "signature": "def __init__(self)",
+        "parent": "MarkdownParser",
+        "doc": null
+      }
+    ],
+    "generate_actions": [
+      {
+        "name": "generate_actions",
+        "type": "method",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 99,
+        "column": 4,
+        "signature": "def generate_actions(\r\n        self,\r\n        semantic_changes",
+        "parent": "ActionGenerator",
+        "doc": null
+      }
+    ],
+    "_action_from_semantic_change": [
+      {
+        "name": "_action_from_semantic_change",
+        "type": "method",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 139,
+        "column": 4,
+        "signature": "def _action_from_semantic_change(\r\n        self,\r\n        change",
+        "parent": "ActionGenerator",
+        "doc": null
+      }
+    ],
+    "_action_from_config_change": [
+      {
+        "name": "_action_from_config_change",
+        "type": "method",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 197,
+        "column": 4,
+        "signature": "def _action_from_config_change(\r\n        self,\r\n        change",
+        "parent": "ActionGenerator",
+        "doc": null
+      }
+    ],
+    "_infer_target_doc": [
+      {
+        "name": "_infer_target_doc",
+        "type": "method",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 260,
+        "column": 4,
+        "signature": "def _infer_target_doc(\r\n        self,\r\n        source_file",
+        "parent": "ActionGenerator",
+        "doc": null
+      }
+    ],
+    "_infer_config_doc": [
+      {
+        "name": "_infer_config_doc",
+        "type": "method",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 294,
+        "column": 4,
+        "signature": "def _infer_config_doc(\r\n        self,\r\n        parent_symbol",
+        "parent": "ActionGenerator",
+        "doc": null
+      }
+    ],
+    "actions_to_dicts": [
+      {
+        "name": "actions_to_dicts",
+        "type": "function",
+        "file": "doc_manager_mcp/core/actions.py",
+        "line": 313,
+        "column": 0,
+        "signature": "def actions_to_dicts(actions",
+        "parent": null,
+        "doc": null
+      }
+    ],
     "ApiCoverageConfig": [
       {
         "name": "ApiCoverageConfig",
@@ -729,7 +2649,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "strategy",
+            "parent_symbol": "ApiCoverageConfig",
+            "field_type": "StrategyName",
+            "default_value": "Field(\r\n        default=\"all_then_underscore\",\r\n        description=\"Strategy for determining public symbols\"\r\n    )",
+            "file": "doc_manager_mcp/core/api_coverage.py",
+            "line": 179,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Strategy for determining public symbols"
+          },
+          {
+            "name": "preset",
+            "parent_symbol": "ApiCoverageConfig",
+            "field_type": "PresetName | None",
+            "default_value": "Field(\r\n        default=None,\r\n        description=\"Preset for common frameworks (see API_COVERAGE_PRESETS for full list)\"\r\n    )",
+            "file": "doc_manager_mcp/core/api_coverage.py",
+            "line": 183,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": "Preset for common frameworks (see API_COVERAGE_PRESETS for full list)"
+          },
+          {
+            "name": "exclude_symbols",
+            "parent_symbol": "ApiCoverageConfig",
+            "field_type": "list[str]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"Patterns for symbols to exclude (fnmatch syntax)\"\r\n    )",
+            "file": "doc_manager_mcp/core/api_coverage.py",
+            "line": 187,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Patterns for symbols to exclude (fnmatch syntax)"
+          },
+          {
+            "name": "include_symbols",
+            "parent_symbol": "ApiCoverageConfig",
+            "field_type": "list[str]",
+            "default_value": "Field(\r\n        default_factory=list,\r\n        description=\"Patterns for symbols to force-include\"\r\n    )",
+            "file": "doc_manager_mcp/core/api_coverage.py",
+            "line": 191,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": "Patterns for symbols to force-include"
+          }
+        ]
       }
     ],
     "get_resolved_exclude_patterns": [
@@ -969,7 +2939,57 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "headings",
+            "parent_symbol": "ParsedMarkdown",
+            "field_type": "list[dict[str, Any]]",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/markdown_cache.py",
+            "line": 25,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "links",
+            "parent_symbol": "ParsedMarkdown",
+            "field_type": "list[dict[str, Any]]",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/markdown_cache.py",
+            "line": 26,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "images",
+            "parent_symbol": "ParsedMarkdown",
+            "field_type": "list[dict[str, Any]]",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/markdown_cache.py",
+            "line": 27,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "code_blocks",
+            "parent_symbol": "ParsedMarkdown",
+            "field_type": "list[dict[str, Any]]",
+            "default_value": null,
+            "file": "doc_manager_mcp/core/markdown_cache.py",
+            "line": 28,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          }
+        ]
       }
     ],
     "MarkdownCache": [
@@ -981,78 +3001,6 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
-      }
-    ],
-    "__init__": [
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/core/markdown_cache.py",
-        "line": 49,
-        "column": 4,
-        "signature": "def __init__(self)",
-        "parent": "MarkdownCache",
-        "doc": null
-      },
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/core/resources.py",
-        "line": 20,
-        "column": 4,
-        "signature": "def __init__(self, max_files",
-        "parent": "ResourceLimits",
-        "doc": null
-      },
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/indexing/link_index.py",
-        "line": 24,
-        "column": 4,
-        "signature": "def __init__(self)",
-        "parent": "LinkIndex",
-        "doc": null
-      },
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/indexing/path_index.py",
-        "line": 20,
-        "column": 4,
-        "signature": "def __init__(self)",
-        "parent": "PathIndex",
-        "doc": null
-      },
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/indexing/analysis/code_validator.py",
-        "line": 28,
-        "column": 4,
-        "signature": "def __init__(self)",
-        "parent": "CodeValidator",
-        "doc": null
-      },
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 83,
-        "column": 4,
-        "signature": "def __init__(self)",
-        "parent": "SymbolIndexer",
-        "doc": null
-      },
-      {
-        "name": "__init__",
-        "type": "method",
-        "file": "doc_manager_mcp/indexing/parsers/markdown.py",
-        "line": 29,
-        "column": 4,
-        "signature": "def __init__(self)",
-        "parent": "MarkdownParser",
         "doc": null
       }
     ],
@@ -1557,7 +3505,7 @@
         "name": "_get_semantic_changes_readonly",
         "type": "function",
         "file": "doc_manager_mcp/tools/analysis/detect_changes.py",
-        "line": 142,
+        "line": 150,
         "column": 0,
         "signature": "async def _get_semantic_changes_readonly(\r\n    project_path",
         "parent": null,
@@ -1753,7 +3701,45 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "method",
+            "parent_symbol": "TransformResult",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 20,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "links_rewritten",
+            "parent_symbol": "TransformResult",
+            "field_type": "bool",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 21,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "toc_generated",
+            "parent_symbol": "TransformResult",
+            "field_type": "bool",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 22,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          }
+        ]
       }
     ],
     "ProcessResult": [
@@ -1765,7 +3751,69 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "old_file",
+            "parent_symbol": "ProcessResult",
+            "field_type": "Path",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 27,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "new_file",
+            "parent_symbol": "ProcessResult",
+            "field_type": "Path",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 28,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "method",
+            "parent_symbol": "ProcessResult",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 29,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "links_rewritten",
+            "parent_symbol": "ProcessResult",
+            "field_type": "bool",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 30,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "toc_generated",
+            "parent_symbol": "ProcessResult",
+            "field_type": "bool",
+            "default_value": null,
+            "file": "doc_manager_mcp/tools/workflows/migrate_helpers.py",
+            "line": 31,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          }
+        ]
       }
     ],
     "rewrite_links": [
@@ -2837,7 +4885,251 @@
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "name",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 52,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "change_type",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 53,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "symbol_type",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 54,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "file",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 55,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "line",
+            "parent_symbol": "SemanticChange",
+            "field_type": "int | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 56,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "old_signature",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 57,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "new_signature",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 58,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "severity",
+            "parent_symbol": "SemanticChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 59,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          }
+        ]
+      }
+    ],
+    "ConfigFieldChange": [
+      {
+        "name": "ConfigFieldChange",
+        "type": "class",
+        "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+        "line": 63,
+        "column": 0,
+        "signature": null,
+        "parent": null,
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "field_name",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 83,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "parent_symbol",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 84,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "change_type",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 85,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "file",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 86,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "line",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "int | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 87,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "old_type",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 88,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "new_type",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 89,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "old_default",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 90,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "new_default",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 91,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "severity",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 92,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "documentation_action",
+            "parent_symbol": "ConfigFieldChange",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+            "line": 93,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          }
+        ]
       }
     ],
     "load_symbol_baseline": [
@@ -2845,7 +5137,7 @@
         "name": "load_symbol_baseline",
         "type": "function",
         "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
-        "line": 62,
+        "line": 96,
         "column": 0,
         "signature": "def load_symbol_baseline(baseline_path",
         "parent": null,
@@ -2857,7 +5149,7 @@
         "name": "save_symbol_baseline",
         "type": "function",
         "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
-        "line": 122,
+        "line": 175,
         "column": 0,
         "signature": "def save_symbol_baseline(\r\n    baseline_path",
         "parent": null,
@@ -2869,9 +5161,33 @@
         "name": "compare_symbols",
         "type": "function",
         "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
-        "line": 214,
+        "line": 285,
         "column": 0,
         "signature": "def compare_symbols(\r\n    old_symbols",
+        "parent": null,
+        "doc": null
+      }
+    ],
+    "compare_config_fields": [
+      {
+        "name": "compare_config_fields",
+        "type": "function",
+        "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+        "line": 417,
+        "column": 0,
+        "signature": "def compare_config_fields(\r\n    old_symbols",
+        "parent": null,
+        "doc": null
+      }
+    ],
+    "_is_type_change_breaking": [
+      {
+        "name": "_is_type_change_breaking",
+        "type": "function",
+        "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
+        "line": 563,
+        "column": 0,
+        "signature": "def _is_type_change_breaking(old_type",
         "parent": null,
         "doc": null
       }
@@ -2881,7 +5197,7 @@
         "name": "_is_public_api",
         "type": "function",
         "file": "doc_manager_mcp/indexing/analysis/semantic_diff.py",
-        "line": 346,
+        "line": 600,
         "column": 0,
         "signature": "def _is_public_api(symbol",
         "parent": null,
@@ -2893,11 +5209,145 @@
         "name": "SymbolType",
         "type": "class",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 46,
+        "line": 48,
         "column": 0,
         "signature": null,
         "parent": null,
         "doc": null
+      }
+    ],
+    "ConfigField": [
+      {
+        "name": "ConfigField",
+        "type": "class",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 64,
+        "column": 0,
+        "signature": null,
+        "parent": null,
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "name",
+            "parent_symbol": "ConfigField",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 72,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "parent_symbol",
+            "parent_symbol": "ConfigField",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 73,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "field_type",
+            "parent_symbol": "ConfigField",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 74,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "default_value",
+            "parent_symbol": "ConfigField",
+            "field_type": "str | None",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 75,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "file",
+            "parent_symbol": "ConfigField",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 76,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "line",
+            "parent_symbol": "ConfigField",
+            "field_type": "int",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 77,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "column",
+            "parent_symbol": "ConfigField",
+            "field_type": "int",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 78,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "tags",
+            "parent_symbol": "ConfigField",
+            "field_type": "dict[str, str] | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 79,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "is_optional",
+            "parent_symbol": "ConfigField",
+            "field_type": "bool",
+            "default_value": "False",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 80,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "doc",
+            "parent_symbol": "ConfigField",
+            "field_type": "str | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 81,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          }
+        ]
       }
     ],
     "Symbol": [
@@ -2905,11 +5355,121 @@
         "name": "Symbol",
         "type": "class",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 61,
+        "line": 85,
         "column": 0,
         "signature": null,
         "parent": null,
-        "doc": null
+        "doc": null,
+        "config_fields": [
+          {
+            "name": "name",
+            "parent_symbol": "Symbol",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 88,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "type",
+            "parent_symbol": "Symbol",
+            "field_type": "SymbolType",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 89,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "file",
+            "parent_symbol": "Symbol",
+            "field_type": "str",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 90,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "line",
+            "parent_symbol": "Symbol",
+            "field_type": "int",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 91,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "column",
+            "parent_symbol": "Symbol",
+            "field_type": "int",
+            "default_value": null,
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 92,
+            "column": 4,
+            "tags": null,
+            "is_optional": false,
+            "doc": null
+          },
+          {
+            "name": "signature",
+            "parent_symbol": "Symbol",
+            "field_type": "str | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 93,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "parent",
+            "parent_symbol": "Symbol",
+            "field_type": "str | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 94,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "doc",
+            "parent_symbol": "Symbol",
+            "field_type": "str | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 95,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          },
+          {
+            "name": "config_fields",
+            "parent_symbol": "Symbol",
+            "field_type": "list[ConfigField] | None",
+            "default_value": "None",
+            "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+            "line": 96,
+            "column": 4,
+            "tags": null,
+            "is_optional": true,
+            "doc": null
+          }
+        ]
       }
     ],
     "SymbolIndexer": [
@@ -2917,7 +5477,7 @@
         "name": "SymbolIndexer",
         "type": "class",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 74,
+        "line": 99,
         "column": 0,
         "signature": null,
         "parent": null,
@@ -2929,7 +5489,7 @@
         "name": "_create_parser",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 118,
+        "line": 145,
         "column": 4,
         "signature": "def _create_parser(self, language",
         "parent": "SymbolIndexer",
@@ -2941,7 +5501,7 @@
         "name": "index_project",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 123,
+        "line": 150,
         "column": 4,
         "signature": "def index_project(self, project_path",
         "parent": "SymbolIndexer",
@@ -2953,7 +5513,7 @@
         "name": "_index_file",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 209,
+        "line": 237,
         "column": 4,
         "signature": "def _index_file(self, file_path",
         "parent": "SymbolIndexer",
@@ -2965,7 +5525,7 @@
         "name": "_extract_go_symbols",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 250,
+        "line": 282,
         "column": 4,
         "signature": "def _extract_go_symbols(self, node",
         "parent": "SymbolIndexer",
@@ -2977,7 +5537,7 @@
         "name": "_extract_python_symbols",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 322,
+        "line": 364,
         "column": 4,
         "signature": "def _extract_python_symbols(self, node",
         "parent": "SymbolIndexer",
@@ -2989,9 +5549,117 @@
         "name": "_extract_js_symbols",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 419,
+        "line": 469,
         "column": 4,
         "signature": "def _extract_js_symbols(self, node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_extract_rust_symbols": [
+      {
+        "name": "_extract_rust_symbols",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 546,
+        "column": 4,
+        "signature": "def _extract_rust_symbols(self, node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_is_python_config_class": [
+      {
+        "name": "_is_python_config_class",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 622,
+        "column": 4,
+        "signature": "def _is_python_config_class(self, class_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_extract_python_config_fields": [
+      {
+        "name": "_extract_python_config_fields",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 654,
+        "column": 4,
+        "signature": "def _extract_python_config_fields(\r\n        self,\r\n        class_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_is_go_config_struct": [
+      {
+        "name": "_is_go_config_struct",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 750,
+        "column": 4,
+        "signature": "def _is_go_config_struct(self, struct_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_extract_go_config_fields": [
+      {
+        "name": "_extract_go_config_fields",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 768,
+        "column": 4,
+        "signature": "def _extract_go_config_fields(\r\n        self,\r\n        struct_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_is_ts_config_interface": [
+      {
+        "name": "_is_ts_config_interface",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 825,
+        "column": 4,
+        "signature": "def _is_ts_config_interface(self, interface_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_extract_ts_config_fields": [
+      {
+        "name": "_extract_ts_config_fields",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 830,
+        "column": 4,
+        "signature": "def _extract_ts_config_fields(\r\n        self,\r\n        interface_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_is_rust_config_struct": [
+      {
+        "name": "_is_rust_config_struct",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 879,
+        "column": 4,
+        "signature": "def _is_rust_config_struct(self, struct_node",
+        "parent": "SymbolIndexer",
+        "doc": null
+      }
+    ],
+    "_extract_rust_config_fields": [
+      {
+        "name": "_extract_rust_config_fields",
+        "type": "method",
+        "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
+        "line": 912,
+        "column": 4,
+        "signature": "def _extract_rust_config_fields(\r\n        self,\r\n        struct_node",
         "parent": "SymbolIndexer",
         "doc": null
       }
@@ -3001,7 +5669,7 @@
         "name": "_find_nodes",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 474,
+        "line": 994,
         "column": 4,
         "signature": "def _find_nodes(self, node",
         "parent": "SymbolIndexer",
@@ -3013,7 +5681,7 @@
         "name": "traverse",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 478,
+        "line": 998,
         "column": 8,
         "signature": "def traverse(n)",
         "parent": "SymbolIndexer",
@@ -3023,7 +5691,7 @@
         "name": "traverse",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 503,
+        "line": 1023,
         "column": 8,
         "signature": "def traverse(n, inside_nested_class=False)",
         "parent": "SymbolIndexer",
@@ -3035,7 +5703,7 @@
         "name": "_find_direct_methods",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 487,
+        "line": 1007,
         "column": 4,
         "signature": "def _find_direct_methods(self, class_node",
         "parent": "SymbolIndexer",
@@ -3047,7 +5715,7 @@
         "name": "_find_child",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 520,
+        "line": 1040,
         "column": 4,
         "signature": "def _find_child(self, node",
         "parent": "SymbolIndexer",
@@ -3059,7 +5727,7 @@
         "name": "_get_node_text",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 527,
+        "line": 1047,
         "column": 4,
         "signature": "def _get_node_text(self, node",
         "parent": "SymbolIndexer",
@@ -3071,7 +5739,7 @@
         "name": "_add_symbol",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 543,
+        "line": 1063,
         "column": 4,
         "signature": "def _add_symbol(self, symbol",
         "parent": "SymbolIndexer",
@@ -3083,7 +5751,7 @@
         "name": "lookup",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 549,
+        "line": 1069,
         "column": 4,
         "signature": "def lookup(self, symbol_name",
         "parent": "SymbolIndexer",
@@ -3095,7 +5763,7 @@
         "name": "get_symbols_in_file",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 553,
+        "line": 1073,
         "column": 4,
         "signature": "def get_symbols_in_file(self, file_path",
         "parent": "SymbolIndexer",
@@ -3107,7 +5775,7 @@
         "name": "get_all_symbols",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 562,
+        "line": 1082,
         "column": 4,
         "signature": "def get_all_symbols(self) -> list[Symbol]",
         "parent": "SymbolIndexer",
@@ -3119,7 +5787,7 @@
         "name": "get_index_stats",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 569,
+        "line": 1089,
         "column": 4,
         "signature": "def get_index_stats(self) -> dict[str, Any]",
         "parent": "SymbolIndexer",
@@ -3131,7 +5799,7 @@
         "name": "extract_bash_code_blocks",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 586,
+        "line": 1106,
         "column": 4,
         "signature": "def extract_bash_code_blocks(self, content",
         "parent": "SymbolIndexer",
@@ -3143,7 +5811,7 @@
         "name": "_find_all_nodes",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 620,
+        "line": 1140,
         "column": 4,
         "signature": "def _find_all_nodes(self, node",
         "parent": "SymbolIndexer",
@@ -3155,7 +5823,7 @@
         "name": "_find_child_by_type",
         "type": "method",
         "file": "doc_manager_mcp/indexing/analysis/tree_sitter.py",
-        "line": 629,
+        "line": 1149,
         "column": 4,
         "signature": "def _find_child_by_type(self, node",
         "parent": "SymbolIndexer",
