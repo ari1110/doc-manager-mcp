@@ -66,6 +66,7 @@ Learn how to [install](getting-started/installation.md) and [get started](gettin
 Step-by-step tutorials for common tasks:
 - [Claude Code Plugin](guides/claude-code-plugin.md) - Interactive documentation workflow
 - [Workflows](guides/workflows.md) - Common patterns and workflows
+- [Config Field Tracking](guides/config-tracking.md) - Track configuration changes
 - [Platforms](guides/platforms.md) - Platform-specific configuration
 
 ### Reference

@@ -393,17 +393,3 @@ structure:
 ### Safe to edit
 
 **Yes** - This file is meant to be customized. Changes take effect immediately in validation and quality assessment.
-
----
-
-## Additional files
-
-### .doc-manager/asset-manifest.json (deprecated)
-
-**Status**: Removed as of v2.1.0
-
-Asset tracking is now integrated into:
-- `repo-baseline.json`: Asset checksums (for change detection)
-- `dependencies.json`: Asset-to-docs mappings
-
-If you see this file in older projects, it can be safely deleted. It's no longer created or used.
