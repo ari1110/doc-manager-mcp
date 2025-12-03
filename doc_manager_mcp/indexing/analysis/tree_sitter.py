@@ -626,13 +626,19 @@ class SymbolIndexer:
             'pydantic' | 'dataclass' | 'typeddict' | 'attrs' | None
         """
         # Check decorators for @dataclass, @attrs, @define
-        for child in class_node.children:
-            if child.type == "decorator":
-                decorator_text = self._get_node_text(child, source)
-                if "@dataclass" in decorator_text:
-                    return "dataclass"
-                if "@attr.s" in decorator_text or "@attrs" in decorator_text or "@define" in decorator_text:
-                    return "attrs"
+        # Decorators may be in class_node children OR in parent decorated_definition
+        nodes_to_check = [class_node]
+        if class_node.parent and class_node.parent.type == "decorated_definition":
+            nodes_to_check.append(class_node.parent)
+
+        for node in nodes_to_check:
+            for child in node.children:
+                if child.type == "decorator":
+                    decorator_text = self._get_node_text(child, source)
+                    if "@dataclass" in decorator_text:
+                        return "dataclass"
+                    if "@attr.s" in decorator_text or "@attrs" in decorator_text or "@define" in decorator_text:
+                        return "attrs"
 
         # Check base classes for BaseModel, BaseSettings, TypedDict
         for child in class_node.children:
@@ -654,6 +660,8 @@ class SymbolIndexer:
         config_type: str,
     ) -> list[ConfigField]:
         """Extract config fields from a Python config class."""
+        import re
+
         fields: list[ConfigField] = []
 
         # Find the class body (block node)
@@ -662,62 +670,62 @@ class SymbolIndexer:
             return fields
 
         for child in body_node.children:
-            # Look for typed assignments: field_name: Type = default
-            if child.type == "expression_statement":
+            # TreeSitter puts typed assignments directly in block (not in expression_statement)
+            # Handle: field: Type = value OR field: Type
+            if child.type == "assignment":
+                # Find the identifier (field name)
+                left = self._find_child(child, "identifier")
+                if not left:
+                    continue
+
+                field_name = self._get_node_text(left, source)
+                # Skip private/dunder fields
+                if field_name.startswith("_"):
+                    continue
+
+                field_type = None
+                default_value = None
+                is_optional = False
+                doc = None
+
+                # Look for type annotation
+                type_node = self._find_child(child, "type")
+                if type_node:
+                    field_type = self._get_node_text(type_node, source)
+                    if "None" in field_type or "Optional" in field_type:
+                        is_optional = True
+
+                # Look for default value (last child that's not identifier, type, or punctuation)
+                for subchild in reversed(child.children):
+                    if subchild.type not in ("identifier", "type", ":", "="):
+                        default_value = self._get_node_text(subchild, source)
+                        # Extract description from Field(description=...)
+                        if "Field(" in default_value and "description=" in default_value:
+                            match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', default_value)
+                            if match:
+                                doc = match.group(1)
+                        break
+
+                fields.append(ConfigField(
+                    name=field_name,
+                    parent_symbol=class_name,
+                    field_type=field_type,
+                    default_value=default_value,
+                    file=file_path,
+                    line=child.start_point[0] + 1,
+                    column=child.start_point[1],
+                    is_optional=is_optional,
+                    doc=doc,
+                ))
+
+            # Handle typed declarations without assignment: field: Type
+            # These appear as expression_statement containing just the annotation
+            elif child.type == "expression_statement":
                 expr = child.children[0] if child.children else None
                 if expr and expr.type == "assignment":
-                    # Handle: field: Type = value
-                    left = self._find_child(expr, "identifier")
-                    if not left:
-                        # Try typed assignment pattern
-                        for subchild in expr.children:
-                            if subchild.type == "identifier":
-                                left = subchild
-                                break
-
-                    if left:
-                        field_name = self._get_node_text(left, source)
-                        # Skip private/dunder fields
-                        if field_name.startswith("_"):
-                            continue
-
-                        field_type = None
-                        default_value = None
-                        is_optional = False
-                        doc = None
-
-                        # Look for type annotation
-                        for subchild in expr.children:
-                            if subchild.type == "type":
-                                field_type = self._get_node_text(subchild, source)
-                                if "None" in field_type or "Optional" in field_type:
-                                    is_optional = True
-
-                        # Look for default value
-                        right_side = expr.children[-1] if len(expr.children) > 1 else None
-                        if right_side and right_side.type not in ("identifier", "type"):
-                            default_value = self._get_node_text(right_side, source)
-                            # Extract description from Field(description=...)
-                            if "Field(" in default_value and "description=" in default_value:
-                                import re
-                                match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', default_value)
-                                if match:
-                                    doc = match.group(1)
-
-                        fields.append(ConfigField(
-                            name=field_name,
-                            parent_symbol=class_name,
-                            field_type=field_type,
-                            default_value=default_value,
-                            file=file_path,
-                            line=child.start_point[0] + 1,
-                            column=child.start_point[1],
-                            is_optional=is_optional,
-                            doc=doc,
-                        ))
-
-            # Also handle typed declarations without assignment: field: Type
-            elif child.type == "type" or (child.type == "expression_statement" and ":" in self._get_node_text(child, source)):
+                    # This is a plain assignment without type annotation
+                    continue
+                # Check if this is a type annotation without value
                 text = self._get_node_text(child, source)
                 if ":" in text and "=" not in text:
                     parts = text.split(":", 1)

@@ -6,7 +6,7 @@ act directly on change detection output without manual interpretation.
 """
 
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from doc_manager_mcp.indexing.analysis.semantic_diff import (
     ConfigFieldChange,
@@ -63,7 +63,7 @@ class ActionGenerator:
     """
 
     # Action mapping based on change type and severity
-    SEMANTIC_ACTION_MAP = {
+    SEMANTIC_ACTION_MAP: ClassVar[dict[tuple[str, str], tuple[str, str]]] = {
         ("added", "function"): ("add_section", "medium"),
         ("added", "method"): ("add_section", "medium"),
         ("added", "class"): ("add_section", "medium"),
@@ -81,7 +81,7 @@ class ActionGenerator:
         ("modified", "class"): ("update_section", "low"),
     }
 
-    CONFIG_ACTION_MAP = {
+    CONFIG_ACTION_MAP: ClassVar[dict[str, tuple[str, str]]] = {
         "added": ("add_field_doc", "high"),
         "removed": ("remove_section", "critical"),
         "type_changed": ("update_field_doc", "high"),
