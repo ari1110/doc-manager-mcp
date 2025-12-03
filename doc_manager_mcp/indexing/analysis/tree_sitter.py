@@ -336,9 +336,11 @@ class SymbolIndexer:
                         name = self._get_node_text(name_node, source)
                         # Determine if struct or interface
                         symbol_type = SymbolType.TYPE
+                        struct_type_node = None
                         for child in spec.children:
                             if child.type == "struct_type":
                                 symbol_type = SymbolType.STRUCT
+                                struct_type_node = child
                             elif child.type == "interface_type":
                                 symbol_type = SymbolType.INTERFACE
 
@@ -349,6 +351,14 @@ class SymbolIndexer:
                             line=type_node.start_point[0] + 1,
                             column=type_node.start_point[1],
                         )
+
+                        # T009: Extract config fields for Go structs
+                        if symbol_type == SymbolType.STRUCT and struct_type_node:
+                            if self._is_go_config_struct(struct_type_node, source, name):
+                                symbol.config_fields = self._extract_go_config_fields(
+                                    struct_type_node, name, source, file_path
+                                )
+
                         self._add_symbol(symbol)
 
     def _extract_python_symbols(self, node: Any, source: bytes, file_path: str):
@@ -404,6 +414,14 @@ class SymbolIndexer:
                     column=class_node.start_point[1],
                     parent=parent_class_name,
                 )
+
+                # T009: Extract config fields for Python config classes
+                config_type = self._is_python_config_class(class_node, source)
+                if config_type:
+                    symbol.config_fields = self._extract_python_config_fields(
+                        class_node, name, source, file_path, config_type
+                    )
+
                 self._add_symbol(symbol)
 
                 # Extract methods within class (only direct methods, not from nested classes)
@@ -484,6 +502,28 @@ class SymbolIndexer:
                 )
                 self._add_symbol(symbol)
 
+        # T009: Interface declarations (TypeScript)
+        for interface_node in self._find_nodes(node, "interface_declaration"):
+            name_node = self._find_child(interface_node, "type_identifier")
+            if name_node:
+                name = self._get_node_text(name_node, source)
+
+                symbol = Symbol(
+                    name=name,
+                    type=SymbolType.INTERFACE,
+                    file=file_path,
+                    line=interface_node.start_point[0] + 1,
+                    column=interface_node.start_point[1],
+                )
+
+                # Extract config fields for config interfaces
+                if self._is_ts_config_interface(interface_node, source, name):
+                    symbol.config_fields = self._extract_ts_config_fields(
+                        interface_node, name, source, file_path
+                    )
+
+                self._add_symbol(symbol)
+
         # Arrow functions assigned to variables/constants
         for var_node in self._find_nodes(node, "lexical_declaration"):
             for declarator in self._find_nodes(var_node, "variable_declarator"):
@@ -536,6 +576,13 @@ class SymbolIndexer:
                     line=struct_node.start_point[0] + 1,
                     column=struct_node.start_point[1],
                 )
+
+                # T009: Extract config fields for Rust serde structs
+                if self._is_rust_config_struct(struct_node, source):
+                    symbol.config_fields = self._extract_rust_config_fields(
+                        struct_node, name, source, file_path
+                    )
+
                 self._add_symbol(symbol)
 
         # Trait declarations
