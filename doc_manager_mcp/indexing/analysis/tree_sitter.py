@@ -55,6 +55,28 @@ class SymbolType(str, Enum):
     CONSTANT = "constant"
     VARIABLE = "variable"
     COMMAND = "command"  # CLI command registration
+    CONFIG_FIELD = "config_field"  # Configuration field in config models
+
+
+@dataclass
+class ConfigField:
+    """Represents a configuration field in a config struct/class/model.
+
+    Used to track field-level changes in configuration models across
+    Python (Pydantic, dataclass, TypedDict, attrs), Go (yaml/json tags),
+    TypeScript (interface properties), and Rust (serde derives).
+    """
+
+    name: str
+    parent_symbol: str  # Name of parent class/struct
+    field_type: str | None  # Type annotation (e.g., "str", "int | None")
+    default_value: str | None  # Default value as string
+    file: str  # Relative path from project root
+    line: int
+    column: int
+    tags: dict[str, str] | None = None  # Go yaml/json, Rust serde attrs
+    is_optional: bool = False  # Whether field is optional
+    doc: str | None = None  # Field docstring or description
 
 
 @dataclass
@@ -69,6 +91,7 @@ class Symbol:
     signature: str | None = None  # Full signature for functions/methods
     parent: str | None = None  # Parent class/struct for methods
     doc: str | None = None  # Documentation string
+    config_fields: list[ConfigField] | None = None  # Config fields if this is a config model
 
 
 class SymbolIndexer:
