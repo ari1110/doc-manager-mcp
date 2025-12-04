@@ -1,5 +1,5 @@
 ---
-name: OpenSpec: Archive
+name: openspec.archive
 description: Archive a deployed OpenSpec change and update specs.
 category: OpenSpec
 tags: [openspec, archive]
