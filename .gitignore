@@ -32,7 +32,8 @@ env/
 # IDEs
 .vscode/
 .idea/
-.claude/
+/.claude/skills
+/.claude/settings.local.json
 *.swp
 *.swo
 *~
@@ -60,4 +61,4 @@ CLAUDE.md
 benchmarks/
 internal_docs/
 temp_mermaid/
-specs/
+/specs
