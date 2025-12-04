@@ -17,11 +17,13 @@ from doc_manager_mcp.core import (
 )
 from doc_manager_mcp.core.markdown_cache import MarkdownCache
 from doc_manager_mcp.models import AssessQualityInput
+from doc_manager_mcp.tools._internal.baselines import load_repo_baseline
 
 from .accuracy import assess_accuracy
 from .clarity import assess_clarity
 from .consistency import assess_consistency
 from .helpers import (
+    calculate_docstring_coverage,
     calculate_documentation_coverage,
     check_heading_case_consistency,
     check_list_formatting_consistency,
@@ -38,7 +40,9 @@ def _format_quality_report(
     undocumented_apis: list[dict[str, Any]] | None = None,
     coverage_data: dict[str, Any] | None = None,
     list_formatting: dict[str, Any] | None = None,
-    heading_case: dict[str, Any] | None = None
+    heading_case: dict[str, Any] | None = None,
+    project_context: dict[str, Any] | None = None,  # Task 1.3: Include project context
+    docstring_coverage: dict[str, Any] | None = None,  # Task 3.3: Include docstring coverage
 ) -> dict[str, Any]:
     """Format quality assessment report."""
     report = {
@@ -46,6 +50,14 @@ def _format_quality_report(
         "overall_score": _calculate_overall_score(results, coverage_data),
         "criteria": results
     }
+
+    # Task 1.3: Add project context (repo_name, description, language) to report
+    if project_context:
+        report["project"] = project_context
+
+    # Task 3.3: Add docstring coverage metric
+    if docstring_coverage:
+        report["docstring_coverage"] = docstring_coverage
 
     # Add documentation coverage if provided
     if coverage_data is not None:
@@ -238,12 +250,27 @@ async def assess_quality(params: AssessQualityInput) -> str | dict[str, Any]:
         list_formatting = check_list_formatting_consistency(docs_path)
         heading_case = check_heading_case_consistency(docs_path)
 
+        # Task 3.3: Calculate docstring coverage from symbol baseline
+        docstring_coverage = calculate_docstring_coverage(project_path)
+
+        # Task 1.3: Load project context from repo baseline
+        project_context = None
+        repo_baseline_data = load_repo_baseline(project_path, validate=False)
+        if isinstance(repo_baseline_data, dict):
+            project_context = {
+                "repo_name": repo_baseline_data.get("repo_name"),
+                "description": repo_baseline_data.get("description"),
+                "language": repo_baseline_data.get("language"),
+            }
+
         return enforce_response_limit(_format_quality_report(
             results,
             undocumented_apis,
             coverage_data,
             list_formatting,
-            heading_case
+            heading_case,
+            project_context,
+            docstring_coverage,
         ))
 
     except Exception as e:

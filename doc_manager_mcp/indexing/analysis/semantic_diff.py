@@ -39,14 +39,20 @@ class SemanticChange:
 
     Attributes:
         name: The fully qualified name of the symbol (e.g., 'MyClass.my_method')
-        change_type: Type of change - "added", "removed", "modified", or "signature_changed"
+        change_type: Type of change - "added", "removed", "modified", "signature_changed",
+                    "parent_changed" (Task 3.2), or "doc_changed" (Task 3.3)
         symbol_type: Kind of symbol - "function", "class", "method", "variable", "constant", etc.
         file: File path relative to project root where the symbol is located
         line: Line number in the new version where the symbol is defined (None if removed)
+        column: Column number for precise location (Task 3.1). None if not available.
         old_signature: Previous signature or definition (None if newly added)
         new_signature: New signature or definition (None if removed)
         severity: Impact assessment - "breaking" (incompatible), "non-breaking" (compatible),
                  or "unknown" (requires manual review)
+        old_parent: Previous parent symbol (Task 3.2). None if not changed or newly added.
+        new_parent: New parent symbol (Task 3.2). None if not changed or removed.
+        old_doc: Previous docstring (Task 3.3). None if not changed or newly added.
+        new_doc: New docstring (Task 3.3). None if not changed or removed.
     """
 
     name: str
@@ -57,6 +63,11 @@ class SemanticChange:
     old_signature: str | None
     new_signature: str | None
     severity: str
+    column: int | None = None  # Task 3.1: Precise column location
+    old_parent: str | None = None  # Task 3.2: Parent change tracking
+    new_parent: str | None = None  # Task 3.2: Parent change tracking
+    old_doc: str | None = None  # Task 3.3: Docstring change tracking
+    new_doc: str | None = None  # Task 3.3: Docstring change tracking
 
 
 @dataclass
@@ -391,7 +402,8 @@ def compare_symbols(
                 line=new_sym.line,
                 old_signature=None,
                 new_signature=new_sym.signature,
-                severity="non-breaking"
+                severity="non-breaking",
+                column=new_sym.column,  # Task 3.1: Include column for precise location
             ))
         else:
             # Symbol exists in both - check for modifications
@@ -411,12 +423,42 @@ def compare_symbols(
                     line=new_sym.line,
                     old_signature=old_sym.signature,
                     new_signature=new_sym.signature,
-                    severity=severity
+                    severity=severity,
+                    column=new_sym.column,  # Task 3.1
                 ))
-            # Check for implementation changes (line, parent, doc)
-            elif (old_sym.line != new_sym.line or
-                  old_sym.parent != new_sym.parent or
-                  old_sym.doc != new_sym.doc):
+            # Task 3.2: Check for parent change (symbol moved between classes)
+            elif old_sym.parent != new_sym.parent and old_sym.parent is not None:
+                # Only flag if parent name differs, not None→value (per design.md)
+                changes.append(SemanticChange(
+                    name=name,
+                    change_type="parent_changed",
+                    symbol_type=new_sym.type.value,
+                    file=file_path,
+                    line=new_sym.line,
+                    old_signature=old_sym.signature,
+                    new_signature=new_sym.signature,
+                    severity="non-breaking",
+                    column=new_sym.column,  # Task 3.1
+                    old_parent=old_sym.parent,
+                    new_parent=new_sym.parent,
+                ))
+            # Task 3.3: Check for doc change (docstring modified)
+            elif old_sym.doc != new_sym.doc:
+                changes.append(SemanticChange(
+                    name=name,
+                    change_type="doc_changed",
+                    symbol_type=new_sym.type.value,
+                    file=file_path,
+                    line=new_sym.line,
+                    old_signature=old_sym.signature,
+                    new_signature=new_sym.signature,
+                    severity="non-breaking",  # Per design.md: doc changes are non-breaking
+                    column=new_sym.column,  # Task 3.1
+                    old_doc=old_sym.doc,
+                    new_doc=new_sym.doc,
+                ))
+            # Check for other implementation changes (line only now)
+            elif old_sym.line != new_sym.line:
                 changes.append(SemanticChange(
                     name=name,
                     change_type="modified",
@@ -425,7 +467,8 @@ def compare_symbols(
                     line=new_sym.line,
                     old_signature=old_sym.signature,
                     new_signature=new_sym.signature,
-                    severity="non-breaking"
+                    severity="non-breaking",
+                    column=new_sym.column,  # Task 3.1
                 ))
 
     # Detect removed symbols

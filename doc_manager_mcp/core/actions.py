@@ -80,6 +80,14 @@ class ActionGenerator:
         ("modified", "function"): ("update_section", "low"),
         ("modified", "method"): ("update_section", "low"),
         ("modified", "class"): ("update_section", "low"),
+        # Task 3.2: parent_changed - symbol moved between classes (refactoring indicator)
+        ("parent_changed", "function"): ("update_section", "medium"),
+        ("parent_changed", "method"): ("update_section", "medium"),
+        ("parent_changed", "class"): ("update_section", "medium"),
+        # Task 3.3: doc_changed - docstring modified (documentation needs sync)
+        ("doc_changed", "function"): ("update_section", "low"),
+        ("doc_changed", "method"): ("update_section", "low"),
+        ("doc_changed", "class"): ("update_section", "low"),
     }
 
     CONFIG_ACTION_MAP: ClassVar[dict[str, tuple[str, str]]] = {
@@ -178,6 +186,12 @@ class ActionGenerator:
             description = f"Remove documentation for deleted {change.symbol_type} '{change.name}'"
         elif change.change_type == "signature_changed":
             description = f"Update signature documentation for {change.symbol_type} '{change.name}'"
+        elif change.change_type == "parent_changed":
+            # Task 3.2: Description for parent change
+            description = f"Update location/hierarchy for {change.symbol_type} '{change.name}' (moved from {change.old_parent or 'module'} to {change.new_parent or 'module'})"
+        elif change.change_type == "doc_changed":
+            # Task 3.3: Description for docstring change
+            description = f"Sync documentation with updated docstring for {change.symbol_type} '{change.name}'"
         else:
             description = f"Update documentation for modified {change.symbol_type} '{change.name}'"
 
@@ -186,23 +200,37 @@ class ActionGenerator:
         if change.change_type == "added" and change.new_signature:
             suggested_content = f"```\n{change.new_signature}\n```"
 
+        # Task 3.1: Include column for precise location in source_change
+        source_change_data: dict[str, Any] = {
+            "type": "semantic",
+            "name": change.name,
+            "change_type": change.change_type,
+            "symbol_type": change.symbol_type,
+            "file": change.file,
+            "line": change.line,
+            "column": change.column,  # Task 3.1: Precise column location
+            "old_signature": change.old_signature,
+            "new_signature": change.new_signature,
+            "severity": change.severity,
+        }
+
+        # Task 3.2: Include parent change info if available
+        if change.old_parent or change.new_parent:
+            source_change_data["old_parent"] = change.old_parent
+            source_change_data["new_parent"] = change.new_parent
+
+        # Task 3.3: Include doc change info if available
+        if change.old_doc is not None or change.new_doc is not None:
+            source_change_data["old_doc"] = change.old_doc
+            source_change_data["new_doc"] = change.new_doc
+
         return ActionItem(
             action_type=action_type,
             target_file=target_file,
             target_section=change.name,
             description=description,
             priority=priority,
-            source_change={
-                "type": "semantic",
-                "name": change.name,
-                "change_type": change.change_type,
-                "symbol_type": change.symbol_type,
-                "file": change.file,
-                "line": change.line,
-                "old_signature": change.old_signature,
-                "new_signature": change.new_signature,
-                "severity": change.severity,
-            },
+            source_change=source_change_data,
             suggested_content=suggested_content,
         )
 

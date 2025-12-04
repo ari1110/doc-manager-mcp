@@ -27,6 +27,7 @@ from doc_manager_mcp.core import (
     load_conventions,
 )
 from doc_manager_mcp.models import SyncInput
+from doc_manager_mcp.tools._internal.baselines import load_repo_baseline
 from doc_manager_mcp.tools.analysis.detect_changes import docmgr_detect_changes
 from doc_manager_mcp.tools.analysis.quality.assessment import assess_quality
 from doc_manager_mcp.tools.analysis.validation.validator import validate_docs
@@ -78,8 +79,15 @@ async def sync(params: SyncInput) -> dict[str, Any] | str:
         config = load_config(project_path)
         include_root_readme = config.get('include_root_readme', False) if config else False
 
+        # Task 1.2 & 1.3: Load repo baseline for repo_name and description
+        repo_baseline_data = load_repo_baseline(project_path, validate=False)
+        repo_name = repo_baseline_data.get("repo_name") if isinstance(repo_baseline_data, dict) else project_path.name
+        description = repo_baseline_data.get("description") if isinstance(repo_baseline_data, dict) else None
+
         lines = ["# Documentation Sync Report", ""]
-        lines.append(f"**Project:** {project_path.name}")
+        lines.append(f"**Project:** {repo_name}")
+        if description:  # Task 1.3: Include description in sync reports
+            lines.append(f"**Description:** {description}")
         lines.append(f"**Mode:** {params.mode} ({'read-only analysis' if params.mode == 'check' else 'baseline update + analysis'})")
         lines.append(f"**Started:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

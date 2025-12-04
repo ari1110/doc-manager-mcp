@@ -17,10 +17,13 @@ from doc_manager_mcp.core import (
 )
 from doc_manager_mcp.core.markdown_cache import MarkdownCache
 from doc_manager_mcp.models import ValidateDocsInput
+from doc_manager_mcp.tools._internal.baselines import load_repo_baseline
+from doc_manager_mcp.tools._internal.dependencies import load_dependencies
 
-from .assets import validate_assets
+from .assets import validate_assets, validate_external_assets
 from .conventions import validate_conventions
 from .links import check_broken_links
+from .references import validate_stale_references
 from .snippets import validate_code_snippets
 from .symbols import validate_symbols
 from .syntax import validate_code_syntax
@@ -171,6 +174,21 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
         include_root_readme = config.get('include_root_readme', False) if config else False
         conventions = load_conventions(project_path)
 
+        # Task 1.4 & 1.5: Load repo baseline for language and docs_exist
+        repo_baseline_data = load_repo_baseline(project_path, validate=False)
+        primary_language = repo_baseline_data.get("language") if isinstance(repo_baseline_data, dict) else None
+        docs_exist = repo_baseline_data.get("docs_exist", True) if isinstance(repo_baseline_data, dict) else True
+
+        # Task 1.5: Early exit if docs_exist=false in baseline
+        if not docs_exist:
+            return enforce_response_limit({
+                "total_issues": 0,
+                "errors": 0,
+                "warnings": 0,
+                "issues": [],
+                "note": "No documentation found. Baseline indicates docs_exist=false."
+            })
+
         # Determine which files to validate (incremental vs full)
         markdown_files = None
         if params.incremental:
@@ -203,7 +221,8 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
 
         if params.check_snippets:
             validators.append(
-                asyncio.to_thread(validate_code_snippets, docs_path, project_path, include_root_readme, markdown_cache, markdown_files)
+                # Task 1.4: Pass primary_language for language-aware validation
+                asyncio.to_thread(validate_code_snippets, docs_path, project_path, include_root_readme, markdown_cache, markdown_files, primary_language)
             )
 
         if params.validate_code_syntax:
@@ -214,6 +233,22 @@ async def validate_docs(params: ValidateDocsInput) -> str | dict[str, Any]:
         if params.validate_symbols:
             validators.append(
                 asyncio.to_thread(validate_symbols, docs_path, project_path, include_root_readme, None, markdown_files)
+            )
+
+        # Task 2.2: Check for stale references using dependencies.json
+        dependencies_data = None
+        if getattr(params, 'check_stale_references', True) or getattr(params, 'check_external_assets', False):
+            dependencies_data = load_dependencies(project_path, validate=False)
+
+        if getattr(params, 'check_stale_references', True) and dependencies_data:
+            validators.append(
+                asyncio.to_thread(validate_stale_references, project_path, dependencies_data)  # type: ignore[arg-type]
+            )
+
+        # Task 2.3: Check external asset URLs for reachability (opt-in, expensive)
+        if getattr(params, 'check_external_assets', False) and dependencies_data:
+            validators.append(
+                asyncio.to_thread(validate_external_assets, project_path, dependencies_data)  # type: ignore[arg-type]
             )
 
         # Run all validators concurrently

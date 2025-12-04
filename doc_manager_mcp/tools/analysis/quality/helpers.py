@@ -623,6 +623,100 @@ def calculate_documentation_coverage(
     }
 
 
+def calculate_docstring_coverage(
+    project_path: Path,
+) -> dict[str, Any]:
+    """Calculate percentage of public symbols that have docstrings.
+
+    Task 3.3: Use `doc` field from symbol-baseline.json to track docstring coverage.
+
+    This metric answers: "What percentage of public symbols have inline documentation?"
+    It's distinct from calculate_documentation_coverage which checks external doc files.
+
+    Args:
+        project_path: Path to project root
+
+    Returns:
+        Dict with:
+        - symbols_with_doc: Number of public symbols with docstrings
+        - total_public_symbols: Total number of public symbols
+        - coverage_percentage: Percentage with docstrings
+        - breakdown_by_type: Coverage by symbol type
+    """
+    import json
+
+    # Load symbol baseline
+    baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
+
+    if not baseline_path.exists():
+        return {
+            "symbols_with_doc": 0,
+            "total_public_symbols": 0,
+            "coverage_percentage": 0.0,
+            "breakdown_by_type": {},
+            "note": "No symbol baseline found. Run docmgr_update_baseline to generate."
+        }
+
+    try:
+        with open(baseline_path, encoding="utf-8") as f:
+            baseline_data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        return {
+            "symbols_with_doc": 0,
+            "total_public_symbols": 0,
+            "coverage_percentage": 0.0,
+            "breakdown_by_type": {},
+            "error": f"Failed to load symbol baseline: {e}"
+        }
+
+    symbols = baseline_data.get("symbols", {})
+
+    # Count symbols with and without docstrings
+    total_public = 0
+    with_doc = 0
+    breakdown: dict[str, dict[str, int]] = {}
+
+    for _file_path, symbol_list in symbols.items():
+        for sym in symbol_list:
+            name = sym.get("name", "")
+            symbol_type = sym.get("type", "unknown")
+            doc = sym.get("doc")
+
+            # Check if symbol is public (Python convention: no leading underscore)
+            # Go convention: uppercase first letter
+            is_public = not name.startswith("_") or name.startswith("__") and name.endswith("__")
+
+            if not is_public:
+                continue
+
+            total_public += 1
+
+            if symbol_type not in breakdown:
+                breakdown[symbol_type] = {"total": 0, "with_doc": 0}
+
+            breakdown[symbol_type]["total"] += 1
+
+            # Check if symbol has a docstring (non-empty doc field)
+            if doc and doc.strip():
+                with_doc += 1
+                breakdown[symbol_type]["with_doc"] += 1
+
+    # Calculate percentages
+    coverage_pct = (with_doc / total_public * 100) if total_public > 0 else 0.0
+
+    # Calculate percentages by type
+    for _type_name, counts in breakdown.items():
+        pct = round(counts["with_doc"] / counts["total"] * 100, 1) if counts["total"] > 0 else 0.0
+        counts["coverage_percentage"] = pct  # type: ignore[typeddict-item]
+
+    return {
+        "symbols_with_doc": with_doc,
+        "total_public_symbols": total_public,
+        "coverage_percentage": round(coverage_pct, 1),
+        "breakdown_by_type": breakdown,
+    }
+
+
 def check_terminology_compliance(docs_path, conventions):
     """Check documentation against terminology conventions.
 

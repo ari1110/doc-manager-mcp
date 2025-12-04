@@ -5,6 +5,29 @@ All notable changes to Documentation Manager are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2025-12-04
+
+### Added
+
+- **Complete data utilization** - All stored fields in baseline files now have concrete consumers
+- **`load_repo_baseline()` function** - Load repo-baseline.json with typed access and version validation
+- **Change percentage reporting** - `docmgr_detect_changes` shows "X of Y files changed (Z%)"
+- **Project context in reports** - Quality and sync reports include repo_name and description
+- **Language-aware validation** - Primary language syntax errors elevated to error severity
+- **Early exit for missing docs** - Tools return early with clear message when `docs_exist=false`
+- **Stale reference validation** - `docmgr_validate_docs` warns about unmatched code references
+- **External asset validation** - Opt-in `check_external_assets` flag to verify HTTP URLs
+- **Docstring coverage metric** - Quality assessment reports "X% of public symbols have docstrings"
+- **Parent change detection** - `compare_symbols` detects when symbols move between classes
+- **Doc change detection** - Detect and track docstring modifications as semantic changes
+- **Precise column locations** - Action items include column number for precise source locations
+
+### Changed
+
+- `SemanticChange` now includes `column`, `old_parent`, `new_parent`, `old_doc`, `new_doc` fields
+- Action generator includes parent and doc change info in source_change references
+- `ValidateDocsInput` adds `check_stale_references` (default: true) and `check_external_assets` (default: false)
+
 ## [1.2.0] - 2025-12-04
 
 ### Added

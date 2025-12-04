@@ -339,6 +339,14 @@ class ValidateDocsInput(BaseModel):
         default=False,
         description="Only validate files that changed since last baseline (5-10x faster)"
     )
+    check_stale_references: bool = Field(
+        default=True,
+        description="Check for stale code references that couldn't be matched to source files (Task 2.2)"
+    )
+    check_external_assets: bool = Field(
+        default=False,
+        description="Check external asset URLs for reachability (expensive, makes HTTP requests). Task 2.3"
+    )
 
 class MapChangesInput(BaseModel):
     """Input for mapping code changes to documentation."""

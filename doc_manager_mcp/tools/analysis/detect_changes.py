@@ -15,6 +15,7 @@ from doc_manager_mcp.core import (
     run_git_command,
 )
 from doc_manager_mcp.models import DocmgrDetectChangesInput
+from doc_manager_mcp.tools._internal.baselines import load_repo_baseline
 from doc_manager_mcp.tools._internal.changes import (
     _categorize_change,
     _get_changed_files_from_checksums,
@@ -87,11 +88,19 @@ async def docmgr_detect_changes(params: DocmgrDetectChangesInput) -> dict[str, A
                 }
 
             changed_files = _get_changed_files_from_checksums(project_path, baseline)
+
+            # Load typed baseline for additional metadata
+            repo_baseline_data = load_repo_baseline(project_path, validate=False)
+            repo_name = repo_baseline_data.get("repo_name") if isinstance(repo_baseline_data, dict) else None
+            file_count = repo_baseline_data.get("file_count", 0) if isinstance(repo_baseline_data, dict) else 0
+
             baseline_info = {
                 "mode": "checksum",
+                "repo_name": repo_name,  # Task 1.2: Include repo name in output
                 "baseline_commit": baseline.get("metadata", {}).get("git_commit") if baseline.get("metadata") else baseline.get("git_commit"),
                 "baseline_created": baseline.get("timestamp"),
                 "baseline_branch": baseline.get("metadata", {}).get("git_branch") if baseline.get("metadata") else None,
+                "file_count": file_count,  # Task 1.7: Include for change percentages
             }
 
         # Categorize changes
@@ -149,10 +158,19 @@ async def docmgr_detect_changes(params: DocmgrDetectChangesInput) -> dict[str, A
                     if branch_warning:
                         warnings.extend(format_staleness_warnings(branch_warning=branch_warning))
 
+        # Task 1.7: Calculate change percentage if file_count available
+        change_percentage = None
+        file_count_value = baseline_info.get("file_count", 0)
+        if isinstance(file_count_value, int) and file_count_value > 0:
+            change_percentage = round(
+                len(changed_files) / file_count_value * 100, 1
+            )
+
         result = {
             "status": "success",
             "changes_detected": len(changed_files) > 0,
             "total_changes": len(changed_files),
+            "change_percentage": change_percentage,  # Task 1.7: "X of Y files changed (Z%)"
             "changed_files": categorized_changes,
             "affected_documentation": affected_docs,
             "semantic_changes": semantic_changes,
