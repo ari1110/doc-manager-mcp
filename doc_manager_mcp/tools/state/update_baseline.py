@@ -246,20 +246,9 @@ async def _update_symbol_baseline(project_path: Path) -> dict[str, Any]:
         dict with status and symbol information
     """
     try:
-        from ...indexing.analysis.semantic_diff import save_symbol_baseline
-        from ...indexing.analysis.tree_sitter import SymbolIndexer
+        from ...indexing.analysis.semantic_diff import create_symbol_baseline
 
-        baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
-
-        # Index current symbols
-        indexer = SymbolIndexer()
-        indexer.index_project(project_path)
-
-        # Save to baseline (use indexer.index which is dict[str, list[Symbol]])
-        save_symbol_baseline(baseline_path, indexer.index)
-
-        # Count total symbols
-        total_symbols = sum(len(symbols) for symbols in indexer.index.values())
+        baseline_path, total_symbols = create_symbol_baseline(project_path)
 
         return {
             "status": "success",

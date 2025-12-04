@@ -308,15 +308,24 @@ terminology:
         # 1. repo-baseline.json (checksums for all files including images)
         # 2. dependencies.json (asset_to_docs mapping for doc references)
 
+        # Create symbol baseline for semantic change tracking
+        if ctx:
+            await ctx.report_progress(progress=90, total=100)
+            await ctx.info("Creating symbol baseline...")
+
+        from doc_manager_mcp.indexing.analysis.semantic_diff import create_symbol_baseline
+        symbol_baseline_path, symbol_count = create_symbol_baseline(project_path)
+
         if ctx:
             await ctx.report_progress(progress=100, total=100)
-            await ctx.info(f"Memory system initialized! Tracked {file_count} files.")
+            await ctx.info(f"Memory system initialized! Tracked {file_count} files, {symbol_count} symbols.")
 
         return {
             "status": "success",
             "message": "Memory system initialized successfully",
             "baseline_path": str(baseline_path),
             "conventions_path": str(conventions_path),
+            "symbol_baseline_path": str(symbol_baseline_path),
             "repository": repo_name,
             "language": language,
             "docs_exist": docs_exist,
@@ -324,7 +333,8 @@ terminology:
                 "git_commit": git_commit[:8] if git_commit else None,
                 "git_branch": git_branch
             },
-            "files_tracked": file_count
+            "files_tracked": file_count,
+            "symbols_indexed": symbol_count
         }
 
     except Exception as e:

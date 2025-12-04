@@ -282,6 +282,41 @@ def save_symbol_baseline(
         raise
 
 
+def create_symbol_baseline(project_path: Path) -> tuple[Path, int]:
+    """Create or update symbol baseline for a project.
+
+    Indexes all code symbols in the project using TreeSitter and saves
+    them to the symbol-baseline.json file. This function is used by both
+    initial setup (docmgr_init) and baseline updates (docmgr_update_baseline).
+
+    Args:
+        project_path: Path to the project root directory
+
+    Returns:
+        Tuple of (baseline_path, symbol_count) where:
+        - baseline_path: Path to the created/updated symbol-baseline.json
+        - symbol_count: Total number of symbols indexed
+    """
+    from .tree_sitter import SymbolIndexer
+
+    baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
+
+    # Ensure parent directory exists
+    baseline_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Index current symbols
+    indexer = SymbolIndexer()
+    indexer.index_project(project_path)
+
+    # Save to baseline
+    save_symbol_baseline(baseline_path, indexer.index)
+
+    # Count total symbols
+    total_symbols = sum(len(symbols) for symbols in indexer.index.values())
+
+    return baseline_path, total_symbols
+
+
 def compare_symbols(
     old_symbols: dict[str, list[Symbol]],
     new_symbols: dict[str, list[Symbol]]
