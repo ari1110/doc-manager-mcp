@@ -5,6 +5,12 @@ All notable changes to Documentation Manager are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2025-12-04
+
+### Fixed
+
+- `dependencies_tracked` count in `docmgr_update_baseline` output now correctly reports `total_references` instead of always showing 0
+
 ## [1.2.2] - 2025-12-04
 
 ### Added
@@ -153,6 +159,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Checksum and semantic change detection
 - Baseline management for tracking documentation state
 
+[1.2.3]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.3
 [1.2.2]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.2
 [1.2.1]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.1
 [1.2.0]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.0

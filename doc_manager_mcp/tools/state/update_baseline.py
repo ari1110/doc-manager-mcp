@@ -290,7 +290,7 @@ async def _update_dependencies(
 
         return {
             "status": "success",
-            "dependencies_tracked": result.get("total_dependencies", 0),
+            "dependencies_tracked": result.get("total_references", 0),
             "path": str(project_path / ".doc-manager" / "dependencies.json")
         }
 
