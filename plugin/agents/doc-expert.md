@@ -69,9 +69,9 @@ Requires analysis, validation, quality assessment, or workflow coordination?
 |------|---------|
 | `docmgr_detect_platform` | Identify doc platform (MkDocs, Sphinx, etc.) |
 | `docmgr_init` | Initialize doc-manager for project |
-| `docmgr_detect_changes` | Compare code against baselines |
-| `docmgr_validate_docs` | Check links, assets, snippets |
-| `docmgr_assess_quality` | Evaluate 7 quality criteria |
+| `docmgr_detect_changes` | Compare code against baselines; reports change percentage |
+| `docmgr_validate_docs` | Check links, assets, snippets, stale refs, external URLs |
+| `docmgr_assess_quality` | Evaluate 7 quality criteria + docstring coverage |
 | `docmgr_update_baseline` | Atomically update all baselines |
 | `docmgr_sync` | Orchestrated sync (check or resync) |
 | `docmgr_migrate` | Restructure with history preservation |
@@ -90,6 +90,14 @@ Requires analysis, validation, quality assessment, or workflow coordination?
 - `mode="checksum"` - Default, compare file checksums
 - `mode="git_diff"` - Compare against specific commit
 - `include_semantic=true` - Add for symbol-level changes and config field tracking
+- Output includes `change_percentage` (e.g., "15 of 100 files changed (15%)")
+
+**`docmgr_validate_docs`:**
+- `check_links=true` (default) - Validate internal links
+- `check_assets=true` (default) - Verify images exist and have alt text
+- `check_snippets=true` (default) - Check code block syntax
+- `check_stale_references=true` (default) - Warn about unmatched code references
+- `check_external_assets=false` (default) - Opt-in HTTP validation of external URLs (expensive)
 
 **Config Field Tracking Output** (when `include_semantic=true`):
 - `config_field_changes` - List of added/removed/modified config fields

@@ -68,6 +68,10 @@ Is it straightforward content writing with clear scope?
 | `docmgr_detect_changes` | Understand what changed (context only) |
 | `docmgr_validate_docs` | Validate your work (ALWAYS run before returning) |
 
+**`docmgr_validate_docs` options:**
+- `check_stale_references=true` (default) - Validates code references exist
+- `check_external_assets=false` (default) - Opt-in external URL validation (expensive)
+
 ### File Operations
 | Tool | Purpose |
 |------|---------|

@@ -96,7 +96,7 @@ Step 4: For Each Batch
 │   └── Note any failures
 │
 ├── 3d: Validate
-│   └── Run: docmgr_validate_docs(check_links=true, check_assets=true, check_snippets=true)
+│   └── Run: docmgr_validate_docs(check_links=true, check_assets=true, check_snippets=true, check_stale_references=true)
 │
 ├── 3e: Assess Quality
 │   ├── Run: docmgr_assess_quality
