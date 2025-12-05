@@ -327,7 +327,7 @@ wheels = [
 
 [[package]]
 name = "doc-manager-mcp"
-version = "1.2.1"
+version = "1.2.4"
 source = { editable = "." }
 dependencies = [
     { name = "markdown-it-py" },

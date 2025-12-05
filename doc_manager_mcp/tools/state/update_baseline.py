@@ -227,7 +227,10 @@ async def _update_repo_baseline(project_path: Path) -> dict[str, Any]:
         return {
             "status": "success",
             "files_tracked": file_count,
+            "language": baseline["language"],
+            "docs_exist": baseline["docs_exist"],
             "git_commit": git_metadata["git_commit"],
+            "git_branch": git_metadata["git_branch"],
             "path": str(baseline_path)
         }
 
@@ -245,16 +248,17 @@ async def _update_symbol_baseline(project_path: Path) -> dict[str, Any]:
         project_path: Project root path
 
     Returns:
-        dict with status and symbol information
+        dict with status and symbol information including breakdown by type
     """
     try:
         from ...indexing.analysis.semantic_diff import create_symbol_baseline
 
-        baseline_path, total_symbols = create_symbol_baseline(project_path)
+        baseline_path, total_symbols, breakdown = create_symbol_baseline(project_path)
 
         return {
             "status": "success",
             "symbols_tracked": total_symbols,
+            "breakdown": breakdown,
             "path": str(baseline_path)
         }
 
@@ -276,7 +280,7 @@ async def _update_dependencies(
         docs_path: Documentation directory path
 
     Returns:
-        dict with status and dependency information
+        dict with status and dependency information including file counts
     """
     try:
         from doc_manager_mcp.models import TrackDependenciesInput
@@ -290,7 +294,10 @@ async def _update_dependencies(
 
         return {
             "status": "success",
-            "dependencies_tracked": result.get("total_references", 0),
+            "total_references": result.get("total_references", 0),
+            "total_doc_files": result.get("total_doc_files", 0),
+            "total_source_files": result.get("total_source_files", 0),
+            "unmatched_references": result.get("total_unmatched_references", 0),
             "path": str(project_path / ".doc-manager" / "dependencies.json")
         }
 

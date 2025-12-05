@@ -31,13 +31,37 @@ Sets up doc-manager infrastructure in your project by creating configuration fil
 ```json
 {
   "status": "success",
-  "config_created": true,
-  "baselines_created": true,
-  "files_tracked": 42,
-  "symbols_indexed": 156,
-  "dependencies_mapped": true
+  "message": "Memory system initialized successfully",
+  "baseline_path": "/project/.doc-manager/memory/repo-baseline.json",
+  "conventions_path": "/project/.doc-manager/memory/doc-conventions.yml",
+  "symbol_baseline_path": "/project/.doc-manager/memory/symbol-baseline.json",
+  "repository": "my-project",
+  "language": "Python",
+  "docs_exist": true,
+  "metadata": {
+    "git_commit": "abc1234",
+    "git_branch": "main"
+  },
+  "files_tracked": 133,
+  "symbols_indexed": 268,
+  "symbol_breakdown": {
+    "function": 120,
+    "class": 45,
+    "method": 103
+  }
 }
 ```
+
+### Output fields
+
+| Field | Description |
+|-------|-------------|
+| `language` | Primary programming language detected |
+| `docs_exist` | Whether documentation directory exists |
+| `metadata.git_branch` | Current git branch at initialization |
+| `files_tracked` | Total files included in repo baseline |
+| `symbols_indexed` | Total code symbols indexed by TreeSitter |
+| `symbol_breakdown` | Symbol counts by type (class, function, method, etc.) |
 
 ## Examples
 

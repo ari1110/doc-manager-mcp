@@ -27,17 +27,51 @@ Atomically updates all three baseline files (repo-baseline.json, symbol-baseline
 ```json
 {
   "status": "success",
-  "baselines_updated": {
-    "repo_baseline": true,
-    "symbol_baseline": true,
-    "dependencies": true
-  },
-  "files_tracked": 58,
-  "symbols_indexed": 203,
-  "dependencies_mapped": 47,
-  "timestamp": "2025-11-20T22:45:12.345678"
+  "message": "All baselines updated successfully",
+  "updated_files": ["repo-baseline.json", "symbol-baseline.json", "dependencies.json"],
+  "details": {
+    "repo_baseline": {
+      "status": "success",
+      "files_tracked": 133,
+      "language": "Python",
+      "docs_exist": true,
+      "git_commit": "abc1234...",
+      "git_branch": "main",
+      "path": "/project/.doc-manager/memory/repo-baseline.json"
+    },
+    "symbol_baseline": {
+      "status": "success",
+      "symbols_tracked": 268,
+      "breakdown": {
+        "function": 120,
+        "class": 45,
+        "method": 103
+      },
+      "path": "/project/.doc-manager/memory/symbol-baseline.json"
+    },
+    "dependencies": {
+      "status": "success",
+      "total_references": 744,
+      "total_doc_files": 28,
+      "total_source_files": 47,
+      "unmatched_references": 12,
+      "path": "/project/.doc-manager/dependencies.json"
+    }
+  }
 }
 ```
+
+### Output fields
+
+| Field | Description |
+|-------|-------------|
+| `details.repo_baseline.language` | Primary programming language detected |
+| `details.repo_baseline.docs_exist` | Whether documentation directory exists |
+| `details.repo_baseline.git_branch` | Current git branch |
+| `details.symbol_baseline.breakdown` | Symbol counts by type (class, function, method, etc.) |
+| `details.dependencies.total_doc_files` | Number of documentation files with code references |
+| `details.dependencies.total_source_files` | Number of source files referenced by docs |
+| `details.dependencies.unmatched_references` | References in docs that don't match real files |
 
 ## Examples
 

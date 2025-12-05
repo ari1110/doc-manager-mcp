@@ -1,6 +1,6 @@
 {
   "name": "doc-manager",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Documentation lifecycle management integration for Claude Code. Provides proactive documentation health monitoring, automated sync workflows, quality assessment against 7 professional criteria, and intelligent agent coordination through the doc-manager MCP server.",
   "author": {
     "name": "ari1110",

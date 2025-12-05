@@ -297,7 +297,7 @@ def save_symbol_baseline(
         raise
 
 
-def create_symbol_baseline(project_path: Path) -> tuple[Path, int]:
+def create_symbol_baseline(project_path: Path) -> tuple[Path, int, dict[str, int]]:
     """Create or update symbol baseline for a project.
 
     Indexes all code symbols in the project using TreeSitter and saves
@@ -308,10 +308,13 @@ def create_symbol_baseline(project_path: Path) -> tuple[Path, int]:
         project_path: Path to the project root directory
 
     Returns:
-        Tuple of (baseline_path, symbol_count) where:
+        Tuple of (baseline_path, symbol_count, breakdown) where:
         - baseline_path: Path to the created/updated symbol-baseline.json
         - symbol_count: Total number of symbols indexed
+        - breakdown: Dict mapping symbol type to count (e.g., {"class": 45, "function": 120})
     """
+    from collections import Counter
+
     from .tree_sitter import SymbolIndexer
 
     baseline_path = project_path / ".doc-manager" / "memory" / "symbol-baseline.json"
@@ -326,10 +329,18 @@ def create_symbol_baseline(project_path: Path) -> tuple[Path, int]:
     # Save to baseline
     save_symbol_baseline(baseline_path, indexer.index)
 
-    # Count total symbols
-    total_symbols = sum(len(symbols) for symbols in indexer.index.values())
+    # Count total symbols and breakdown by type
+    total_symbols = 0
+    type_counter: Counter[str] = Counter()
+    for symbols in indexer.index.values():
+        for sym in symbols:
+            total_symbols += 1
+            type_counter[sym.type.value] += 1
 
-    return baseline_path, total_symbols
+    # Convert Counter to regular dict sorted by count (descending)
+    breakdown = dict(sorted(type_counter.items(), key=lambda x: -x[1]))
+
+    return baseline_path, total_symbols, breakdown
 
 
 def compare_symbols(

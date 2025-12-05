@@ -5,6 +5,21 @@ All notable changes to Documentation Manager are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2025-12-04
+
+### Added
+
+- **Enriched tool outputs** - MCP tools now return more useful metrics from baseline files
+- **Symbol breakdown by type** - `docmgr_update_baseline` and `docmgr_init` return symbol counts by type (class, function, method, etc.)
+- **Repository context in update_baseline** - Returns `language`, `docs_exist`, `git_branch` for project awareness
+- **Dependency metrics** - Returns `total_doc_files`, `total_source_files`, `unmatched_references` counts
+
+### Changed
+
+- `create_symbol_baseline()` now returns 3-tuple: `(path, count, breakdown)` instead of 2-tuple
+- `docmgr_update_baseline` details now include full metrics from each baseline update
+- `docmgr_init` output now includes `symbol_breakdown` dict
+
 ## [1.2.3] - 2025-12-04
 
 ### Fixed
@@ -159,6 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Checksum and semantic change detection
 - Baseline management for tracking documentation state
 
+[1.2.4]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.4
 [1.2.3]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.3
 [1.2.2]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.2
 [1.2.1]: https://github.com/ari1110/doc-manager-mcp/releases/tag/v1.2.1

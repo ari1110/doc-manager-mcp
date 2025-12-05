@@ -320,7 +320,7 @@ terminology:
             await ctx.info("Creating symbol baseline...")
 
         from doc_manager_mcp.indexing.analysis.semantic_diff import create_symbol_baseline
-        symbol_baseline_path, symbol_count = create_symbol_baseline(project_path)
+        symbol_baseline_path, symbol_count, symbol_breakdown = create_symbol_baseline(project_path)
 
         if ctx:
             await ctx.report_progress(progress=100, total=100)
@@ -340,7 +340,8 @@ terminology:
                 "git_branch": git_branch
             },
             "files_tracked": file_count,
-            "symbols_indexed": symbol_count
+            "symbols_indexed": symbol_count,
+            "symbol_breakdown": symbol_breakdown
         }
 
     except Exception as e:
